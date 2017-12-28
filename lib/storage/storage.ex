@@ -13,11 +13,11 @@ defmodule ExqScheduler.Storage do
     end)
   end
 
-  def get_jobs(window) do
+  def filter_active_jobs(window, schedules) do
     win_start = elem(window, 0)
     win_end = elem(window, 1)
-    IO.puts("Looking for jobs between: #{inspect(win_start)}, #{inspect(win_end)}")
-    Enum.map(get_schedules(), &(&1.job))
+    IO.puts("Looking for active jobs between: #{inspect(win_start)}, #{inspect(win_end)}")
+    Enum.map(schedules, &(&1.job))
   end
 
   def queue_jobs(jobs) do

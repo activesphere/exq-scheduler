@@ -1,10 +1,11 @@
 defmodule ExqScheduler.Scheduler.Server do
   use GenServer
-  alias ExqScheduler.Storage
 
   @window_prev 2000
   @window_next 2000
   @buffer 1000
+
+  alias ExqScheduler.Storage
 
   def start_link() do
     {:ok, server} = GenServer.start_link(__MODULE__, :ok, [])
@@ -19,16 +20,21 @@ defmodule ExqScheduler.Scheduler.Server do
     tick(server)
   end
 
-  def handle_cast({:tick, time}, _state) do
-    IO.puts("Time is #{inspect(time)}")
-    handle_tick(time)
-    {:noreply, time}
+  def init(_opts) do
+    state = Storage.get_schedules()
+    {:ok, state}
   end
 
-  defp handle_tick(time) do
+  def handle_cast({:tick, time}, state) do
+    IO.puts("Time is #{inspect(time)}")
+    handle_tick(state, time)
+    {:noreply, state}
+  end
+
+  defp handle_tick(schedules, time) do
     time
     |> get_window
-    |> Storage.get_jobs
+    |> Storage.filter_active_jobs(schedules)
     |> Storage.queue_jobs
   end
 
