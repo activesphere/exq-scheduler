@@ -2,18 +2,20 @@ defmodule ExqScheduler.Storage.Redis do
   use GenServer
 
   def hkeys(key) do
-    conn = get_instance_name()
-    {:ok, keys} = Redix.command(conn, ['HKEYS', key])
+    {:ok, keys} = Redix.command(pid(), ['HKEYS', key])
     keys
   end
 
   def hget(key, field) do
-    conn = get_instance_name()
-    {:ok, result} = Redix.command(conn, ['HGET', key, field])
+    {:ok, result} = Redix.command(pid(), ['HGET', key, field])
     result |> decode
   end
 
-  def get_instance_name do
+  def hset(key, field, val) do
+    Redix.command(pid(), ['HSET', key, field, val])
+  end
+
+  def pid do
     "#{__MODULE__}.Client" |> String.to_atom
   end
 

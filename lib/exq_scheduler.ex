@@ -7,7 +7,7 @@ defmodule ExqScheduler do
 
   def start(_type, _args) do
     children = [
-      worker(Redix, [[], [name: Redis.get_instance_name]]),
+      worker(Redix, [[], [name: Redis.pid()]]),
       worker(ExqScheduler.Scheduler.Server, [])
     ]
 
