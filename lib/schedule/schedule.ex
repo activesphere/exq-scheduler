@@ -1,10 +1,10 @@
-defmodule ExqScheduler.Scheduler.Schedule.ScheduleOpts do
+defmodule ExqScheduler.Schedule.ScheduleOpts do
   defstruct first_at: nil, last_at: nil
 end
 
-defmodule ExqScheduler.Scheduler.Schedule do
+defmodule ExqScheduler.Schedule do
   alias Exq.Support.Job
-  alias ExqScheduler.Scheduler.Schedule.ScheduleOpts
+  alias ExqScheduler.Schedule.ScheduleOpts
 
   @enforce_keys [:cron, :job]
   defstruct cron: nil, job: nil, schedule_opts: nil, last_run: nil
