@@ -8,26 +8,23 @@ defmodule ExqScheduler.Scheduler.Server do
   alias ExqScheduler.Storage
 
   def start_link() do
-    {:ok, server} = GenServer.start_link(__MODULE__, :ok, [])
-    tick(server)
-    {:ok, server}
+    GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
-  def tick(server) do
+  def next_tick(server, timeout) do
     time = :calendar.local_time
-    GenServer.cast(server, {:tick, time})
-    :timer.sleep(timeout())
-    tick(server)
+    Process.send_after(server, {:tick, time}, timeout)
   end
 
   def init(_opts) do
     state = Storage.get_schedules()
+    next_tick(__MODULE__, 0)
     {:ok, state}
   end
 
-  def handle_cast({:tick, time}, state) do
-    IO.puts("Time is #{inspect(time)}")
+  def handle_info({:tick, time}, state) do
     handle_tick(state, time)
+    next_tick(__MODULE__, timeout())
     {:noreply, state}
   end
 
