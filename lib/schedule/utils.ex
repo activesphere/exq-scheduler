@@ -1,6 +1,5 @@
 defmodule ExqScheduler.Schedule.Utils do
     alias Timex.Duration
-    require IEx
 
     def to_cron(every) do
         every
