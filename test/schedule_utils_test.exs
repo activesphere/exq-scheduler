@@ -3,6 +3,15 @@ defmodule ScheduleUtilsTest do
   alias ExqScheduler.Schedule.Utils
   alias Timex.Duration
 
+  test "to_cron(): It converts an every string to Cron-supported syntax" do
+    assert Utils.to_cron("1s") == "1 * * * * * *" # Extended Cron Syntax
+    assert Utils.to_cron("5m") == "5 * * * * *"
+    assert Utils.to_cron("2h") == "* 2 * * * *"
+    assert Utils.to_cron("1d") == "* * 1 * * *"
+    assert Utils.to_cron("5M") == "* * * 5 * *"
+    assert Utils.to_cron("3y") == "* * * * * 3"
+  end
+
   test "to_duration(): it converts the time string to timex duration object" do
     assert Utils.to_duration("15.64s") == Duration.from_seconds(15.64)
     assert Utils.to_duration("1s") == Duration.from_seconds(1)

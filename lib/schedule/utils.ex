@@ -1,6 +1,6 @@
 defmodule ExqScheduler.Schedule.Utils do
   alias Timex.Duration
-  alias __MODULE__
+  alias Crontab.CronExpression, as: Cron
 
   def get_elem(arr, index) do
     unless arr in [nil, []] do
@@ -18,8 +18,28 @@ defmodule ExqScheduler.Schedule.Utils do
     end
   end
 
+  def str_to_int(numstr) do
+    if numstr == "" do
+      0
+    else
+      Integer.parse(numstr) |> elem(0)
+    end
+  end
+
   def to_cron(every) do
-    every
+    unit = String.last(every)
+    value = [String.replace(every, unit, "") |> str_to_int]
+
+    Cron.Composer.compose(
+      case unit do
+        "y" -> %Cron{year: value}
+        "M" -> %Cron{month: value}
+        "d" -> %Cron{day: value}
+        "h" -> %Cron{hour: value}
+        "m" -> %Cron{minute: value}
+        "s" -> %Cron{extended: true, second: value}
+      end
+    )
   end
 
   def to_duration(timestring) do
@@ -41,9 +61,9 @@ defmodule ExqScheduler.Schedule.Utils do
     {date_part, time_part} =
       {
         Regex.run(~r/(\d+(\.{1}\d+)*y)?(\d+(\.{1}\d+)*M)?(\d+(\.{1}\d+)*d)?/, timestring)
-        |> Utils.get_elem(0),
+        |> get_elem(0),
         Regex.run(~r/(\d+(\.{1}\d+)*h)?(\d+(\.{1}\d+)*m)?(\d+(\.{1}\d+)*s)?$/, timestring)
-        |> Utils.get_elem(0)
+        |> get_elem(0)
       }
 
     if {date_part, time_part} == {"", ""} do
