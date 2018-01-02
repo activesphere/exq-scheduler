@@ -9,7 +9,7 @@ defmodule ExqScheduler.Schedule.ScheduleOpts do
   end
 end
 
-defmodule ExqScheduler.Schedule.Window do
+defmodule ExqScheduler.Schedule.TimeRange do
   defstruct t_start: nil, t_end: nil
 end
 
@@ -39,9 +39,9 @@ defmodule ExqScheduler.Schedule do
     |> Poison.encode!
   end
 
-  def get_jobs(schedule, window) do
-    next_dates = get_next_run_dates(schedule.cron, window.t_end)
-    prev_dates = get_previous_run_dates(schedule.cron, window.t_start)
+  def get_jobs(schedule, time_range) do
+    next_dates = get_next_run_dates(schedule.cron, time_range.t_end)
+    prev_dates = get_previous_run_dates(schedule.cron, time_range.t_start)
     Enum.concat(prev_dates, next_dates)
     |> Enum.map(fn date -> {date, schedule.job} end)
   end

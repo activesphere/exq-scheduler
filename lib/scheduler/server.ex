@@ -1,12 +1,12 @@
 defmodule ExqScheduler.Scheduler.Server do
   use GenServer
 
-  @window_prev 2000
-  @window_next 2000
+  @prev_offset 200000
+  @next_offset 200000
   @buffer 1000
 
   alias ExqScheduler.Storage
-  alias ExqScheduler.Schedule
+  alias ExqScheduler.Schedule.TimeRange
 
   def start_link() do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
@@ -35,22 +35,24 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defp handle_tick(schedules, time) do
     time
-    |> get_window
-    |> Storage.filter_active_jobs(schedules)
+    |> get_time_range
+    |> (&(Storage.filter_active_jobs(schedules, &1))).()
     |> Storage.queue_jobs
   end
 
-  defp get_window(time) do
-    { Timex.shift(time, milliseconds: -@window_prev),
-      Timex.shift(time, milliseconds: @window_next) }
+  def get_time_range(time) do
+    %TimeRange{
+      t_start: Timex.shift(time, milliseconds: -@prev_offset),
+      t_end: Timex.shift(time, milliseconds: @next_offset)
+    }
   end
 
   defp timeout do
-    @window_prev + @window_next - @buffer
+    @prev_offset + @next_offset - @buffer
   end
 
   defp next_tick(server, timeout) do
-    time = :calendar.local_time
+    time = NaiveDateTime.utc_now
     Process.send_after(server, {:tick, time}, timeout)
   end
 end
