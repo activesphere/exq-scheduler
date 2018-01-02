@@ -2,8 +2,7 @@ defmodule ExqScheduler.Storage.Redis do
   use GenServer
 
   def hkeys(key) do
-    {:ok, keys} = Redix.command(pid(), ['HKEYS', key])
-    keys
+    Redix.command(pid(), ['HKEYS', key])
   end
 
   def hget(key, field) do
