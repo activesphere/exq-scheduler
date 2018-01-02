@@ -11,11 +11,11 @@ defmodule ExqScheduler.Schedule.Parser do
 
   alias Crontab.CronExpression
 
-  def parse_schedule(schedule = %{"cron" => cron}) do
+  def parse_schedule(schedule = %{"cron" => cron_data}) do
     job = schedule
           |> Map.delete("cron")
           |> Poison.encode!
-    {cron, job}
+    {hd(cron_data), job, parse_schedule_opts(tl(cron_data))}
   end
 
   #Let's not support this rufus-scheduler type syntax yet. We'll move schedule parsing elsewhere
@@ -24,8 +24,11 @@ defmodule ExqScheduler.Schedule.Parser do
           |> Map.delete("every")
           |> Poison.encode!
     cron = get_cron(interval)
-    {cron, job}
+    {cron, job, parse_schedule_opts(tl(interval))}
   end
+
+  defp parse_schedule_opts([]), do: nil
+  defp parse_schedule_opts(opts), do: opts |> hd
 
   defp get_cron(interval) when is_list(interval) do
     hd(interval) |> get_cron
