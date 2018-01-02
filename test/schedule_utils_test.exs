@@ -4,7 +4,7 @@ defmodule ScheduleUtilsTest do
   alias Timex.Duration
 
   test "to_cron(): It converts an every string to Cron-supported syntax" do
-    assert Utils.to_cron("1s") == "1 * * * * * *" # Extended Cron Syntax
+    assert Utils.to_cron("1s") == "1 * * * * * *"
     assert Utils.to_cron("5m") == "5 * * * * *"
     assert Utils.to_cron("2h") == "* 2 * * * *"
     assert Utils.to_cron("1d") == "* * 1 * * *"
