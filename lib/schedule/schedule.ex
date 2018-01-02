@@ -11,6 +11,13 @@ end
 
 defmodule ExqScheduler.Schedule.TimeRange do
   defstruct t_start: nil, t_end: nil
+
+  def new(time, prev_offset, next_offset) do
+    %__MODULE__{
+      t_start: Timex.shift(time, milliseconds: -prev_offset),
+      t_end: Timex.shift(time, milliseconds: next_offset)
+    }
+  end
 end
 
 defmodule ExqScheduler.Schedule do
