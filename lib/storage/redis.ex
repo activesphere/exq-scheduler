@@ -14,6 +14,17 @@ defmodule ExqScheduler.Storage.Redis do
     Redix.command(pid(), ['HSET', key, field, val])
   end
 
+  def cas(compare_key, commands) do
+    watch = ['WATCH', compare_key]
+    multi = ['MULTI']
+    set = ['SET', compare_key, true]
+    exec = ['EXEC']
+    pipeline_command = [watch, multi, set]
+                       |> Enum.concat(commands)
+                       |> Enum.concat([exec])
+    Redix.pipeline(pid(), pipeline_command)
+  end
+
   def pid do
     "#{__MODULE__}.Client" |> String.to_atom()
   end
