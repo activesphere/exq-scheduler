@@ -2,25 +2,25 @@ defmodule ExqScheduler.Schedule.Utils do
   alias Timex.Duration
   alias Crontab.CronExpression, as: Cron
 
-  def get_elem(arr, index) do
+  def get_elem(arr, index, default \\ "") do
     unless arr in [nil, []] do
       Enum.at(arr, index)
     else
-      ""
+      default
     end
   end
 
-  def str_to_float(numstr) do
+  def str_to_float(numstr, default \\ 0) do
     if numstr == "" do
-      0
+      default
     else
       Float.parse(numstr) |> elem(0)
     end
   end
 
-  def str_to_int(numstr) do
+  def str_to_int(numstr, default \\ 0) do
     if numstr == "" do
-      0
+      default
     else
       Integer.parse(numstr) |> elem(0)
     end
