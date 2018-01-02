@@ -2,7 +2,7 @@ defmodule ExqScheduler.Schedule.ScheduleOpts do
   defstruct first_at: nil, last_at: nil
 
   def new(opts) do
-    %__MODULE__ {
+    %__MODULE__{
       first_at: Map.get(opts, :first_at),
       last_at: Map.get(opts, :last_at)
     }
@@ -20,11 +20,11 @@ defmodule ExqScheduler.Schedule do
   alias Crontab.Scheduler
 
   @enforce_keys [:name, :cron, :job]
-  defstruct name: nil, cron: nil, job: nil, schedule_opts: nil,
-  first_run: nil, last_run: nil
+  defstruct name: nil, cron: nil, job: nil, schedule_opts: nil, first_run: nil, last_run: nil
 
   def new(name, cron_str, job, schedule_opts \\ %{}) when is_binary(job) do
-    {:ok, cron} = CronExpression.Parser.parse cron_str
+    {:ok, cron} = CronExpression.Parser.parse(cron_str)
+
     %__MODULE__{
       name: name,
       cron: cron,
@@ -36,38 +36,44 @@ defmodule ExqScheduler.Schedule do
   def encode(schedule) do
     schedule.job
     |> Map.merge(%{cron: build_encoded_cron(schedule)})
-    |> Poison.encode!
+    |> Poison.encode!()
   end
 
   def get_jobs(schedule, time_range) do
     next_dates = get_next_run_dates(schedule.cron, time_range.t_end)
     prev_dates = get_previous_run_dates(schedule.cron, time_range.t_start)
+
     Enum.concat(prev_dates, next_dates)
     |> Enum.map(fn date -> {date, schedule.job} end)
   end
 
   defp get_next_run_dates(cron, upper_bound_date) do
-    now = Timex.now |> Timex.to_naive_datetime
+    now = Timex.now() |> Timex.to_naive_datetime()
     enum = Scheduler.get_next_run_dates(cron, now)
+
     finish_chunking = fn date ->
       Timex.compare(date, upper_bound_date) == 1
     end
+
     reduce_dates(enum, finish_chunking)
   end
 
   defp get_previous_run_dates(cron, lower_bound_date) do
-    now = Timex.now |> Timex.to_naive_datetime
+    now = Timex.now() |> Timex.to_naive_datetime()
     enum = Scheduler.get_previous_run_dates(cron, now)
+
     finish_chunking = fn date ->
       Timex.compare(date, lower_bound_date) == -1
     end
+
     reduce_dates(enum, finish_chunking)
   end
 
   defp reduce_dates(enum, chunk_fn) do
     reducer = build_reducer(chunk_fn)
+
     Stream.transform(enum, [], reducer)
-    |> Enum.to_list
+    |> Enum.to_list()
   end
 
   defp build_reducer(chunk_fn) do

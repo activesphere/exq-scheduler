@@ -4,13 +4,13 @@ defmodule ScheduleTest do
   alias ExqScheduler.Schedule.TimeRange
 
   defp build_schedule(cron) do
-    {:ok, job} = %{class: "TestJob"} |> Poison.encode
+    {:ok, job} = %{class: "TestJob"} |> Poison.encode()
     Schedule.new("test_schedule", cron, job)
   end
 
   defp build_time_range(offset) do
-    t_start = Timex.now |> Timex.shift(seconds: -offset)
-    t_end = Timex.now |> Timex.shift(seconds: offset)
+    t_start = Timex.now() |> Timex.shift(seconds: -offset)
+    t_end = Timex.now() |> Timex.shift(seconds: offset)
     %TimeRange{t_start: t_start, t_end: t_end}
   end
 
@@ -22,6 +22,7 @@ defmodule ScheduleTest do
       %{cron: "0 * * * *", offset: 1800, length: 1},
       %{cron: "0 */2 * * *", offset: 3600, length: 1}
     ]
+
     Enum.each(test_params, fn params ->
       schedule = build_schedule(params.cron)
       time_range = build_time_range(params.offset)

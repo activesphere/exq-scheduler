@@ -15,10 +15,10 @@ defmodule ExqScheduler.Storage.Redis do
   end
 
   def pid do
-    "#{__MODULE__}.Client" |> String.to_atom
+    "#{__MODULE__}.Client" |> String.to_atom()
   end
 
   defp decode(result) do
-    result |> Poison.decode!
+    result |> Poison.decode!()
   end
 end

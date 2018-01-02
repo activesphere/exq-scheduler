@@ -1,8 +1,8 @@
 defmodule ExqScheduler.Scheduler.Server do
   use GenServer
 
-  @prev_offset 200000
-  @next_offset 200000
+  @prev_offset 200_000
+  @next_offset 200_000
   @buffer 1000
 
   alias ExqScheduler.Storage
@@ -36,8 +36,8 @@ defmodule ExqScheduler.Scheduler.Server do
   defp handle_tick(schedules, time) do
     time
     |> get_time_range
-    |> (&(Storage.filter_active_jobs(schedules, &1))).()
-    |> Storage.queue_jobs
+    |> (&Storage.filter_active_jobs(schedules, &1)).()
+    |> Storage.queue_jobs()
   end
 
   def get_time_range(time) do
@@ -52,7 +52,7 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp next_tick(server, timeout) do
-    time = NaiveDateTime.utc_now
+    time = NaiveDateTime.utc_now()
     Process.send_after(server, {:tick, time}, timeout)
   end
 end

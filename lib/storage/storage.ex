@@ -6,16 +6,21 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Schedule.Parser
 
   def add_schedule(name, cron, job, opts) do
-    val = Schedule.new(name, cron, job, opts)
-          |> Schedule.encode
+    val =
+      Schedule.new(name, cron, job, opts)
+      |> Schedule.encode()
+
     Redis.hset(@schedule_key, name, val)
   end
 
   def get_schedules do
     {:ok, keys} = Redis.hkeys(@schedule_key)
-    Enum.map(keys, fn(name) ->
-      {cron, job, _} = Redis.hget(@schedule_key, name)
-      |> Parser.parse_schedule
+
+    Enum.map(keys, fn name ->
+      {cron, job, _} =
+        Redis.hget(@schedule_key, name)
+        |> Parser.parse_schedule()
+
       Schedule.new(name, cron, job)
     end)
   end
