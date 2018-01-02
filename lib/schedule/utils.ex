@@ -24,14 +24,21 @@ defmodule ExqScheduler.Schedule.Utils do
 
   def to_duration(timestring) do
     # Parse week (W) syntax if present.
-    weekPart =
+    week_part =
       Regex.run(~r/(\d+(\.{1}\d+)*w{1})/, timestring)
       |> get_elem(0)
 
-    numWeeks = weekPart |> String.trim("w") |> str_to_float
-    timestring = String.replace(timestring, weekPart, "")
+    num_weeks = week_part |> String.trim("w") |> str_to_float
 
-    {datePart, timePart} =
+    # Remove week from timestring after parsing.
+    timestring =
+      unless week_part == "" do
+        String.replace(timestring, week_part, "")
+      else
+        timestring
+      end
+
+    {date_part, time_part} =
       {
         Regex.run(~r/(\d+(\.{1}\d+)*y)?(\d+(\.{1}\d+)*M)?(\d+(\.{1}\d+)*d)?/, timestring)
         |> Utils.get_elem(0),
@@ -39,9 +46,9 @@ defmodule ExqScheduler.Schedule.Utils do
         |> Utils.get_elem(0)
       }
 
-    if {datePart, timePart} == {"", ""} do
-      if numWeeks != 0 do
-        Duration.from_weeks(numWeeks)
+    if {date_part, time_part} == {"", ""} do
+      if num_weeks != 0 do
+        Duration.from_weeks(num_weeks)
       else
         nil
       end
@@ -49,19 +56,19 @@ defmodule ExqScheduler.Schedule.Utils do
       {:ok, duration} =
         cond do
           # If it's only date.
-          timestring == datePart ->
-            Duration.parse("P#{String.upcase(datePart)}")
+          timestring == date_part ->
+            Duration.parse("P#{String.upcase(date_part)}")
 
           # If it's only time.
-          timestring == timePart ->
-            Duration.parse("PT#{String.upcase(timePart)}")
+          timestring == time_part ->
+            Duration.parse("PT#{String.upcase(time_part)}")
 
           # If it's both date and time.
           true ->
-            Duration.parse("P#{String.upcase(datePart)}" <> "T#{String.upcase(timePart)}")
+            Duration.parse("P#{String.upcase(date_part)}" <> "T#{String.upcase(time_part)}")
         end
 
-      Duration.add(duration, Duration.from_weeks(numWeeks))
+      Duration.add(duration, Duration.from_weeks(num_weeks))
     end
   end
 end
