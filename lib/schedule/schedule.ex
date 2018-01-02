@@ -50,34 +50,20 @@ defmodule ExqScheduler.Schedule do
   defp get_next_run_dates(cron, upper_bound_date) do
     now = Timex.now() |> Timex.to_naive_datetime()
     enum = Scheduler.get_next_run_dates(cron, now)
-
-    finish_chunking = fn date ->
-      Timex.compare(date, upper_bound_date) == 1
-    end
-
-    reduce_dates(enum, finish_chunking)
+    collect_till = &(Timex.compare(&1, upper_bound_date) != 1)
+    reduce_dates(enum, collect_till)
   end
 
   defp get_previous_run_dates(cron, lower_bound_date) do
     now = Timex.now() |> Timex.to_naive_datetime()
     enum = Scheduler.get_previous_run_dates(cron, now)
-
-    finish_chunking = fn date ->
-      Timex.compare(date, lower_bound_date) == -1
-    end
-
-    reduce_dates(enum, finish_chunking)
+    collect_till = &(Timex.compare(&1, lower_bound_date) != -1)
+    reduce_dates(enum, collect_till)
   end
 
-  defp reduce_dates(enum, chunk_fn) do
-    reducer = build_reducer(chunk_fn)
-
-    Stream.transform(enum, [], reducer)
+  defp reduce_dates(enum, collect_till) do
+    Stream.take_while(enum, collect_till)
     |> Enum.to_list()
-  end
-
-  defp build_reducer(chunk_fn) do
-    fn date, _ -> if chunk_fn.(date), do: {:halt, []}, else: {[date], []} end
   end
 
   defp build_encoded_cron(schedule) do
