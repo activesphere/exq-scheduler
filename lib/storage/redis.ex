@@ -26,6 +26,14 @@ defmodule ExqScheduler.Storage.Redis do
     Redix.pipeline(redis, pipeline_command)
   end
 
+  def queue_len(redis, queue) do
+    Redix.command(redis, ['LLEN', queue])
+  end
+
+  def flushdb(redis) do
+    Redix.command(redis, ['FLUSHDB'])
+  end
+
   defp decode(result) do
     result |> Poison.decode!()
   end

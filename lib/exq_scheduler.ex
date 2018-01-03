@@ -8,7 +8,7 @@ defmodule ExqScheduler do
 
   def start(_type, _args) do
     children = [
-      worker(Redix, [[], [name: redis_pid()]]),
+      worker(Redix, [get_config(:redis), [name: redis_pid()]]),
       worker(ExqScheduler.Scheduler.Server, [build_opts()])
     ]
 
@@ -16,7 +16,7 @@ defmodule ExqScheduler do
     Supervisor.start_link(children, opts)
   end
 
-  defp build_opts do
+  def build_opts do
     [
       storage_opts: build_storage_opts(),
       server_opts: build_server_opts()

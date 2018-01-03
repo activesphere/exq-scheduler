@@ -50,6 +50,11 @@ defmodule ExqScheduler.Storage do
     Enum.each(jobs, &enqueue_job(&1, storage_opts))
   end
 
+  def queue_key(queue_name, storage_opts) do
+    [storage_opts.exq_namespace, "queues", queue_name]
+    |> build_key
+  end
+
   # TODO: Update schedule.first_run, schedule.last_run
   defp enqueue_job(scheduled_job, storage_opts) do
     {job, time} = {scheduled_job.job, scheduled_job.time}
@@ -73,11 +78,6 @@ defmodule ExqScheduler.Storage do
 
   defp queues_key(storage_opts) do
     [storage_opts.exq_namespace, "queues"]
-    |> build_key
-  end
-
-  defp queue_key(queue_name, storage_opts) do
-    [storage_opts.exq_namespace, "queues", queue_name]
     |> build_key
   end
 
