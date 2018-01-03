@@ -1,0 +1,2 @@
+#!/bin/sh
+sidekiq -r ./sidekiq_worker.rb -C sidekiq.yml
