@@ -12,18 +12,18 @@ defmodule ExqScheduler.Storage.Redis do
     Redix.command(redis, ['HSET', key, field, val])
   end
 
-  def cas(redis, compare_key, commands) do
-    watch = ['WATCH', compare_key]
-    multi = ['MULTI']
-    set = ['SET', compare_key, true]
-    exec = ['EXEC']
+  def cas(redis, lock_key, commands) do
+    setnx = ['SETNX', lock_key, true]
+    {:ok, acquire_lock} = Redix.command(redis, setnx)
 
-    pipeline_command =
-      [watch, multi, set]
-      |> Enum.concat(commands)
-      |> Enum.concat([exec])
+    if acquire_lock == 1 do
+      pipeline_command =
+        ['MULTI']
+        |> Enum.concat(commands)
+        |> Enum.concat(['EXEC'])
 
-    Redix.pipeline(redis, pipeline_command)
+      Redix.pipeline(redis, pipeline_command)
+    end
   end
 
   def queue_len(redis, queue) do

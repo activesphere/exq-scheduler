@@ -66,12 +66,13 @@ defmodule ExqScheduler.Storage do
     ]
 
     enqueue_key = build_enqueued_jobs_key(storage_opts)
-    Redis.cas(storage_opts.redis, build_compare_key(job, time, enqueue_key), commands)
+    Redis.cas(storage_opts.redis, build_lock_key(job, time, enqueue_key), commands)
   end
 
-  defp build_compare_key(job, time, enqueue_key) do
+  defp build_lock_key(job, time, enqueue_key) do
     serialized_job = Job.encode(job)
     time_string = NaiveDateTime.to_string(time)
+
     [enqueue_key, serialized_job, time_string]
     |> build_key
   end

@@ -36,4 +36,10 @@ defmodule TestUtils do
     queue_name = Storage.queue_key("default", opts)
     Redis.queue_len(opts.redis, queue_name)
   end
+
+  def pmap(collection, func) do
+    collection
+    |> Enum.map(&Task.async(fn -> func.(&1) end))
+    |> Enum.map(&Task.await/1)
+  end
 end
