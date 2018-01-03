@@ -21,6 +21,18 @@ defmodule ExqScheduler.Schedule do
     end
   end
 
+  defmodule ScheduledJob do
+    @enforce_keys [:job, :time]
+    defstruct @enforce_keys
+
+    def new(job, time) do
+      %__MODULE__{
+        job: job,
+        time: time
+      }
+    end
+  end
+
   alias Exq.Support.Job
   alias Crontab.CronExpression
   alias Crontab.Scheduler
@@ -50,7 +62,7 @@ defmodule ExqScheduler.Schedule do
     prev_dates = get_previous_run_dates(schedule.cron, time_range.t_start)
 
     Enum.concat(prev_dates, next_dates)
-    |> Enum.map(fn date -> {date, schedule.job} end)
+    |> Enum.map(&ScheduledJob.new(schedule.job, &1))
   end
 
   defp get_next_run_dates(cron, upper_bound_date) do

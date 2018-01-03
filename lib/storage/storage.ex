@@ -7,8 +7,9 @@ defmodule ExqScheduler.Storage do
   @default_queue "default"
 
   alias ExqScheduler.Schedule
-  alias ExqScheduler.Storage.Redis
   alias ExqScheduler.Schedule.Parser
+  alias ExqScheduler.Schedule.ScheduledJob
+  alias ExqScheduler.Storage.Redis
   alias Exq.Support.Job
 
   def add_schedule(name, cron, job, opts) do
@@ -40,8 +41,8 @@ defmodule ExqScheduler.Storage do
     Enum.each(jobs, &enqueue_job(&1))
   end
 
-  defp enqueue_job(job_data) do
-    {time, job} = {elem(job_data, 0), elem(job_data, 1)}
+  defp enqueue_job(scheduled_job) do
+    {job, time} = {scheduled_job.job, scheduled_job.time}
     queue_name = job.queue || @default_queue
 
     commands = [
