@@ -1,20 +1,18 @@
 defmodule ExqScheduler.Storage.Redis do
-  use GenServer
-
-  def hkeys(key) do
-    Redix.command(pid(), ['HKEYS', key])
+  def hkeys(redis, key) do
+    Redix.command(redis, ['HKEYS', key])
   end
 
-  def hget(key, field) do
-    {:ok, result} = Redix.command(pid(), ['HGET', key, field])
+  def hget(redis, key, field) do
+    {:ok, result} = Redix.command(redis, ['HGET', key, field])
     result |> decode
   end
 
-  def hset(key, field, val) do
-    Redix.command(pid(), ['HSET', key, field, val])
+  def hset(redis, key, field, val) do
+    Redix.command(redis, ['HSET', key, field, val])
   end
 
-  def cas(compare_key, commands) do
+  def cas(redis, compare_key, commands) do
     watch = ['WATCH', compare_key]
     multi = ['MULTI']
     set = ['SET', compare_key, true]
@@ -25,11 +23,7 @@ defmodule ExqScheduler.Storage.Redis do
       |> Enum.concat(commands)
       |> Enum.concat([exec])
 
-    Redix.pipeline(pid(), pipeline_command)
-  end
-
-  def pid do
-    "#{__MODULE__}.Client" |> String.to_atom()
+    Redix.pipeline(redis, pipeline_command)
   end
 
   defp decode(result) do
