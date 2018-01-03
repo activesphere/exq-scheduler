@@ -30,7 +30,7 @@ defmodule ExqScheduler do
 
   defp build_storage_opts do
     get_config(:storage_opts)
-    |> Keyword.merge([redis_pid: redis_pid()])
+    |> Keyword.merge(redis_pid: redis_pid())
     |> Storage.Opts.new()
   end
 

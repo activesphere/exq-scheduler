@@ -30,11 +30,13 @@ defmodule ExqScheduler.Scheduler.Server do
 
   def init(opts) do
     storage_opts = opts[:storage_opts]
+
     state = %State{
       schedules: Storage.get_schedules(storage_opts),
       storage_opts: storage_opts,
       server_opts: opts[:server_opts]
     }
+
     next_tick(__MODULE__, 0)
     {:ok, state}
   end
