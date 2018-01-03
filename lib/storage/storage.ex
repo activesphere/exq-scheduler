@@ -1,5 +1,5 @@
 defmodule ExqScheduler.Storage do
-  #TODO: Sync with Exq config
+  # TODO: Sync with Exq config
   @exq_namespace "exq"
   @namespace "exq_scheduler"
   @enqued_jobs_key "#{@namespace}:enqueued_jobs"
@@ -23,8 +23,8 @@ defmodule ExqScheduler.Storage do
     {:ok, keys} = Redis.hkeys(@schedule_key)
 
     Enum.map(keys, fn name ->
+      # TODO: opts are being ignored as of now, include them
       {cron, job, _} =
-        #TODO: opts are being ignored as of now, include them
         Redis.hget(@schedule_key, name)
         |> Parser.parse_schedule()
 
@@ -43,8 +43,12 @@ defmodule ExqScheduler.Storage do
   defp enqueue_job(job_data) do
     {time, job} = {elem(job_data, 0), elem(job_data, 1)}
     queue_name = job.queue || @default_queue
-    commands = [["SADD", queues_key(), queue_name],
-                ["LPUSH", queue_key(queue_name), Job.encode(job)]]
+
+    commands = [
+      ["SADD", queues_key(), queue_name],
+      ["LPUSH", queue_key(queue_name), Job.encode(job)]
+    ]
+
     Redis.cas(build_compare_key(job, time), commands)
   end
 

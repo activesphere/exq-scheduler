@@ -35,6 +35,7 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defp handle_tick(schedules, time) do
     range = TimeRange.new(time, @prev_offset, @next_offset)
+
     Storage.filter_active_jobs(schedules, range)
     |> Storage.enqueue_jobs()
   end
@@ -44,7 +45,7 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp next_tick(server, timeout) do
-    time = Timex.now |> Timex.to_naive_datetime
+    time = Timex.now() |> Timex.to_naive_datetime()
     Process.send_after(server, {:tick, time}, timeout)
   end
 end

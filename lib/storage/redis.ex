@@ -19,9 +19,12 @@ defmodule ExqScheduler.Storage.Redis do
     multi = ['MULTI']
     set = ['SET', compare_key, true]
     exec = ['EXEC']
-    pipeline_command = [watch, multi, set]
-                       |> Enum.concat(commands)
-                       |> Enum.concat([exec])
+
+    pipeline_command =
+      [watch, multi, set]
+      |> Enum.concat(commands)
+      |> Enum.concat([exec])
+
     Redix.pipeline(pid(), pipeline_command)
   end
 

@@ -1,28 +1,27 @@
-defmodule ExqScheduler.Schedule.ScheduleOpts do
-  defstruct first_at: nil, last_at: nil
-
-  def new(opts) do
-    %__MODULE__{
-      first_at: Map.get(opts, :first_at),
-      last_at: Map.get(opts, :last_at)
-    }
-  end
-end
-
-defmodule ExqScheduler.Schedule.TimeRange do
-  defstruct t_start: nil, t_end: nil
-
-  def new(time, prev_offset, next_offset) do
-    %__MODULE__{
-      t_start: Timex.shift(time, milliseconds: -prev_offset),
-      t_end: Timex.shift(time, milliseconds: next_offset)
-    }
-  end
-end
-
 defmodule ExqScheduler.Schedule do
+  defmodule ScheduleOpts do
+    defstruct first_at: nil, last_at: nil
+
+    def new(opts) do
+      %__MODULE__{
+        first_at: Map.get(opts, :first_at),
+        last_at: Map.get(opts, :last_at)
+      }
+    end
+  end
+
+  defmodule TimeRange do
+    defstruct t_start: nil, t_end: nil
+
+    def new(time, prev_offset, next_offset) do
+      %__MODULE__{
+        t_start: Timex.shift(time, milliseconds: -prev_offset),
+        t_end: Timex.shift(time, milliseconds: next_offset)
+      }
+    end
+  end
+
   alias Exq.Support.Job
-  alias ExqScheduler.Schedule.ScheduleOpts
   alias Crontab.CronExpression
   alias Crontab.Scheduler
 
