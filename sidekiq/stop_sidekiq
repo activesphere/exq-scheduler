@@ -1,0 +1,2 @@
+#!/bin/sh
+ps aux | grep  -i sidekiq | grep -v grep | awk -F ' ' '{ print $2 }' | xargs kill
