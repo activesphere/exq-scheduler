@@ -1,13 +1,15 @@
 require 'sidekiq-scheduler'
 
+REDIS_URL = 'redis://127.0.0.1:6379/1'
+
 # If your client is single-threaded, we just need a single connection in our Redis connection pool
 Sidekiq.configure_client do |config|
-  config.redis = { :namespace => 'exq_scheduler_test', :size => 1 }
+  config.redis = { :namespace => 'exq_scheduler_test', :size => 1, url: REDIS_URL }
 end
 
 # Sidekiq server is multi-threaded so our Redis connection pool size defaults to concurrency (-c)
 Sidekiq.configure_server do |config|
-  config.redis = { :namespace => 'exq_scheduler_test' }
+  config.redis = { :namespace => 'exq_scheduler_test', url: REDIS_URL }
 end
 
 # Start up sidekiq via
