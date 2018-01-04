@@ -19,7 +19,7 @@ defmodule ExqScheduler.Storage.Redis do
     {:ok, ["OK", is_locked]} = Redix.pipeline(redis, [watch, get])
 
     if is_locked do
-      Redix.pipeline(redis, ['UNWATCH', lock_key])
+      Redix.pipeline(redis, [['UNWATCH', lock_key]])
     else
       pipeline_command =
         [['MULTI'], ['SET', lock_key, true]]

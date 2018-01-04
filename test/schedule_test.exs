@@ -1,7 +1,6 @@
 defmodule ScheduleTest do
   use ExUnit.Case, async: true
   import TestUtils
-  alias ExqScheduler.Schedule
 
   test "get jobs for time range" do
     test_params = [
