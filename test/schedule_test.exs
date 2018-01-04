@@ -13,9 +13,7 @@ defmodule ScheduleTest do
     ]
 
     Enum.each(test_params, fn params ->
-      schedule = build_schedule(params.cron)
-      time_range = build_time_range(params.offset)
-      jobs = Schedule.get_jobs(schedule, time_range)
+      jobs = build_scheduled_jobs(params.cron, params.offset)
       assert length(jobs) == params.length
     end)
   end

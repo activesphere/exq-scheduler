@@ -11,15 +11,15 @@ defmodule TestUtils do
     Schedule.new("test_schedule", cron, job)
   end
 
-  def build_time_range(offset) do
-    t_start = Timex.now() |> Timex.shift(seconds: -offset)
-    t_end = Timex.now() |> Timex.shift(seconds: offset)
+  def build_time_range(now, offset) do
+    t_start = now |> Timex.shift(seconds: -offset)
+    t_end = now |> Timex.shift(seconds: offset)
     %TimeRange{t_start: t_start, t_end: t_end}
   end
 
-  def build_scheduled_jobs do
-    schedule = build_schedule("*/2 * * * *")
-    time_range = build_time_range(60)
+  def build_scheduled_jobs(cron, offset, now \\ Timex.now()) do
+    schedule = build_schedule(cron)
+    time_range = build_time_range(now, offset)
     Schedule.get_jobs(schedule, time_range)
   end
 
