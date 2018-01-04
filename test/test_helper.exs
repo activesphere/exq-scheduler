@@ -24,7 +24,7 @@ defmodule TestUtils do
   end
 
   def storage_opts do
-    ExqScheduler.build_opts()[:storage_opts]
+    ExqScheduler.build_storage_opts(false)
   end
 
   def flush_redis do

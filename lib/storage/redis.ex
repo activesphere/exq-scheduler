@@ -13,15 +13,18 @@ defmodule ExqScheduler.Storage.Redis do
   end
 
   def cas(redis, lock_key, commands) do
-    setnx = ['SETNX', lock_key, true]
-    {:ok, acquire_lock} = Redix.command(redis, setnx)
+    watch = ['WATCH', lock_key]
+    get = ['GET', lock_key]
 
-    if acquire_lock == 1 do
+    {:ok, ["OK", is_locked]} = Redix.pipeline(redis, [watch, get])
+
+    if is_locked do
+      Redix.pipeline(redis, ['UNWATCH', lock_key])
+    else
       pipeline_command =
-        ['MULTI']
+        [['MULTI'], ['SET', lock_key, true]]
         |> Enum.concat(commands)
-        |> Enum.concat(['EXEC'])
-
+        |> Enum.concat([['EXEC']])
       Redix.pipeline(redis, pipeline_command)
     end
   end

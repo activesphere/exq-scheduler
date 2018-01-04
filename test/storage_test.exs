@@ -9,8 +9,8 @@ defmodule StorageTest do
     end)
   end
 
-  defp build_and_enqueue(cron, offset, now \\ Timex.now()) do
-    opts = storage_opts()
+  defp build_and_enqueue(cron, offset, now \\ Timex.now(), redis \\ nil) do
+    opts = ExqScheduler.build_storage_opts(redis)
     jobs = build_scheduled_jobs(cron, offset, now)
     Storage.enqueue_jobs(jobs, opts)
     jobs
@@ -22,7 +22,11 @@ defmodule StorageTest do
   end
 
   test "no duplicate jobs" do
-    all_jobs = pmap(1..100, fn _ -> build_and_enqueue("*/2 * * * *", 60) end)
+    all_jobs = pmap(1..20, fn idx ->
+      pid = "redis_#{idx}" |> String.to_atom
+      {:ok, _} = Redix.start_link(ExqScheduler.get_config(:redis), name: pid)
+      build_and_enqueue("*/2 * * * *", 60, Timex.now(), pid)
+    end)
     assert default_queue_job_count() == {:ok, length(hd(all_jobs))}
   end
 end
