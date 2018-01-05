@@ -17,9 +17,7 @@ defmodule SchedulerSerdesTest do
 
     on_exit(context, fn ->
       System.cmd("#{sidekiq_path}/stop_sidekiq", [], cd: sidekiq_path)
-
       assert_down(sidekiq_task.pid)
-      Redix.stop(redis_conn, 1000)
     end)
   end
 

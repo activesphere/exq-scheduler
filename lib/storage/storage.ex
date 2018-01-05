@@ -36,7 +36,7 @@ defmodule ExqScheduler.Storage do
       # TODO: opts are being ignored as of now, include them
       {cron, job, _} =
         Redis.hget(storage_opts.redis, schedules_key, name)
-        |> Parser.parse_schedule()
+        |> Parser.get_schedule()
 
       Schedule.new(name, cron, job)
     end)

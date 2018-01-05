@@ -25,6 +25,7 @@ defmodule ExqScheduler.Storage.Redis do
         [['MULTI'], ['SET', lock_key, true]]
         |> Enum.concat(commands)
         |> Enum.concat([['EXEC']])
+
       Redix.pipeline(redis, pipeline_command)
     end
   end

@@ -1,54 +1,65 @@
 defmodule ExqScheduler.Schedule.Parser do
-  @cron_map %{
-    y: :year,
-    M: :month,
-    w: :week,
-    d: :day,
-    h: :hour,
-    m: :minute,
-    s: :second
-  }
+  alias ExqScheduler.Schedule.Utils
 
-  alias Crontab.CronExpression
+  @cron_key "cron"
+  @every_key "every"
+  @time_keys [@cron_key, @every_key]
 
-  def parse_schedule(schedule = %{"cron" => cron_data}) do
-    job =
-      schedule
-      |> Map.delete("cron")
-      |> Poison.encode!()
+  @doc """
+    Parses the schedule as per the format (rufus-scheduler supported):
+    %{
+      cron => "* * * * *" or ["* * * * *", {first_in: "5m"}]
+      every => "15m",
+      class => "SidekiqWorker",
+      queue => "high",
+      args => "/tmp/poop"
+    }
+  """
+  def get_schedule(schedule) do
+    has_cron = Map.has_key?(schedule, @cron_key)
+    has_every = Map.has_key?(schedule, @every_key)
 
-    {hd(cron_data), job, parse_schedule_opts(tl(cron_data))}
+    if !has_cron and !has_every do
+      nil
+    else
+      schedule_time_key =
+        if has_cron do
+          @cron_key
+        else
+          @every_key
+        end
+
+      schedule_time = Map.fetch!(schedule, schedule_time_key)
+
+      unless is_bitstring(schedule_time) or List.ascii_printable?(schedule_time) do
+        [schedule_time, schedule_opts] = schedule_time
+
+        {
+          normalize_time(schedule_time_key, schedule_time),
+          create_job(schedule),
+          schedule_opts
+        }
+      else
+        {
+          normalize_time(schedule_time_key, schedule_time),
+          create_job(schedule),
+          nil
+        }
+      end
+    end
   end
 
-  # Let's not support this rufus-scheduler type syntax yet. We'll move schedule parsing elsewhere
-  def parse_schedule(schedule = %{"every" => interval}) do
-    job =
-      schedule
-      |> Map.delete("every")
-      |> Poison.encode!()
+  defp normalize_time(key, time) do
+    time = to_string(time)
 
-    cron = get_cron(interval)
-    {cron, job, parse_schedule_opts(tl(interval))}
+    if key == @every_key do
+      Utils.to_cron(time)
+    else
+      Utils.normalize_cron(time)
+    end
   end
 
-  defp parse_schedule_opts([]), do: nil
-  defp parse_schedule_opts(opts), do: opts |> hd
-
-  defp get_cron(interval) when is_list(interval) do
-    hd(interval) |> get_cron
-  end
-
-  defp get_cron(interval) when is_binary(interval) do
-    String.split_at(interval, -1)
-    |> get_cron
-  end
-
-  defp get_cron(interval) when is_tuple(interval) do
-    qty = interval |> elem(0) |> String.to_integer()
-    period = interval |> elem(1) |> String.to_atom()
-    sym = Map.get(@cron_map, period)
-
-    struct(CronExpression, [{sym, [qty]}])
-    |> CronExpression.Composer.compose()
+  defp create_job(schedule) do
+    Map.drop(schedule, @time_keys) |> Poison.encode!()
   end
 end

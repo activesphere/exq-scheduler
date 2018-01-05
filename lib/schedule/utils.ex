@@ -26,11 +26,11 @@ defmodule ExqScheduler.Schedule.Utils do
     end
   end
 
-  def to_cron(every) do
+  def to_cron(every, stringify \\ true) do
     unit = String.last(every)
     value = [String.replace(every, unit, "") |> str_to_int]
 
-    Cron.Composer.compose(
+    cron_exp =
       case unit do
         "y" -> %Cron{year: value}
         "M" -> %Cron{month: value}
@@ -39,9 +39,25 @@ defmodule ExqScheduler.Schedule.Utils do
         "m" -> %Cron{minute: value}
         "s" -> %Cron{extended: true, second: value}
       end
-    )
+
+    if stringify do
+      Cron.Composer.compose(cron_exp)
+    else
+      cron_exp
+    end
   end
 
+  def normalize_cron(cron_str) do
+    Cron.Parser.parse(cron_str) |> elem(1) |> Cron.Composer.compose()
+  end
+
+  @doc """
+    Converts a time string to a Timex.Duration object.
+    Example:
+
+    Input: 1y5d15m20s
+    Output: %Timex.Duration{}
+  """
   def to_duration(timestring) do
     # Parse week (W) syntax if present.
     week_part =

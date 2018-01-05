@@ -3,7 +3,7 @@ defmodule ScheduleUtilsTest do
   alias ExqScheduler.Schedule.Utils
   alias Timex.Duration
 
-  test "to_cron(): It converts an every string to Cron-supported syntax" do
+  test "to_cron_str(): It converts an every string to Cron-supported syntax" do
     assert Utils.to_cron("1s") == "1 * * * * * *"
     assert Utils.to_cron("5m") == "5 * * * * *"
     assert Utils.to_cron("2h") == "* 2 * * * *"
