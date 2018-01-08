@@ -51,6 +51,25 @@ defmodule ExqScheduler.Schedule.Utils do
     Cron.Parser.parse(cron_str) |> elem(1) |> Cron.Composer.compose()
   end
 
+  def strip_timezone(cron_str) do
+    cron_splitted = String.split(cron_str, " ")
+    last_part = List.last(cron_splitted)
+    if Timex.Timezone.exists?(last_part) do
+      cron_splitted |> List.delete_at(-1) |> Enum.join(" ")
+    else
+      cron_splitted
+    end
+  end
+
+  def get_timezone(cron_str) do
+    last_part = String.split(cron_str, " ") |> List.last
+    if Timex.Timezone.exists?(last_part) do
+      last_part
+    else
+      nil
+    end
+  end
+
   @doc """
     Converts a time string to a Timex.Duration object.
     Example:

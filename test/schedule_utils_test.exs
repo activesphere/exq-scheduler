@@ -12,6 +12,16 @@ defmodule ScheduleUtilsTest do
     assert Utils.to_cron("3y") == "* * * * * 3"
   end
 
+  test "strip_timezone(): It strips out the timezone from a cron string" do
+    assert Utils.strip_timezone("* * * * * * Asia/Kolkata") == "* * * * * *"
+    assert Utils.strip_timezone("* * * * * * * Asia/Kolkata") == "* * * * * * *"
+  end
+
+  test "get_timezone(): It gets the timezone from a cron string" do
+    assert Utils.get_timezone("* * * * * * Asia/Kolkata") == "Asia/Kolkata"
+    assert Utils.get_timezone("* * * * * * * Asia/Kolkata") == "Asia/Kolkata"
+  end
+
   test "to_duration(): it converts the time string to timex duration object" do
     assert Utils.to_duration("15.64s") == Duration.from_seconds(15.64)
     assert Utils.to_duration("1s") == Duration.from_seconds(1)
