@@ -72,25 +72,27 @@ defmodule ExqScheduler.Schedule do
     |> Enum.map(&ScheduledJob.new(schedule.job, &1))
   end
 
-  defp get_next_run_dates(cron, tz_offset, upper_bound_date) do
-    now = get_now(tz_offset)
-    enum = Scheduler.get_next_run_dates(cron, now)
+  def get_next_run_dates(cron, tz_offset, upper_bound_date) do
+    now = add_tz(Timex.now(), tz_offset)
+    enum = Crontab.Scheduler.get_next_run_dates(cron, now)
+    upper_bound_date = add_tz(upper_bound_date, tz_offset)
     collect_till = &(Timex.compare(&1, upper_bound_date) != 1)
     reduce_dates(enum, collect_till, tz_offset)
   end
 
-  defp get_previous_run_dates(cron, tz_offset, lower_bound_date) do
-    now = get_now(tz_offset)
+  def get_previous_run_dates(cron, tz_offset, lower_bound_date) do
+    now = add_tz(Timex.now(), tz_offset)
     enum = Scheduler.get_previous_run_dates(cron, now)
+    lower_bound_date = add_tz(lower_bound_date, tz_offset)
     collect_till = &(Timex.compare(&1, lower_bound_date) != -1)
     reduce_dates(enum, collect_till, tz_offset)
   end
 
-  defp get_now(tz_offset) do
+  defp add_tz(time, tz_offset) do
     unless tz_offset == nil do
-      Timex.now() |> Timex.add(tz_offset) |> Timex.to_naive_datetime()
+      time |> Timex.add(tz_offset) |> Timex.to_naive_datetime()
     else
-      Timex.now() |> Timex.to_naive_datetime()
+      time |> Timex.to_naive_datetime()
     end
   end
 
