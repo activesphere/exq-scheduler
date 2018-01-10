@@ -26,7 +26,7 @@ defmodule ExqScheduler.Schedule.Utils do
     end
   end
 
-  def to_cron(every, stringify \\ true) do
+  def every_to_cron(every, stringify \\ true) do
     unit = String.last(every)
     value = [String.replace(every, unit, "") |> str_to_int]
 
@@ -47,22 +47,48 @@ defmodule ExqScheduler.Schedule.Utils do
     end
   end
 
-  def normalize_cron(cron_str) do
-    Cron.Parser.parse(cron_str) |> elem(1) |> Cron.Composer.compose()
+  def to_cron_exp(cron_str) do
+    timezone = get_timezone(cron_str)
+    cron_str = strip_timezone(cron_str)
+    cron_exp = Cron.Parser.parse(cron_str) |> elem(1)
+
+    if timezone == nil do
+      {cron_exp, nil}
+    else
+      cron_tz = Timex.Timezone.get(timezone)
+      d_utc = Timex.Duration.from_seconds(cron_tz.offset_utc)
+
+      offset_duration =
+        cond do
+          cron_tz.offset_utc > 0 ->
+            d_utc
+
+          cron_tz.offset_utc < 0 ->
+            Timex.Duration.from_hours(24)
+            |> Timex.Duration.add(d_utc)
+
+          true ->
+            nil
+        end
+
+      {cron_exp, offset_duration}
+    end
   end
 
   def strip_timezone(cron_str) do
     cron_splitted = String.split(cron_str, " ")
     last_part = List.last(cron_splitted)
+
     if Timex.Timezone.exists?(last_part) do
       cron_splitted |> List.delete_at(-1) |> Enum.join(" ")
     else
-      cron_splitted
+      cron_str
     end
   end
 
   def get_timezone(cron_str) do
-    last_part = String.split(cron_str, " ") |> List.last
+    last_part = String.split(cron_str, " ") |> List.last()
+
     if Timex.Timezone.exists?(last_part) do
       last_part
     else

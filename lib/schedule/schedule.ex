@@ -34,18 +34,25 @@ defmodule ExqScheduler.Schedule do
   end
 
   alias Exq.Support.Job
-  alias Crontab.CronExpression
+  alias ExqScheduler.Schedule.Utils
   alias Crontab.Scheduler
 
   @enforce_keys [:name, :cron, :job]
-  defstruct name: nil, cron: nil, job: nil, schedule_opts: nil, first_run: nil, last_run: nil
+  defstruct name: nil,
+            cron: nil,
+            tz_offset: nil,
+            job: nil,
+            schedule_opts: nil,
+            first_run: nil,
+            last_run: nil
 
   def new(name, cron_str, job, schedule_opts \\ %{}) when is_binary(job) do
-    {:ok, cron} = CronExpression.Parser.parse(cron_str)
+    {cron_exp, tz_offset} = Utils.to_cron_exp(cron_str)
 
     %__MODULE__{
       name: name,
-      cron: cron,
+      cron: cron_exp,
+      tz_offset: tz_offset,
       job: Job.decode(job),
       schedule_opts: ScheduleOpts.new(schedule_opts)
     }
@@ -58,30 +65,43 @@ defmodule ExqScheduler.Schedule do
   end
 
   def get_jobs(schedule, time_range) do
-    next_dates = get_next_run_dates(schedule.cron, time_range.t_end)
-    prev_dates = get_previous_run_dates(schedule.cron, time_range.t_start)
+    next_dates = get_next_run_dates(schedule.cron, schedule.tz_offset, time_range.t_end)
+    prev_dates = get_previous_run_dates(schedule.cron, schedule.tz_offset, time_range.t_start)
 
     Enum.concat(prev_dates, next_dates)
     |> Enum.map(&ScheduledJob.new(schedule.job, &1))
   end
 
-  defp get_next_run_dates(cron, upper_bound_date) do
-    now = Timex.now() |> Timex.to_naive_datetime()
+  defp get_next_run_dates(cron, tz_offset, upper_bound_date) do
+    now = get_now(tz_offset)
     enum = Scheduler.get_next_run_dates(cron, now)
     collect_till = &(Timex.compare(&1, upper_bound_date) != 1)
-    reduce_dates(enum, collect_till)
+    reduce_dates(enum, collect_till, tz_offset)
   end
 
-  defp get_previous_run_dates(cron, lower_bound_date) do
-    now = Timex.now() |> Timex.to_naive_datetime()
+  defp get_previous_run_dates(cron, tz_offset, lower_bound_date) do
+    now = get_now(tz_offset)
     enum = Scheduler.get_previous_run_dates(cron, now)
     collect_till = &(Timex.compare(&1, lower_bound_date) != -1)
-    reduce_dates(enum, collect_till)
+    reduce_dates(enum, collect_till, tz_offset)
   end
 
-  defp reduce_dates(enum, collect_till) do
-    Stream.take_while(enum, collect_till)
-    |> Enum.to_list()
+  defp get_now(tz_offset) do
+    unless tz_offset == nil do
+      Timex.now() |> Timex.add(tz_offset) |> Timex.to_naive_datetime()
+    else
+      Timex.now() |> Timex.to_naive_datetime()
+    end
+  end
+
+  defp reduce_dates(enum, collect_till, tz_offset) do
+    dates = Stream.take_while(enum, collect_till) |> Enum.to_list()
+
+    if tz_offset == nil do
+      dates
+    else
+      Enum.map(dates, fn date -> Timex.subtract(date, tz_offset) end)
+    end
   end
 
   defp build_encoded_cron(schedule) do

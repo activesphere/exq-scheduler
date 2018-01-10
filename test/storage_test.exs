@@ -22,11 +22,13 @@ defmodule StorageTest do
   end
 
   test "no duplicate jobs" do
-    all_jobs = pmap(1..20, fn idx ->
-      pid = "redis_#{idx}" |> String.to_atom
-      {:ok, _} = Redix.start_link(ExqScheduler.get_config(:redis), name: pid)
-      build_and_enqueue("*/2 * * * *", 60, Timex.now(), pid)
-    end)
+    all_jobs =
+      pmap(1..20, fn idx ->
+        pid = "redis_#{idx}" |> String.to_atom()
+        {:ok, _} = Redix.start_link(ExqScheduler.get_config(:redis), name: pid)
+        build_and_enqueue("*/2 * * * *", 60, Timex.now(), pid)
+      end)
+
     assert default_queue_job_count() == {:ok, length(hd(all_jobs))}
   end
 end

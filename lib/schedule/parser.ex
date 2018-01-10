@@ -53,9 +53,11 @@ defmodule ExqScheduler.Schedule.Parser do
     time = to_string(time)
 
     if key == @every_key do
-      Utils.to_cron(time)
+      Utils.every_to_cron(time)
     else
-      Utils.normalize_cron(time)
+      Utils.to_cron_exp(time)
+      |> elem(0)
+      |> Crontab.CronExpression.Composer.compose()
     end
   end
 

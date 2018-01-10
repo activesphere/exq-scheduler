@@ -3,13 +3,13 @@ defmodule ScheduleUtilsTest do
   alias ExqScheduler.Schedule.Utils
   alias Timex.Duration
 
-  test "to_cron_str(): It converts an every string to Cron-supported syntax" do
-    assert Utils.to_cron("1s") == "1 * * * * * *"
-    assert Utils.to_cron("5m") == "5 * * * * *"
-    assert Utils.to_cron("2h") == "* 2 * * * *"
-    assert Utils.to_cron("1d") == "* * 1 * * *"
-    assert Utils.to_cron("5M") == "* * * 5 * *"
-    assert Utils.to_cron("3y") == "* * * * * 3"
+  test "every_to_cron(): It converts an every string to Cron-supported syntax" do
+    assert Utils.every_to_cron("1s") == "1 * * * * * *"
+    assert Utils.every_to_cron("5m") == "5 * * * * *"
+    assert Utils.every_to_cron("2h") == "* 2 * * * *"
+    assert Utils.every_to_cron("1d") == "* * 1 * * *"
+    assert Utils.every_to_cron("5M") == "* * * 5 * *"
+    assert Utils.every_to_cron("3y") == "* * * * * 3"
   end
 
   test "strip_timezone(): It strips out the timezone from a cron string" do
@@ -62,5 +62,13 @@ defmodule ScheduleUtilsTest do
              |> Duration.add(Duration.from_days(2.5))
              |> Duration.add(Duration.from_minutes(3))
              |> Duration.add(Duration.from_seconds(1))
+  end
+
+  test "to_cron_exp(): It normalizes cron expression with timezone support" do
+    assert Utils.to_cron_exp("* * * * * Asia/Kolkata") ==
+             {
+               Crontab.CronExpression.Parser.parse("* * * * *") |> elem(1),
+               Timex.Duration.from_clock({5, 30, 0, 0})
+             }
   end
 end
