@@ -3,15 +3,14 @@ defmodule ExqScheduler.Storage do
   @default_queue "default"
 
   defmodule Opts do
-    @enforce_keys [:namespace, :exq_namespace, :redis, :schedules]
+    @enforce_keys [:namespace, :exq_namespace, :redis]
     defstruct @enforce_keys
 
     def new(opts) do
       %__MODULE__{
         namespace: opts[:namespace],
         exq_namespace: opts[:exq_namespace],
-        redis: opts[:redis_pid],
-        schedules: opts[:schedules]
+        redis: opts[:redis_pid]
       }
     end
   end
@@ -30,17 +29,19 @@ defmodule ExqScheduler.Storage do
   end
 
   def load_schedules_config(storage_opts, persist \\ true) do
-    schedule_conf_map = storage_opts.schedules
+    schedule_conf_list = ExqScheduler.get_config(:schedules)
 
-    Enum.each(schedule_conf_map, fn name, schedule_conf ->
-      {cron, job, opts} = ExqScheduler.Schedule.Parser.get_schedule(schedule_conf)
-
-      if persist do
-        persist_schedule(name, cron, job, opts, storage_opts)
-      end
-
-      Schedule.new(name, cron, job, opts)
-    end)
+    if is_nil(schedule_conf_list) or Enum.empty?(schedule_conf_list) do
+      []
+    else
+      Enum.map(schedule_conf_list, fn {name, schedule_conf} ->
+        {cron, job, opts} = ExqScheduler.Schedule.Parser.get_schedule(schedule_conf)
+        if persist do
+          persist_schedule(name, cron, job, opts, storage_opts)
+        end
+        Schedule.new(name, cron, job, opts)
+      end)
+    end
   end
 
   def get_schedules(storage_opts) do

@@ -107,6 +107,9 @@ defmodule ExqScheduler.Schedule do
   end
 
   defp build_encoded_cron(schedule) do
-    [schedule.cron, schedule.schedule_opts]
+    [
+      Crontab.CronExpression.Composer.compose(schedule.cron),
+      schedule.schedule_opts
+    ]
   end
 end

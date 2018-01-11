@@ -1,10 +1,9 @@
 defmodule SchedulerSerdesTest do
   use ExUnit.Case, async: false
+  import TestUtils
 
   setup context do
-    {:ok, redis_conn} = Redix.start_link()
-    Redix.command(redis_conn, ['FLUSHALL'])
-
+    flush_redis()
     sidekiq_path = System.cwd() |> Path.join("./sidekiq")
 
     sidekiq_task =

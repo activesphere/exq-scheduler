@@ -16,6 +16,12 @@ defmodule StorageTest do
     jobs
   end
 
+  defp redis_pid(idx) do
+    pid = "redis_#{idx}" |> String.to_atom()
+    {:ok, _} = Redix.start_link(ExqScheduler.get_config(:redis), name: pid)
+    pid
+  end
+
   test "enqueue jobs" do
     jobs = build_and_enqueue("*/2 * * * *", 60)
     assert default_queue_job_count() == {:ok, length(jobs)}
@@ -24,11 +30,15 @@ defmodule StorageTest do
   test "no duplicate jobs" do
     all_jobs =
       pmap(1..20, fn idx ->
-        pid = "redis_#{idx}" |> String.to_atom()
-        {:ok, _} = Redix.start_link(ExqScheduler.get_config(:redis), name: pid)
-        build_and_enqueue("*/2 * * * *", 60, Timex.now(), pid)
+        build_and_enqueue("*/2 * * * *", 60, Timex.now(), redis_pid(idx))
       end)
 
     assert default_queue_job_count() == {:ok, length(hd(all_jobs))}
+  end
+
+  test "it loads the schedules from the config file" do
+    storage_opts = ExqScheduler.build_storage_opts(redis_pid("test"))
+    schedules = Storage.load_schedules_config(storage_opts)
+    assert length(schedules) == 2
   end
 end

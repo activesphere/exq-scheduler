@@ -1,6 +1,5 @@
 defmodule ExqScheduler.Schedule.Parser do
   alias ExqScheduler.Schedule.Utils
-
   @cron_key "cron"
   @every_key "every"
   @time_keys [@cron_key, @every_key]
