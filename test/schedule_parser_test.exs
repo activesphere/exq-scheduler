@@ -79,7 +79,7 @@ defmodule ScheduleParserTest do
                  "queue" => "high",
                  "args" => "/tmp/poop"
                }),
-               nil
+               %{}
              }
   end
 
@@ -99,7 +99,7 @@ defmodule ScheduleParserTest do
                  "queue" => "high",
                  "args" => "/tmp/poop"
                }),
-               nil
+               %{}
              }
   end
 end

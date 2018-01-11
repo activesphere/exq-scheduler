@@ -43,7 +43,7 @@ defmodule ExqScheduler.Schedule.Parser do
         {
           normalize_time(schedule_time_key, schedule_time),
           create_job(schedule),
-          nil
+          %{}
         }
       end
     end

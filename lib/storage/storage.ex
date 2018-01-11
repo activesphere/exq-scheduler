@@ -3,14 +3,15 @@ defmodule ExqScheduler.Storage do
   @default_queue "default"
 
   defmodule Opts do
-    @enforce_keys [:namespace, :exq_namespace, :redis]
+    @enforce_keys [:namespace, :exq_namespace, :redis, :schedules]
     defstruct @enforce_keys
 
     def new(opts) do
       %__MODULE__{
         namespace: opts[:namespace],
         exq_namespace: opts[:exq_namespace],
-        redis: opts[:redis_pid]
+        redis: opts[:redis_pid],
+        schedules: opts[:schedules]
       }
     end
   end
@@ -20,7 +21,7 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Storage.Redis
   alias Exq.Support.Job
 
-  def add_schedule(name, cron, job, opts, storage_opts) do
+  def persist_schedule(name, cron, job, opts, storage_opts) do
     val =
       Schedule.new(name, cron, job, opts)
       |> Schedule.encode()
@@ -28,17 +29,30 @@ defmodule ExqScheduler.Storage do
     Redis.hset(storage_opts.redis, build_schedules_key(storage_opts), name, val)
   end
 
+  def load_schedules_config(storage_opts, persist \\ true) do
+    schedule_conf_map = storage_opts.schedules
+
+    Enum.each(schedule_conf_map, fn name, schedule_conf ->
+      {cron, job, opts} = ExqScheduler.Schedule.Parser.get_schedule(schedule_conf)
+
+      if persist do
+        persist_schedule(name, cron, job, opts, storage_opts)
+      end
+
+      Schedule.new(name, cron, job, opts)
+    end)
+  end
+
   def get_schedules(storage_opts) do
     schedules_key = build_schedules_key(storage_opts)
     {:ok, keys} = Redis.hkeys(storage_opts.redis, schedules_key)
 
     Enum.map(keys, fn name ->
-      # TODO: opts are being ignored as of now, include them
-      {cron, job, _} =
+      {cron, job, opts} =
         Redis.hget(storage_opts.redis, schedules_key, name)
         |> Parser.get_schedule()
 
-      Schedule.new(name, cron, job)
+      Schedule.new(name, cron, job, opts)
     end)
   end
 

@@ -8,7 +8,7 @@ defmodule TestUtils do
 
   def build_schedule(cron) do
     {:ok, job} = %{class: "TestJob"} |> Poison.encode()
-    Schedule.new("test_schedule", cron, job)
+    Schedule.new("test_schedule", cron, job, %{})
   end
 
   def build_time_range(now, offset) do

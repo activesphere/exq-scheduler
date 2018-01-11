@@ -1,19 +1,20 @@
 defmodule ExqScheduler.Scheduler.Server do
   use GenServer
 
-  @prev_offset 200_000
-  @next_offset 1000
-
   defmodule State do
     defstruct schedules: nil, storage_opts: nil, server_opts: nil
   end
 
   defmodule Opts do
-    @enforce_keys [:timeout]
+    @enforce_keys [:timeout, :prev_offset, :next_offset]
     defstruct @enforce_keys
 
     def new(opts) do
-      %__MODULE__{timeout: opts[:timeout]}
+      %__MODULE__{
+        timeout: opts[:timeout],
+        prev_offset: opts[:prev_offset],
+        next_offset: opts[:next_offset]
+      }
     end
   end
 
@@ -24,8 +25,8 @@ defmodule ExqScheduler.Scheduler.Server do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def add_schedule(name, cron, job, opts) do
-    GenServer.cast(__MODULE__, {:add_schedule, {name, cron, job, opts}})
+  def load_schedules_config() do
+    GenServer.cast(__MODULE__, :load_schedules_config)
   end
 
   def init(opts) do
@@ -47,13 +48,13 @@ defmodule ExqScheduler.Scheduler.Server do
     {:noreply, state}
   end
 
-  def handle_cast({:add_schedule, {name, cron, job, schedule_opts}}, state) do
-    Storage.add_schedule(name, cron, job, schedule_opts, state.storage_opts)
+  def handle_cast(:load_schedules_config, state) do
+    Storage.load_schedules_config(state.storage_opts)
     {:noreply, Storage.get_schedules(state.storage_opts)}
   end
 
   defp handle_tick(state, time) do
-    range = TimeRange.new(time, @prev_offset, @next_offset)
+    range = TimeRange.new(time, state.server_opts.prev_offset, state.server_opts.next_offset)
 
     Storage.filter_active_jobs(state.schedules, range)
     |> Storage.enqueue_jobs(state.storage_opts)

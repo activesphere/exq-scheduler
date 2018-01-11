@@ -46,7 +46,7 @@ defmodule ExqScheduler.Schedule do
             first_run: nil,
             last_run: nil
 
-  def new(name, cron_str, job, schedule_opts \\ %{}) when is_binary(job) do
+  def new(name, cron_str, job, schedule_opts) when is_binary(job) do
     {cron_exp, tz_offset} = Utils.to_cron_exp(cron_str)
 
     %__MODULE__{
