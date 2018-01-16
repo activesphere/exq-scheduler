@@ -7,7 +7,8 @@ config :exq_scheduler, :storage_opts,
 config :exq_scheduler, :server_opts,
   timeout: 10_000,
   prev_offset: 200_000,
-  next_offset: 1000
+  next_offset: 1000,
+  time_zone: "Asia/Kolkata"
 
 config :exq_scheduler, :redis,
   host: "127.0.0.1",

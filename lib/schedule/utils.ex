@@ -88,9 +88,30 @@ defmodule ExqScheduler.Schedule.Utils do
 
   def get_timezone(cron_str) do
     last_part = String.split(cron_str, " ") |> List.last()
+    is_valid_tz = Timex.Timezone.exists?(last_part)
+    tz_from_config = get_timezone_config()
 
-    if Timex.Timezone.exists?(last_part) do
-      last_part
+    cond do
+      is_valid_tz ->
+        last_part
+
+      tz_from_config != nil ->
+        tz_from_config
+
+      true ->
+        nil
+    end
+  end
+
+  def get_timezone_config() do
+    server_opts = ExqScheduler.get_config(:server_opts)
+    if server_opts != nil do
+      tz_from_config = server_opts[:time_zone]
+      if tz_from_config != nil and Timex.Timezone.exists?(tz_from_config) do
+        tz_from_config
+      else
+        nil
+      end
     else
       nil
     end

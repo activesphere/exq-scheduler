@@ -22,6 +22,14 @@ defmodule ScheduleUtilsTest do
     assert Utils.get_timezone("* * * * * * * Asia/Kolkata") == "Asia/Kolkata"
   end
 
+  test "get_timezone(): It uses the timezone from the config file is not specified" do
+    assert Utils.get_timezone("* * * * * *") == "Asia/Kolkata"
+  end
+
+  test "get_timezone_config(): It fetches the time_zone from config" do
+    assert Utils.get_timezone_config() == "Asia/Kolkata"
+  end
+
   test "to_duration(): it converts the time string to timex duration object" do
     assert Utils.to_duration("15.64s") == Duration.from_seconds(15.64)
     assert Utils.to_duration("1s") == Duration.from_seconds(1)
