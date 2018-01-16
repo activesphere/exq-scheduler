@@ -1,3 +1,10 @@
 :schedule:
-  SidekiqWorker:
+  mins_5:
+    class: SidekiqWorker
     cron: '5 * * * * *'
+  mins_10:
+   class: SidekiqWorker
+   cron: '10 * * * * *'
+  mins_15:
+    class: SidekiqWorker
+    cron: '15 * * * * *'

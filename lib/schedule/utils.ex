@@ -105,8 +105,10 @@ defmodule ExqScheduler.Schedule.Utils do
 
   def get_timezone_config() do
     server_opts = ExqScheduler.get_config(:server_opts)
+
     if server_opts != nil do
       tz_from_config = server_opts[:time_zone]
+
       if tz_from_config != nil and Timex.Timezone.exists?(tz_from_config) do
         tz_from_config
       else

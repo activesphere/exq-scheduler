@@ -36,9 +36,11 @@ defmodule ExqScheduler.Storage do
     else
       Enum.map(schedule_conf_list, fn {name, schedule_conf} ->
         {cron, job, opts} = ExqScheduler.Schedule.Parser.get_schedule(schedule_conf)
+
         if persist do
           persist_schedule(name, cron, job, opts, storage_opts)
         end
+
         Schedule.new(name, cron, job, opts)
       end)
     end
