@@ -68,7 +68,7 @@ defmodule ExqScheduler.Storage do
   end
 
   def queue_key(queue_name, storage_opts) do
-    [storage_opts.exq_namespace, "queues", queue_name]
+    [storage_opts.exq_namespace, "queue", queue_name]
     |> build_key
   end
 
