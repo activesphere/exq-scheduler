@@ -1,5 +1,6 @@
 defmodule ExqScheduler.Storage do
   @schedules_key "schedules"
+  @schedule_states_key "states"
   @default_queue "default"
 
   defmodule Opts do
@@ -24,8 +25,13 @@ defmodule ExqScheduler.Storage do
     val =
       Schedule.new(name, cron, job, opts)
       |> Schedule.encode()
-
     Redis.hset(storage_opts.redis, build_schedules_key(storage_opts), name, val)
+
+    schedule_state =
+      %{"enabled": Map.get(opts, "enabled", false)}
+      |> Poison.encode!()
+    Redis.hset(storage_opts.redis, build_schedule_states_key(storage_opts),
+      name, schedule_state)
   end
 
   def load_schedules_config(storage_opts, persist \\ true) do
@@ -100,12 +106,17 @@ defmodule ExqScheduler.Storage do
   end
 
   defp build_enqueued_jobs_key(storage_opts) do
-    [storage_opts.namespace, "enqueued_jobs"]
+    [storage_opts.exq_namespace, "enqueued_jobs"]
     |> build_key
   end
 
   defp build_schedules_key(storage_opts) do
-    [storage_opts.namespace, @schedules_key]
+    [storage_opts.exq_namespace, @schedules_key]
+    |> build_key
+  end
+
+  defp build_schedule_states_key(storage_opts) do
+    [storage_opts.namespace, @schedule_states_key]
     |> build_key
   end
 

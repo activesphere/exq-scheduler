@@ -1,7 +1,7 @@
 use Mix.Config
 
 config :exq_scheduler, :storage_opts,
-  namespace: "sidekiq-scheduler",
+  namespace: "exq:sidekiq-scheduler",
   exq_namespace: "exq"
 
 config :exq_scheduler, :server_opts,
