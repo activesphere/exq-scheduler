@@ -12,6 +12,29 @@ defmodule ScheduleParserTest do
 
     assert Parser.get_schedule(schedule) ==
              {
+               "",
+               "* * * * * *",
+               Poison.encode!(%{
+                 "class" => "SidekiqWorker",
+                 "queue" => "high",
+                 "args" => "/tmp/poop"
+               }),
+               %{"first_in" => "3m"}
+             }
+  end
+
+  test "it correctly parses the description of the schedule" do
+    schedule = %{
+      "description" => "this is a test",
+      "cron" => ["* * * * * *", %{"first_in" => "3m"}],
+      "class" => "SidekiqWorker",
+      "queue" => "high",
+      "args" => "/tmp/poop"
+    }
+
+    assert Parser.get_schedule(schedule) ==
+             {
+               "this is a test",
                "* * * * * *",
                Poison.encode!(%{
                  "class" => "SidekiqWorker",
@@ -32,6 +55,7 @@ defmodule ScheduleParserTest do
 
     assert Parser.get_schedule(schedule) ==
              {
+               "",
                "* * * * * *",
                Poison.encode!(%{
                  "class" => "SidekiqWorker",
@@ -53,6 +77,7 @@ defmodule ScheduleParserTest do
 
     assert Parser.get_schedule(schedule) ==
              {
+               "",
                "2 * * * * *",
                Poison.encode!(%{
                  "class" => "SidekiqWorker",
@@ -73,6 +98,7 @@ defmodule ScheduleParserTest do
 
     assert Parser.get_schedule(schedule) ==
              {
+               "",
                "1 * * * * *",
                Poison.encode!(%{
                  "class" => "SidekiqWorker",
@@ -93,6 +119,7 @@ defmodule ScheduleParserTest do
 
     assert Parser.get_schedule(schedule) ==
              {
+               "",
                "1 * * * * *",
                Poison.encode!(%{
                  "class" => "SidekiqWorker",

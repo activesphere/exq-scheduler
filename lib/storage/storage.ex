@@ -21,9 +21,9 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Storage.Redis
   alias Exq.Support.Job
 
-  def persist_schedule(name, cron, job, opts, storage_opts) do
+  def persist_schedule(name, desc, cron, job, opts, storage_opts) do
     val =
-      Schedule.new(name, cron, job, opts)
+      Schedule.new(name, desc, cron, job, opts)
       |> Schedule.encode()
     Redis.hset(storage_opts.redis, build_schedules_key(storage_opts), name, val)
 
@@ -41,13 +41,14 @@ defmodule ExqScheduler.Storage do
       []
     else
       Enum.map(schedule_conf_list, fn {name, schedule_conf} ->
-        {cron, job, opts} = ExqScheduler.Schedule.Parser.get_schedule(schedule_conf)
+        {description, cron, job, opts} =
+          ExqScheduler.Schedule.Parser.get_schedule(schedule_conf)
 
         if persist do
-          persist_schedule(name, cron, job, opts, storage_opts)
+          persist_schedule(name, description, cron, job, opts, storage_opts)
         end
 
-        Schedule.new(name, cron, job, opts)
+        Schedule.new(name, description, cron, job, opts)
       end)
     end
   end
@@ -57,11 +58,11 @@ defmodule ExqScheduler.Storage do
     {:ok, keys} = Redis.hkeys(storage_opts.redis, schedules_key)
 
     Enum.map(keys, fn name ->
-      {cron, job, opts} =
+      {description, cron, job, opts} =
         Redis.hget(storage_opts.redis, schedules_key, name)
         |> Parser.get_schedule()
 
-      Schedule.new(name, cron, job, opts)
+      Schedule.new(name, description, cron, job, opts)
     end)
   end
 

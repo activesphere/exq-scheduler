@@ -2,7 +2,8 @@ defmodule ExqScheduler.Schedule.Parser do
   alias ExqScheduler.Schedule.Utils
   @cron_key "cron"
   @every_key "every"
-  @time_keys [@cron_key, @every_key]
+  @description_key "description"
+  @non_job_keys [@cron_key, @every_key, @description_key]
 
   @doc """
     Parses the schedule as per the format (rufus-scheduler supported):
@@ -29,17 +30,19 @@ defmodule ExqScheduler.Schedule.Parser do
         end
 
       schedule_time = Map.fetch!(schedule, schedule_time_key)
+      description = Map.get(schedule, @description_key, "")
 
       unless is_bitstring(schedule_time) or List.ascii_printable?(schedule_time) do
         [schedule_time, schedule_opts] = schedule_time
-
         {
+          description,
           normalize_time(schedule_time_key, schedule_time),
           create_job(schedule),
           schedule_opts
         }
       else
         {
+          description,
           normalize_time(schedule_time_key, schedule_time),
           create_job(schedule),
           %{}
@@ -61,6 +64,6 @@ defmodule ExqScheduler.Schedule.Parser do
   end
 
   defp create_job(schedule) do
-    Map.drop(schedule, @time_keys) |> Poison.encode!()
+    Map.drop(schedule, @non_job_keys) |> Poison.encode!()
   end
 end

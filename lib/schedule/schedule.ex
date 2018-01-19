@@ -1,4 +1,6 @@
 defmodule ExqScheduler.Schedule do
+  @default_queue "default"
+
   defmodule ScheduleOpts do
     defstruct first_at: nil, last_at: nil
 
@@ -39,6 +41,7 @@ defmodule ExqScheduler.Schedule do
 
   @enforce_keys [:name, :cron, :job]
   defstruct name: nil,
+            description: nil,
             cron: nil,
             tz_offset: nil,
             job: nil,
@@ -46,11 +49,12 @@ defmodule ExqScheduler.Schedule do
             first_run: nil,
             last_run: nil
 
-  def new(name, cron_str, job, schedule_opts) when is_binary(job) do
+  def new(name, description, cron_str, job, schedule_opts) when is_binary(job) do
     {cron_exp, tz_offset} = Utils.to_cron_exp(cron_str)
 
     %__MODULE__{
       name: name,
+      description: description,
       cron: cron_exp,
       tz_offset: tz_offset,
       job: Job.decode(job),
@@ -60,6 +64,11 @@ defmodule ExqScheduler.Schedule do
 
   def encode(schedule) do
     schedule.job
+    |> Map.merge(%{
+      :description => schedule.description,
+      :tz_offset => schedule.tz_offset,
+      :queue => schedule.job.queue || @default_queue
+    })
     |> Map.merge(%{cron: build_encoded_cron(schedule)})
     |> Poison.encode!()
   end
