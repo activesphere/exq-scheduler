@@ -28,7 +28,7 @@ defmodule ExqScheduler.Storage do
     Redis.hset(storage_opts.redis, build_schedules_key(storage_opts), name, val)
 
     schedule_state =
-      %{"enabled": Map.get(opts, "enabled", false)}
+      %{"enabled": Map.get(opts, "enabled", true)}
       |> Poison.encode!()
     Redis.hset(storage_opts.redis, build_schedule_states_key(storage_opts),
       name, schedule_state)
