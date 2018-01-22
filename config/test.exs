@@ -1,8 +1,8 @@
 use Mix.Config
 
 config :exq_scheduler, :storage_opts,
-  namespace: "exq_scheduler_test",
-  exq_namespace: "exq_test"
+  namespace: "exq:sidekiq-scheduler",
+  exq_namespace: "exq"
 
 config :exq_scheduler, :server_opts,
   timeout: 10_000,
@@ -16,5 +16,7 @@ config :exq_scheduler, :redis,
   database: 1
 
 config :exq_scheduler, :schedules,
-  schedule_cron_5m: %{ "cron" => "5 * * * *", "class" => "ExqWorker" },
-  schedule_cron_10m: %{ "cron" => "10 * * * *", "class" => "ExqWorker"}
+  schedule_cron_1m: %{ "description" => "It's a 1 minute schedule",
+    "cron" => "* * * * *", "class" => "HardWorker" },
+  schedule_cron_2m: %{ "description" => "It's 2 minute schedule",
+    "cron" => "*/2 * * * *", "class" => "HardWorker"}
