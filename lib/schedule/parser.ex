@@ -34,6 +34,7 @@ defmodule ExqScheduler.Schedule.Parser do
 
       unless is_bitstring(schedule_time) or List.ascii_printable?(schedule_time) do
         [schedule_time, schedule_opts] = schedule_time
+
         {
           description,
           normalize_time(schedule_time_key, schedule_time),

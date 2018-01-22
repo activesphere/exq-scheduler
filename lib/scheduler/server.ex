@@ -2,7 +2,7 @@ defmodule ExqScheduler.Scheduler.Server do
   use GenServer
 
   defmodule State do
-    defstruct schedules: nil, storage_opts: nil, server_opts: nil
+    defstruct schedules: nil, storage_opts: nil, server_opts: nil, range: nil
   end
 
   defmodule Opts do
@@ -56,14 +56,18 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp handle_tick(state, time) do
-    range = TimeRange.new(time, state.server_opts.prev_offset, state.server_opts.next_offset)
+    Storage.persist_schedule_times(state.schedules, get_range(state, time), state.storage_opts)
 
-    Storage.filter_active_jobs(state.schedules, range)
+    Storage.filter_active_jobs(state.schedules, get_range(state, time))
     |> Storage.enqueue_jobs(state.storage_opts)
   end
 
   defp next_tick(server, timeout) do
     time = Timex.now() |> Timex.to_naive_datetime()
     Process.send_after(server, {:tick, time}, timeout)
+  end
+
+  defp get_range(state, time) do
+    TimeRange.new(time, state.server_opts.prev_offset, state.server_opts.next_offset)
   end
 end
