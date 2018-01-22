@@ -1,0 +1,10 @@
+# :schedule:
+#   mins_5:
+#     class: HardWorker
+#     cron: '5 * * * * *'
+#   mins_10:
+#    class: HardWorker
+#    cron: '10 * * * * *'
+#   mins_15:
+#     class: HardWorker
+#     cron: '15 * * * * *'
