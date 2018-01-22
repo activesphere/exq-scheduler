@@ -16,7 +16,7 @@ config :exq_scheduler, :redis,
   database: 0
 
 config :exq_scheduler, :schedules,
-  schedule_cron_5m: %{ "description" => "It's a 5 minute schedule",
+  schedule_cron_1m: %{ "description" => "It's a 1 minute schedule",
     "cron" => "* * * * *", "class" => "HardWorker" },
-  schedule_cron_10m: %{ "description" => "It's a 10 minute schedule",
+  schedule_cron_2m: %{ "description" => "It's 2 minute schedule",
     "cron" => "*/2 * * * *", "class" => "HardWorker"}
