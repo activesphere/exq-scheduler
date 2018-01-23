@@ -43,7 +43,9 @@ defmodule ExqScheduler.Storage do
         Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset, time_range.t_start)
 
       if !Enum.empty?(prev_times) do
-        prev_time = Enum.at(prev_times, 0) |> Poison.encode!()
+        prev_time = Enum.at(prev_times, 0)
+          |> Timex.add(schedule.tz_offset)
+          |> Poison.encode!()
 
         Redis.hset(
           storage_opts.redis,
@@ -57,7 +59,9 @@ defmodule ExqScheduler.Storage do
         Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset, time_range.t_end)
 
       if !Enum.empty?(next_times) do
-        next_time = Enum.at(next_times, 0) |> Poison.encode!()
+        next_time = Enum.at(next_times, 0)
+          |> Timex.add(schedule.tz_offset)
+          |> Poison.encode!()
 
         Redis.hset(
           storage_opts.redis,
