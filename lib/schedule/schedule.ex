@@ -83,7 +83,7 @@ defmodule ExqScheduler.Schedule do
 
   def get_next_run_dates(cron, tz_offset, upper_bound_date) do
     now = add_tz(Timex.now(), tz_offset)
-    enum = Crontab.Scheduler.get_next_run_dates(cron, now)
+    enum = Scheduler.get_next_run_dates(cron, now)
     upper_bound_date = add_tz(upper_bound_date, tz_offset)
     collect_till = &(Timex.compare(&1, upper_bound_date) != 1)
     reduce_dates(enum, collect_till, tz_offset)
