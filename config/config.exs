@@ -5,9 +5,9 @@ config :exq_scheduler, :storage_opts,
   exq_namespace: "exq"
 
 config :exq_scheduler, :server_opts,
-  timeout: 10_000,
-  prev_offset: 200_000,
-  next_offset: 1000,
+  timeout: 5000,
+  prev_offset: 100_000,
+  next_offset: 100_000,
   time_zone: "Asia/Kolkata"
 
 config :exq_scheduler, :redis,
