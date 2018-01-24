@@ -4,3 +4,5 @@ elixir: 1.6.0
 otp_release: 20.2
 services:
   - redis-server
+before_script:
+  - cd sidekiq && bundle install && cd ..
