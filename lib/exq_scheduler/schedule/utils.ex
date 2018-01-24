@@ -2,6 +2,19 @@ defmodule ExqScheduler.Schedule.Utils do
   alias Timex.Duration
   alias Crontab.CronExpression, as: Cron
 
+  def is_string?(item) do
+    cond do
+      is_bitstring(item) ->
+        true
+
+      is_list(item) ->
+        Enum.all?(item, fn char -> is_integer(char) and char >= 32 and char <= 128 end)
+
+      true ->
+        false
+    end
+  end
+
   def get_elem(arr, index, default \\ "") do
     unless arr in [nil, []] do
       Enum.at(arr, index)

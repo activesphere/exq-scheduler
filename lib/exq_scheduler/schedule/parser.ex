@@ -32,7 +32,7 @@ defmodule ExqScheduler.Schedule.Parser do
       schedule_time = Map.fetch!(schedule, schedule_time_key)
       description = Map.get(schedule, @description_key, "")
 
-      unless is_bitstring(schedule_time) or List.ascii_printable?(schedule_time) do
+      unless Utils.is_string?(schedule_time) do
         [schedule_time, schedule_opts] = schedule_time
 
         {

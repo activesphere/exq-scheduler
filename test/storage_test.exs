@@ -5,6 +5,7 @@ defmodule StorageTest do
 
   setup do
     flush_redis()
+
     on_exit(fn ->
       flush_redis()
     end)
