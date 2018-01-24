@@ -4,12 +4,13 @@ defmodule StorageTest do
   alias ExqScheduler.Storage
 
   setup do
+    flush_redis()
     on_exit(fn ->
       flush_redis()
     end)
   end
 
-  defp build_and_enqueue(cron, offset, now \\ Timex.now(), redis \\ nil) do
+  defp build_and_enqueue(cron, offset, now, redis) do
     opts = ExqScheduler.build_storage_opts(redis)
     jobs = build_scheduled_jobs(cron, offset, now)
     Storage.enqueue_jobs(jobs, opts)
@@ -20,11 +21,6 @@ defmodule StorageTest do
     pid = "redis_#{idx}" |> String.to_atom()
     {:ok, _} = Redix.start_link(ExqScheduler.get_config(:redis), name: pid)
     pid
-  end
-
-  test "enqueue jobs" do
-    jobs = build_and_enqueue("*/2 * * * *", 60)
-    assert default_queue_job_count() == {:ok, length(jobs)}
   end
 
   test "no duplicate jobs" do
