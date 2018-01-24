@@ -1,4 +1,4 @@
-# ExqScheduler
+# ExqScheduler [![Build Status](https://travis-ci.org/activesphere/exq_scheduler.svg?branch=master)](https://travis-ci.org/activesphere/exq_scheduler)
 
 ## TODO
 1. Loading Schedule: Schedule defined in the following fmt:
