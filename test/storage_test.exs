@@ -30,7 +30,7 @@ defmodule StorageTest do
         build_and_enqueue("*/2 * * * *", 60, Timex.now(), redis_pid(idx))
       end)
 
-    assert default_queue_job_count() == {:ok, length(hd(all_jobs))}
+    assert default_queue_job_count() == length(hd(all_jobs))
   end
 
   test "it loads the schedules from the config file" do
