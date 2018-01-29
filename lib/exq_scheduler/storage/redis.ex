@@ -1,41 +1,40 @@
 defmodule ExqScheduler.Storage.Redis do
   def hkeys(redis, key) do
-    Redix.command(redis, ["HKEYS", key])
+    Redix.command!(redis, ["HKEYS", key])
   end
 
   def hget(redis, key, field) do
-    {:ok, result} = Redix.command(redis, ["HGET", key, field])
-    result |> decode
+    Redix.command!(redis, ["HGET", key, field]) |> decode
   end
 
   def hset(redis, key, field, val) do
-    Redix.command(redis, ["HSET", key, field, val])
+    Redix.command!(redis, ["HSET", key, field, val])
   end
 
   def cas(redis, lock_key, commands) do
     watch = ["WATCH", lock_key]
     get = ["GET", lock_key]
 
-    {:ok, ["OK", is_locked]} = Redix.pipeline(redis, [watch, get])
+    ["OK", is_locked] = Redix.pipeline!(redis, [watch, get])
 
     if is_locked do
-      Redix.pipeline(redis, [["UNWATCH", lock_key]])
+      Redix.pipeline!(redis, [["UNWATCH", lock_key]])
     else
       pipeline_command =
         [["MULTI"], ["SET", lock_key, true]]
         |> Enum.concat(commands)
         |> Enum.concat([["EXEC"]])
 
-      Redix.pipeline(redis, pipeline_command)
+      Redix.pipeline!(redis, pipeline_command)
     end
   end
 
   def queue_len(redis, queue) do
-    Redix.command(redis, ["LLEN", queue])
+    Redix.command!(redis, ["LLEN", queue])
   end
 
   def flushdb(redis) do
-    Redix.command(redis, ["FLUSHDB"])
+    Redix.command!(redis, ["FLUSHDB"])
   end
 
   defp decode(result) do
