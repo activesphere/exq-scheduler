@@ -98,7 +98,7 @@ defmodule ExqScheduler.Schedule do
   end
 
   defp add_tz(time, tz_offset) do
-    unless tz_offset == nil do
+    if tz_offset != nil do
       time |> Timex.add(tz_offset) |> Timex.to_naive_datetime()
     else
       time |> Timex.to_naive_datetime()

@@ -32,7 +32,7 @@ defmodule ExqScheduler.Scheduler.Server do
   def init(opts) do
     storage_opts = opts[:storage_opts]
 
-    Storage.load_schedules_config(storage_opts)
+    _ = Storage.load_schedules_config(storage_opts)
 
     state = %State{
       schedules: Storage.get_schedules(storage_opts),
@@ -51,7 +51,7 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   def handle_cast(:load_schedules_config, state) do
-    Storage.load_schedules_config(state.storage_opts)
+    _ = Storage.load_schedules_config(state.storage_opts)
     {:noreply, Storage.get_schedules(state.storage_opts)}
   end
 

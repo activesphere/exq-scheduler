@@ -28,13 +28,18 @@ defmodule ExqScheduler.Storage do
     schedule = Schedule.new(name, desc, cron, job, opts)
 
     val = Schedule.encode(schedule)
-    Redis.hset(storage_opts.redis, build_schedules_key(storage_opts), name, val)
+    _ = Redis.hset(storage_opts.redis, build_schedules_key(storage_opts), name, val)
 
     schedule_state =
       %{enabled: Map.get(opts, "enabled", true)}
       |> Poison.encode!()
 
-    Redis.hset(storage_opts.redis, build_schedule_states_key(storage_opts), name, schedule_state)
+    Redis.hset(
+      storage_opts.redis,
+      build_schedule_states_key(storage_opts),
+      name,
+      schedule_state
+    )
   end
 
   def persist_schedule_times(schedules, time_range, storage_opts) do
@@ -42,18 +47,19 @@ defmodule ExqScheduler.Storage do
       prev_times =
         Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset, time_range.t_start)
 
-      if !Enum.empty?(prev_times) do
+      if not Enum.empty?(prev_times) do
         prev_time =
           Enum.at(prev_times, 0)
           |> Timex.add(schedule.tz_offset)
           |> Poison.encode!()
 
-        Redis.hset(
-          storage_opts.redis,
-          build_schedule_times_key(storage_opts, :prev),
-          schedule.name,
-          prev_time
-        )
+        _ =
+          Redis.hset(
+            storage_opts.redis,
+            build_schedule_times_key(storage_opts, :prev),
+            schedule.name,
+            prev_time
+          )
       end
 
       next_times =
@@ -96,7 +102,7 @@ defmodule ExqScheduler.Storage do
 
   def get_schedules(storage_opts) do
     schedules_key = build_schedules_key(storage_opts)
-    {:ok, keys} = Redis.hkeys(storage_opts.redis, schedules_key)
+    keys = Redis.hkeys(storage_opts.redis, schedules_key)
 
     Enum.map(keys, fn name ->
       {description, cron, job, opts} =

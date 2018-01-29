@@ -16,7 +16,7 @@ defmodule ExqScheduler.Schedule.Utils do
   end
 
   def get_elem(arr, index, default \\ "") do
-    unless arr in [nil, []] do
+    if arr not in [nil, []] do
       Enum.at(arr, index)
     else
       default
@@ -149,7 +149,7 @@ defmodule ExqScheduler.Schedule.Utils do
 
     # Remove week from timestring after parsing.
     timestring =
-      unless week_part == "" do
+      if week_part != "" do
         String.replace(timestring, week_part, "")
       else
         timestring
