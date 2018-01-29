@@ -7,7 +7,11 @@ defmodule ExqScheduler.Mixfile do
       version: "0.1.0",
       elixir: "~> 1.5",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      dialyzer: [
+        plt_add_deps: :transitive,
+        flags: [:unmatched_returns, :race_conditions, :error_handling, :underspecs]
+      ]
     ]
   end
 
@@ -26,7 +30,8 @@ defmodule ExqScheduler.Mixfile do
       {:redix, ">= 0.0.0"},
       {:poison, "~> 3.1"},
       {:crontab, "~> 1.1"},
-      {:exq, "~> 0.9.1"}
+      {:exq, "~> 0.9.1"},
+      {:dialyxir, "~> 0.5", only: [:dev], runtime: false}
     ]
   end
 end
