@@ -82,12 +82,18 @@ defmodule ExqScheduler.Schedule do
   def get_missed_run_dates(storage_opts, schedule, lower_bound_time) do
     now = add_tz(Timex.now(), schedule.tz_offset)
 
-    schedule_last_run_time =
-      Storage.get_schedule_last_run_time(storage_opts, schedule)
-      |> Timex.parse!("{ISO:Extended:Z}")
+    schedule_last_run_time = Storage.get_schedule_last_run_time(storage_opts, schedule)
 
     lower_bound_time =
-      Utils.get_nearer_date(now, lower_bound_time, schedule_last_run_time)
+      if schedule_last_run_time != nil do
+        schedule_last_run_time =
+          schedule_last_run_time
+          |> Timex.parse!("{ISO:Extended:Z}")
+
+        Utils.get_nearer_date(now, lower_bound_time, schedule_last_run_time)
+      else
+        lower_bound_time
+      end
       |> add_tz(schedule.tz_offset)
 
     enum = Scheduler.get_previous_run_dates(schedule.cron, now)
