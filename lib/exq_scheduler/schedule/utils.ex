@@ -188,4 +188,15 @@ defmodule ExqScheduler.Schedule.Utils do
       Duration.add(duration, Duration.from_weeks(num_weeks))
     end
   end
+
+  def get_nearer_date(ref_date, date1, date2) do
+    diff1 = Timex.diff(ref_date, date1) |> abs
+    diff2 = Timex.diff(ref_date, date2) |> abs
+
+    if diff1 < diff2 do
+      date1
+    else
+      date2
+    end
+  end
 end

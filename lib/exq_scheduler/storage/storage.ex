@@ -78,15 +78,9 @@ defmodule ExqScheduler.Storage do
         )
       end
 
-      now = Timex.now() |> Timex.to_naive_datetime() |> to_string()
+      now = Timex.now() |> Timex.to_naive_datetime() |> Poison.encode!()
 
-      schedule_first_run =
-        Redis.hget(
-          storage_opts.redis,
-          build_schedule_runs_key(storage_opts, :first),
-          schedule.name,
-          false
-        )
+      schedule_first_run = get_schedule_first_run_time(storage_opts, schedule)
 
       if schedule_first_run == nil do
         Redis.hset(
@@ -125,6 +119,22 @@ defmodule ExqScheduler.Storage do
     end
   end
 
+  def get_schedule_last_run_time(storage_opts, schedule) do
+    Redis.hget(
+      storage_opts.redis,
+      build_schedule_runs_key(storage_opts, :last),
+      schedule.name
+    )
+  end
+
+  def get_schedule_first_run_time(storage_opts, schedule) do
+    Redis.hget(
+      storage_opts.redis,
+      build_schedule_runs_key(storage_opts, :first),
+      schedule.name
+    )
+  end
+
   def get_schedules(storage_opts) do
     schedules_key = build_schedules_key(storage_opts)
     keys = Redis.hkeys(storage_opts.redis, schedules_key)
@@ -138,9 +148,9 @@ defmodule ExqScheduler.Storage do
     end)
   end
 
-  def filter_active_jobs(schedules, time_range) do
+  def filter_active_jobs(storage_opts, schedules, time_range) do
     Enum.map(schedules, fn schedule ->
-      jobs = Schedule.get_jobs(schedule, time_range)
+      jobs = Schedule.get_jobs(storage_opts, schedule, time_range)
       {schedule, jobs}
     end)
   end

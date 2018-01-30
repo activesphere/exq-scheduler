@@ -38,6 +38,7 @@ defmodule ExqScheduler.Schedule do
 
   alias Exq.Support.Job
   alias ExqScheduler.Schedule.Utils
+  alias ExqScheduler.Storage
   alias Crontab.Scheduler
 
   @enforce_keys [:name, :cron, :job]
@@ -72,18 +73,27 @@ defmodule ExqScheduler.Schedule do
     |> Poison.encode!()
   end
 
-  def get_jobs(schedule, time_range) do
-    get_missed_run_dates(schedule.cron, schedule.tz_offset, time_range.t_start)
+  def get_jobs(storage_opts, schedule, time_range) do
+    get_missed_run_dates(storage_opts, schedule, time_range.t_start)
     |> Enum.concat(get_next_run_dates(schedule.cron, schedule.tz_offset))
     |> Enum.map(&ScheduledJob.new(schedule.job, &1))
   end
 
-  def get_missed_run_dates(cron, tz_offset, lower_bound_time) do
-    now = add_tz(Timex.now(), tz_offset)
-    enum = Scheduler.get_previous_run_dates(cron, now)
-    lower_bound_time = add_tz(lower_bound_time, tz_offset)
+  def get_missed_run_dates(storage_opts, schedule, lower_bound_time) do
+    now = add_tz(Timex.now(), schedule.tz_offset)
+
+    schedule_last_run_time =
+      Storage.get_schedule_last_run_time(storage_opts, schedule)
+      |> Timex.parse!("{ISO:Extended:Z}")
+
+    lower_bound_time =
+      Utils.get_nearer_date(now, lower_bound_time, schedule_last_run_time)
+      |> add_tz(schedule.tz_offset)
+
+    enum = Scheduler.get_previous_run_dates(schedule.cron, now)
+
     collect_till = &(Timex.compare(&1, lower_bound_time) != -1)
-    get_dates(enum, tz_offset, collect_till)
+    get_dates(enum, schedule.tz_offset, collect_till)
   end
 
   def get_previous_run_dates(cron, tz_offset) do

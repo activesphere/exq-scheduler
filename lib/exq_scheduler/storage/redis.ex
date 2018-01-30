@@ -3,14 +3,8 @@ defmodule ExqScheduler.Storage.Redis do
     Redix.command!(redis, ["HKEYS", key])
   end
 
-  def hget(redis, key, field, decode \\ true) do
-    result = Redix.command!(redis, ["HGET", key, field])
-
-    if decode do
-      result |> decode
-    else
-      result
-    end
+  def hget(redis, key, field) do
+    Redix.command!(redis, ["HGET", key, field]) |> decode
   end
 
   def hset(redis, key, field, val) do
@@ -44,6 +38,8 @@ defmodule ExqScheduler.Storage.Redis do
   end
 
   defp decode(result) do
-    result |> Poison.decode!()
+    if result != nil do
+      result |> Poison.decode!()
+    end
   end
 end
