@@ -79,4 +79,11 @@ defmodule ScheduleUtilsTest do
                Timex.Duration.from_clock({5, 30, 0, 0})
              }
   end
+
+  test "get_nearer_date(): It returns the date nearer to the reference date" do
+    now = Timex.now()
+    date1 = Timex.shift(now, seconds: 5)
+    date2 = Timex.shift(now, seconds: 10)
+    assert Utils.get_nearer_date(now, date1, date2) |> Timex.equal?(date1)
+  end
 end
