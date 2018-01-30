@@ -74,19 +74,17 @@ defmodule ExqScheduler.Schedule do
   end
 
   def get_jobs(schedule, time_range) do
-    next_dates = get_next_run_dates(schedule.cron, schedule.tz_offset, time_range.t_end)
+    next_dates = get_next_run_dates(schedule.cron, schedule.tz_offset)
     prev_dates = get_previous_run_dates(schedule.cron, schedule.tz_offset, time_range.t_start)
 
     Enum.concat(prev_dates, next_dates)
     |> Enum.map(&ScheduledJob.new(schedule.job, &1))
   end
 
-  def get_next_run_dates(cron, tz_offset, upper_bound_date) do
+  def get_next_run_dates(cron, tz_offset) do
     now = add_tz(Timex.now(), tz_offset)
     enum = Scheduler.get_next_run_dates(cron, now)
-    upper_bound_date = add_tz(upper_bound_date, tz_offset)
-    collect_till = &(Timex.compare(&1, upper_bound_date) != 1)
-    reduce_dates(enum, collect_till, tz_offset)
+    get_dates(enum, collect_till, tz_offset)
   end
 
   def get_previous_run_dates(cron, tz_offset, lower_bound_date) do
@@ -94,7 +92,7 @@ defmodule ExqScheduler.Schedule do
     enum = Scheduler.get_previous_run_dates(cron, now)
     lower_bound_date = add_tz(lower_bound_date, tz_offset)
     collect_till = &(Timex.compare(&1, lower_bound_date) != -1)
-    reduce_dates(enum, collect_till, tz_offset)
+    get_dates(enum, collect_till, tz_offset)
   end
 
   defp add_tz(time, tz_offset) do
@@ -105,8 +103,11 @@ defmodule ExqScheduler.Schedule do
     end
   end
 
-  defp reduce_dates(enum, collect_till, tz_offset) do
-    dates = Stream.take_while(enum, collect_till) |> Enum.to_list()
+  defp get_dates(enum, collect_till \\ nil, tz_offset) do
+    if collect_till do
+      dates = Stream.take_while(enum, collect_till) |> Enum.to_list()
+    else
+      dates = Stream.take(enum, 1) |> Enum.to_list()
 
     if tz_offset == nil do
       dates

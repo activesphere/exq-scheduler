@@ -35,7 +35,7 @@ defmodule ScheduleTest do
     end)
 
     next_dates =
-      ExqScheduler.Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset, t_end)
+      ExqScheduler.Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset)
 
     Enum.with_index(next_dates, 1)
     |> Enum.each(fn {next_date, index} ->

@@ -62,7 +62,7 @@ defmodule ExqScheduler.Storage do
       end
 
       next_times =
-        Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset, time_range.t_end)
+        Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset)
 
       if not Enum.empty?(next_times) do
         next_time =
