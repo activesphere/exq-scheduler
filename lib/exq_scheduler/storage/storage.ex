@@ -44,8 +44,7 @@ defmodule ExqScheduler.Storage do
 
   def persist_schedule_times(schedules, storage_opts) do
     Enum.each(schedules, fn schedule ->
-      prev_times =
-        Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset)
+      prev_times = Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset)
 
       if not Enum.empty?(prev_times) do
         prev_time =
@@ -61,8 +60,7 @@ defmodule ExqScheduler.Storage do
         )
       end
 
-      next_times =
-        Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset)
+      next_times = Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset)
 
       if not Enum.empty?(next_times) do
         next_time =
@@ -113,11 +111,14 @@ defmodule ExqScheduler.Storage do
   end
 
   def filter_active_jobs(schedules, time_range) do
-    Enum.flat_map(schedules, &Schedule.get_jobs(&1, time_range))
+    Enum.map(schedules, fn schedule ->
+      jobs = Schedule.get_jobs(schedule, time_range)
+      {schedule, jobs}
+    end)
   end
 
-  def enqueue_jobs(jobs, storage_opts) do
-    Enum.each(jobs, &enqueue_job(&1, storage_opts))
+  def enqueue_jobs(schedule, jobs, storage_opts) do
+    Enum.each(jobs, &enqueue_job(schedule, &1, storage_opts))
   end
 
   def queue_key(queue_name, storage_opts) do
@@ -126,7 +127,7 @@ defmodule ExqScheduler.Storage do
   end
 
   # TODO: Update schedule.first_run, schedule.last_run
-  defp enqueue_job(scheduled_job, storage_opts) do
+  defp enqueue_job(schedule, scheduled_job, storage_opts) do
     {job, time} = {scheduled_job.job, scheduled_job.time}
     queue_name = job.queue || @default_queue
 
@@ -136,6 +137,7 @@ defmodule ExqScheduler.Storage do
     ]
 
     enqueue_key = build_enqueued_jobs_key(storage_opts)
+    persist_schedule_times([schedule], storage_opts)
     Redis.cas(storage_opts.redis, build_lock_key(job, time, enqueue_key), commands)
   end
 

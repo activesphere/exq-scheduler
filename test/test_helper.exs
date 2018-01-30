@@ -20,7 +20,7 @@ defmodule TestUtils do
   def build_scheduled_jobs(cron, offset, now \\ Timex.now()) do
     schedule = build_schedule(cron)
     time_range = build_time_range(now, offset)
-    Schedule.get_jobs(schedule, time_range)
+    {schedule, Schedule.get_jobs(schedule, time_range)}
   end
 
   def storage_opts do

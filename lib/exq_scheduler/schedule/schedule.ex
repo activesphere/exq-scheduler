@@ -89,12 +89,14 @@ defmodule ExqScheduler.Schedule do
 
   def get_previous_run_dates(cron, tz_offset) do
     now = add_tz(Timex.now(), tz_offset)
+
     Scheduler.get_previous_run_dates(cron, now)
     |> get_dates(tz_offset)
   end
 
   def get_next_run_dates(cron, tz_offset) do
     now = add_tz(Timex.now(), tz_offset)
+
     Scheduler.get_next_run_dates(cron, now)
     |> get_dates(tz_offset)
   end
@@ -108,11 +110,13 @@ defmodule ExqScheduler.Schedule do
   end
 
   defp get_dates(enum, tz_offset, collect_till \\ nil) do
-    dates = if collect_till do
-      Stream.take_while(enum, collect_till) |> Enum.to_list()
-    else
-      Stream.take(enum, 1) |> Enum.to_list()
-    end
+    dates =
+      if collect_till do
+        Stream.take_while(enum, collect_till) |> Enum.to_list()
+      else
+        Stream.take(enum, 1) |> Enum.to_list()
+      end
+
     Enum.map(dates, fn date -> Timex.subtract(date, tz_offset) end)
   end
 

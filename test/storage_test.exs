@@ -13,8 +13,8 @@ defmodule StorageTest do
 
   defp build_and_enqueue(cron, offset, now, redis) do
     opts = ExqScheduler.build_storage_opts(redis)
-    jobs = build_scheduled_jobs(cron, offset, now)
-    Storage.enqueue_jobs(jobs, opts)
+    {schedule, jobs} = build_scheduled_jobs(cron, offset, now)
+    Storage.enqueue_jobs(schedule, jobs, opts)
     jobs
   end
 

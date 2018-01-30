@@ -50,6 +50,8 @@ defmodule ExqScheduler.Scheduler.Server do
       server_opts: opts[:server_opts]
     }
 
+    Storage.persist_schedule_times(state.schedules, state.storage_opts)
+
     next_tick(__MODULE__, 0)
     {:ok, state}
   end
@@ -66,10 +68,10 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp handle_tick(state, time) do
-    Storage.persist_schedule_times(state.schedules, state.storage_opts)
-
     Storage.filter_active_jobs(state.schedules, get_range(state, time))
-    |> Storage.enqueue_jobs(state.storage_opts)
+    |> Enum.map(fn {schedule, jobs} ->
+      Storage.enqueue_jobs(schedule, jobs, state.storage_opts)
+    end)
   end
 
   defp next_tick(server, timeout) do
