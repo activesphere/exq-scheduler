@@ -3,15 +3,6 @@ defmodule ScheduleUtilsTest do
   alias ExqScheduler.Schedule.Utils
   alias Timex.Duration
 
-  test "every_to_cron(): It converts an every string to Cron-supported syntax" do
-    assert Utils.every_to_cron("1s") == "1 * * * * * *"
-    assert Utils.every_to_cron("5m") == "5 * * * * *"
-    assert Utils.every_to_cron("2h") == "* 2 * * * *"
-    assert Utils.every_to_cron("1d") == "* * 1 * * *"
-    assert Utils.every_to_cron("5M") == "* * * 5 * *"
-    assert Utils.every_to_cron("3y") == "* * * * * 3"
-  end
-
   test "strip_timezone(): It strips out the timezone from a cron string" do
     assert Utils.strip_timezone("* * * * * * Asia/Kolkata") == "* * * * * *"
     assert Utils.strip_timezone("* * * * * * * Asia/Kolkata") == "* * * * * * *"

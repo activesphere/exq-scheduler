@@ -39,27 +39,6 @@ defmodule ExqScheduler.Schedule.Utils do
     end
   end
 
-  def every_to_cron(every, stringify \\ true) do
-    unit = String.last(every)
-    value = [String.replace(every, unit, "") |> str_to_int]
-
-    cron_exp =
-      case unit do
-        "y" -> %Cron{year: value}
-        "M" -> %Cron{month: value}
-        "d" -> %Cron{day: value}
-        "h" -> %Cron{hour: value}
-        "m" -> %Cron{minute: value}
-        "s" -> %Cron{extended: true, second: value}
-      end
-
-    if stringify do
-      Cron.Composer.compose(cron_exp)
-    else
-      cron_exp
-    end
-  end
-
   def to_cron_exp(cron_str) do
     timezone = get_timezone(cron_str)
     cron_str = strip_timezone(cron_str)
