@@ -7,15 +7,15 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defmodule Opts do
     @enforce_keys [:timeout]
-    defstruct timeout: nil, enqueue_missed_jobs: false, prev_offset: nil
+    defstruct timeout: nil, enqueue_missed_jobs: false, missed_jobs_threshold_duration: nil
 
     def new(opts) do
       timeout = opts[:timeout]
       enqueue_missed_jobs = opts[:enqueue_missed_jobs]
 
-      prev_offset =
+      missed_jobs_threshold_duration =
         if enqueue_missed_jobs do
-          opts[:prev_offset]
+          opts[:missed_jobs_threshold_duration]
         else
           timeout
         end
@@ -23,7 +23,7 @@ defmodule ExqScheduler.Scheduler.Server do
       %__MODULE__{
         timeout: timeout,
         enqueue_missed_jobs: enqueue_missed_jobs,
-        prev_offset: prev_offset
+        missed_jobs_threshold_duration: missed_jobs_threshold_duration
       }
     end
   end
@@ -78,6 +78,6 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp get_range(state, time) do
-    TimeRange.new(time, state.server_opts.prev_offset)
+    TimeRange.new(time, state.server_opts.missed_jobs_threshold_duration)
   end
 end

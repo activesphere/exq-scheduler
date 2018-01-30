@@ -6,7 +6,8 @@ config :exq_scheduler, :storage_opts,
 
 config :exq_scheduler, :server_opts,
   timeout: 5000,
-  prev_offset: 100_000,
+  enqueue_missed_jobs: true,
+  missed_jobs_threshold_duration: 100_000,
   time_zone: "Asia/Kolkata"
 
 config :exq_scheduler, :redis,

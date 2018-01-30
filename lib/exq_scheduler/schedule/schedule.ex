@@ -15,9 +15,9 @@ defmodule ExqScheduler.Schedule do
   defmodule TimeRange do
     defstruct t_start: nil, t_end: nil
 
-    def new(time, prev_offset) do
+    def new(time, missed_jobs_threshold_duration) do
       %__MODULE__{
-        t_start: Timex.shift(time, milliseconds: -prev_offset),
+        t_start: Timex.shift(time, milliseconds: -missed_jobs_threshold_duration),
         t_end: time
       }
     end
