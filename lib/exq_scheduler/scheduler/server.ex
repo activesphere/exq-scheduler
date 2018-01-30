@@ -6,14 +6,13 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defmodule Opts do
-    @enforce_keys [:timeout, :prev_offset, :next_offset]
+    @enforce_keys [:timeout, :prev_offset]
     defstruct @enforce_keys
 
     def new(opts) do
       %__MODULE__{
         timeout: opts[:timeout],
-        prev_offset: opts[:prev_offset],
-        next_offset: opts[:next_offset]
+        prev_offset: opts[:prev_offset]
       }
     end
   end
@@ -68,6 +67,6 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp get_range(state, time) do
-    TimeRange.new(time, state.server_opts.prev_offset, state.server_opts.next_offset)
+    TimeRange.new(time, state.server_opts.prev_offset)
   end
 end

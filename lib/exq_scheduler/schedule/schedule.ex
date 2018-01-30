@@ -15,10 +15,10 @@ defmodule ExqScheduler.Schedule do
   defmodule TimeRange do
     defstruct t_start: nil, t_end: nil
 
-    def new(time, prev_offset, next_offset) do
+    def new(time, prev_offset) do
       %__MODULE__{
         t_start: Timex.shift(time, milliseconds: -prev_offset),
-        t_end: Timex.shift(time, milliseconds: next_offset)
+        t_end: time
       }
     end
   end
