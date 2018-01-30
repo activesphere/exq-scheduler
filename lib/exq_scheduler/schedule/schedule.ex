@@ -46,9 +46,7 @@ defmodule ExqScheduler.Schedule do
             cron: nil,
             tz_offset: nil,
             job: nil,
-            schedule_opts: nil,
-            first_run: nil,
-            last_run: nil
+            schedule_opts: nil
 
   def new(name, description, cron_str, job, schedule_opts) when is_binary(job) do
     {cron_exp, tz_offset} = Utils.to_cron_exp(cron_str)
@@ -76,6 +74,7 @@ defmodule ExqScheduler.Schedule do
 
   def get_jobs(schedule, time_range) do
     get_missed_run_dates(schedule.cron, schedule.tz_offset, time_range.t_start)
+    |> Enum.concat(get_next_run_dates(schedule.cron, schedule.tz_offset))
     |> Enum.map(&ScheduledJob.new(schedule.job, &1))
   end
 

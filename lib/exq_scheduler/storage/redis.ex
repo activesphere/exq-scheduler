@@ -3,8 +3,14 @@ defmodule ExqScheduler.Storage.Redis do
     Redix.command!(redis, ["HKEYS", key])
   end
 
-  def hget(redis, key, field) do
-    Redix.command!(redis, ["HGET", key, field]) |> decode
+  def hget(redis, key, field, decode \\ true) do
+    result = Redix.command!(redis, ["HGET", key, field])
+
+    if decode do
+      result |> decode
+    else
+      result
+    end
   end
 
   def hset(redis, key, field, val) do

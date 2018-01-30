@@ -3,6 +3,8 @@ defmodule ExqScheduler.Storage do
   @schedule_states_key "states"
   @schedule_prev_times_key "last_times"
   @schedule_next_times_key "next_times"
+  @schedule_first_runs_key "first_runs"
+  @schedule_last_runs_key "last_runs"
   @default_queue "default"
 
   defmodule Opts do
@@ -75,6 +77,32 @@ defmodule ExqScheduler.Storage do
           next_time
         )
       end
+
+      now = Timex.now() |> Timex.to_naive_datetime() |> to_string()
+
+      schedule_first_run =
+        Redis.hget(
+          storage_opts.redis,
+          build_schedule_runs_key(storage_opts, :first),
+          schedule.name,
+          false
+        )
+
+      if schedule_first_run == nil do
+        Redis.hset(
+          storage_opts.redis,
+          build_schedule_runs_key(storage_opts, :first),
+          schedule.name,
+          now
+        )
+      end
+
+      Redis.hset(
+        storage_opts.redis,
+        build_schedule_runs_key(storage_opts, :last),
+        schedule.name,
+        now
+      )
     end)
   end
 
@@ -176,6 +204,16 @@ defmodule ExqScheduler.Storage do
 
   defp build_schedule_times_key(storage_opts, :next) do
     [storage_opts.namespace, @schedule_next_times_key]
+    |> build_key
+  end
+
+  defp build_schedule_runs_key(storage_opts, :first) do
+    [storage_opts.namespace, @schedule_first_runs_key]
+    |> build_key
+  end
+
+  defp build_schedule_runs_key(storage_opts, :last) do
+    [storage_opts.namespace, @schedule_last_runs_key]
     |> build_key
   end
 
