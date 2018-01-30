@@ -42,10 +42,10 @@ defmodule ExqScheduler.Storage do
     )
   end
 
-  def persist_schedule_times(schedules, time_range, storage_opts) do
+  def persist_schedule_times(schedules, storage_opts) do
     Enum.each(schedules, fn schedule ->
       prev_times =
-        Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset, time_range.t_start)
+        Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset)
 
       if not Enum.empty?(prev_times) do
         prev_time =

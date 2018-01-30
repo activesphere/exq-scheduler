@@ -81,7 +81,7 @@ defmodule ExqScheduler.Schedule.Utils do
             |> Timex.Duration.add(d_utc)
 
           true ->
-            nil
+            Timex.Duration.zero()
         end
 
       {cron_exp, offset_duration}

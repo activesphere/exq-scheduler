@@ -66,7 +66,7 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp handle_tick(state, time) do
-    Storage.persist_schedule_times(state.schedules, get_range(state, time), state.storage_opts)
+    Storage.persist_schedule_times(state.schedules, state.storage_opts)
 
     Storage.filter_active_jobs(state.schedules, get_range(state, time))
     |> Storage.enqueue_jobs(state.storage_opts)

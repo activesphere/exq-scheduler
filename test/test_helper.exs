@@ -13,7 +13,7 @@ defmodule TestUtils do
 
   def build_time_range(now, offset) do
     t_start = now |> Timex.shift(seconds: -offset)
-    t_end = now |> Timex.shift(seconds: offset)
+    t_end = now
     %TimeRange{t_start: t_start, t_end: t_end}
   end
 
