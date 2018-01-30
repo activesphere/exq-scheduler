@@ -6,13 +6,24 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defmodule Opts do
-    @enforce_keys [:timeout, :prev_offset]
-    defstruct @enforce_keys
+    @enforce_keys [:timeout]
+    defstruct timeout: nil, enqueue_missed_jobs: false, prev_offset: nil
 
     def new(opts) do
+      timeout = opts[:timeout]
+      enqueue_missed_jobs = opts[:enqueue_missed_jobs]
+
+      prev_offset =
+        if enqueue_missed_jobs do
+          opts[:prev_offset]
+        else
+          timeout
+        end
+
       %__MODULE__{
-        timeout: opts[:timeout],
-        prev_offset: opts[:prev_offset]
+        timeout: timeout,
+        enqueue_missed_jobs: enqueue_missed_jobs,
+        prev_offset: prev_offset
       }
     end
   end
