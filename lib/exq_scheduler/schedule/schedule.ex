@@ -2,12 +2,11 @@ defmodule ExqScheduler.Schedule do
   @default_queue "default"
 
   defmodule ScheduleOpts do
-    defstruct first_at: nil, last_at: nil
+    defstruct enabled: nil
 
     def new(opts) do
       %__MODULE__{
-        first_at: Map.get(opts, :first_at),
-        last_at: Map.get(opts, :last_at)
+        enabled: Map.get(opts, :enabled, true)
       }
     end
   end
