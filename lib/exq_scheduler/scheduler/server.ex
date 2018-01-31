@@ -50,7 +50,8 @@ defmodule ExqScheduler.Scheduler.Server do
       server_opts: opts[:server_opts]
     }
 
-    Storage.persist_schedule_times(state.schedules, state.storage_opts)
+    Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
+    |> Storage.persist_schedule_times(state.storage_opts)
 
     next_tick(__MODULE__, 0)
     {:ok, state}
