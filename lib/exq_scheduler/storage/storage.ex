@@ -23,6 +23,7 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Schedule
   alias ExqScheduler.Schedule.Parser
   alias ExqScheduler.Storage.Redis
+  alias ExqScheduler.Storage
   alias Exq.Support.Job
 
   def persist_schedule(schedule_props, storage_opts) do
@@ -135,6 +136,23 @@ defmodule ExqScheduler.Storage do
     )
   end
 
+  def is_schedule_enabled?(storage_opts, schedule) do
+    schedule_state =
+      Redis.hget(
+        storage_opts.redis,
+        build_schedule_states_key(storage_opts),
+        schedule.name
+      )
+
+    if schedule_state != nil do
+      Map.fetch!(schedule_state, "enabled")
+    else
+      # By default the schedule will always be enabled, so we return true
+      # if the entry does not exist.
+      true
+    end
+  end
+
   def get_schedules(storage_opts) do
     schedules_key = build_schedules_key(storage_opts)
     keys = Redis.hkeys(storage_opts.redis, schedules_key)
@@ -149,7 +167,10 @@ defmodule ExqScheduler.Storage do
   end
 
   def filter_active_jobs(storage_opts, schedules, time_range) do
-    Enum.map(schedules, fn schedule ->
+    Enum.filter(schedules, fn schedule ->
+      Storage.is_schedule_enabled?(storage_opts, schedule)
+    end)
+    |> Enum.map(fn schedule ->
       jobs = Schedule.get_jobs(storage_opts, schedule, time_range)
       {schedule, jobs}
     end)

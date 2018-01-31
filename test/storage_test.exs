@@ -38,4 +38,24 @@ defmodule StorageTest do
     schedules = Storage.load_schedules_config(storage_opts)
     assert length(schedules) == 2
   end
+
+  test "is_schedule_enabled?(): It checks if the schedule is enabled or not" do
+    storage_opts = ExqScheduler.build_storage_opts(redis_pid("test"))
+    schedules = Storage.load_schedules_config(storage_opts)
+    assert length(schedules) >= 1
+
+    Enum.map(schedules, fn schedule ->
+      schedule_props =
+        {
+          schedule.name,
+          schedule.description,
+          Crontab.CronExpression.Composer.compose(schedule.cron),
+          Exq.Support.Job.encode(schedule.job),
+          %{"enabled" => false}
+        }
+
+      Storage.persist_schedule(schedule_props, storage_opts)
+      assert Storage.is_schedule_enabled?(storage_opts, schedule) == false
+    end)
+  end
 end

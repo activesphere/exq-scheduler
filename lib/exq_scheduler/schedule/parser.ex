@@ -44,6 +44,7 @@ defmodule ExqScheduler.Schedule.Parser do
 
   defp normalize_time(time) do
     time = to_string(time)
+
     Utils.to_cron_exp(time)
     |> elem(0)
     |> Crontab.CronExpression.Composer.compose()
