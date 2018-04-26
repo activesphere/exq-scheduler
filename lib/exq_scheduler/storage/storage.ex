@@ -1,4 +1,5 @@
 defmodule ExqScheduler.Storage do
+  @moduledoc false
   @schedules_key "schedules"
   @schedule_states_key "states"
   @schedule_prev_times_key "last_times"
@@ -8,6 +9,7 @@ defmodule ExqScheduler.Storage do
   @default_queue "default"
 
   defmodule Opts do
+    @moduledoc false
     @enforce_keys [:namespace, :exq_namespace, :redis]
     defstruct @enforce_keys
 

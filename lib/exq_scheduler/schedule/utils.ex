@@ -1,4 +1,5 @@
 defmodule ExqScheduler.Schedule.Utils do
+  @moduledoc false
   alias Timex.Duration
   alias Crontab.CronExpression, as: Cron
 

@@ -1,11 +1,14 @@
 defmodule ExqScheduler.Scheduler.Server do
+  @moduledoc false
   use GenServer
 
   defmodule State do
+    @moduledoc false
     defstruct schedules: nil, storage_opts: nil, server_opts: nil, range: nil
   end
 
   defmodule Opts do
+    @moduledoc false
     @enforce_keys [:timeout]
     defstruct timeout: nil, enqueue_missed_jobs: false, missed_jobs_threshold_duration: nil
 

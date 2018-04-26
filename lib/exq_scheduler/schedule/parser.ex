@@ -1,4 +1,5 @@
 defmodule ExqScheduler.Schedule.Parser do
+  @moduledoc false
   alias ExqScheduler.Schedule.Utils
   @cron_key "cron"
   @description_key "description"

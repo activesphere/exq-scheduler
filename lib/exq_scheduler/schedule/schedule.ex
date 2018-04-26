@@ -2,6 +2,7 @@ defmodule ExqScheduler.Schedule do
   @default_queue "default"
 
   defmodule ScheduleOpts do
+    @moduledoc false
     defstruct enabled: nil
 
     def new(opts) do
@@ -12,6 +13,7 @@ defmodule ExqScheduler.Schedule do
   end
 
   defmodule TimeRange do
+    @moduledoc false
     @enforce_keys [:t_start, :t_end]
     defstruct @enforce_keys
 
@@ -24,6 +26,7 @@ defmodule ExqScheduler.Schedule do
   end
 
   defmodule ScheduledJob do
+    @moduledoc false
     @enforce_keys [:job, :time]
     defstruct @enforce_keys
 

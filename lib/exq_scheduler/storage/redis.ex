@@ -1,4 +1,6 @@
 defmodule ExqScheduler.Storage.Redis do
+  @moduledoc false
+
   def hkeys(redis, key) do
     Redix.command!(redis, ["HKEYS", key])
   end
