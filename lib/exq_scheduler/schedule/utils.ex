@@ -97,7 +97,7 @@ defmodule ExqScheduler.Schedule.Utils do
   end
 
   def get_timezone_config() do
-    server_opts = ExqScheduler.get_config(:server_opts)
+    server_opts = Application.get_env(:exq_scheduler, :server_opts)
 
     if server_opts != nil do
       tz_from_config = server_opts[:time_zone]
@@ -135,13 +135,12 @@ defmodule ExqScheduler.Schedule.Utils do
         timestring
       end
 
-    {date_part, time_part} =
-      {
-        Regex.run(~r/(\d+(\.{1}\d+)*y)?(\d+(\.{1}\d+)*M)?(\d+(\.{1}\d+)*d)?/, timestring)
-        |> get_elem(0),
-        Regex.run(~r/(\d+(\.{1}\d+)*h)?(\d+(\.{1}\d+)*m)?(\d+(\.{1}\d+)*s)?$/, timestring)
-        |> get_elem(0)
-      }
+    {date_part, time_part} = {
+      Regex.run(~r/(\d+(\.{1}\d+)*y)?(\d+(\.{1}\d+)*M)?(\d+(\.{1}\d+)*d)?/, timestring)
+      |> get_elem(0),
+      Regex.run(~r/(\d+(\.{1}\d+)*h)?(\d+(\.{1}\d+)*m)?(\d+(\.{1}\d+)*s)?$/, timestring)
+      |> get_elem(0)
+    }
 
     if {date_part, time_part} == {"", ""} do
       if num_weeks != 0 do

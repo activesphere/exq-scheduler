@@ -12,7 +12,7 @@ defmodule StorageTest do
   end
 
   defp build_and_enqueue(cron, offset, now, redis) do
-    opts = ExqScheduler.build_storage_opts(redis)
+    opts = Storage.build_opts(env([:redis, :name], redis))
     {schedule, jobs} = build_scheduled_jobs(cron, offset, now)
     Storage.enqueue_jobs(schedule, jobs, opts)
     jobs
@@ -20,7 +20,7 @@ defmodule StorageTest do
 
   defp redis_pid(idx) do
     pid = "redis_#{idx}" |> String.to_atom()
-    {:ok, _} = Redix.start_link(ExqScheduler.get_config(:redis), name: pid)
+    {:ok, _} = Redix.start_link(Keyword.get(env(), :redis), name: pid)
     pid
   end
 
@@ -34,14 +34,14 @@ defmodule StorageTest do
   end
 
   test "it loads the schedules from the config file" do
-    storage_opts = ExqScheduler.build_storage_opts(redis_pid("test"))
-    schedules = Storage.load_schedules_config(storage_opts)
+    storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
+    schedules = Storage.load_schedules_config(storage_opts, env())
     assert length(schedules) == 2
   end
 
   test "is_schedule_enabled?(): It checks if the schedule is enabled or not" do
-    storage_opts = ExqScheduler.build_storage_opts(redis_pid("test"))
-    schedules = Storage.load_schedules_config(storage_opts)
+    storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
+    schedules = Storage.load_schedules_config(storage_opts, env())
     assert length(schedules) >= 1
 
     Enum.map(schedules, fn schedule ->

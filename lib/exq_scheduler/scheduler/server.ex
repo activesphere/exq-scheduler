@@ -4,7 +4,7 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defmodule State do
     @moduledoc false
-    defstruct schedules: nil, storage_opts: nil, server_opts: nil, range: nil
+    defstruct schedules: nil, storage_opts: nil, server_opts: nil, range: nil, env: nil
   end
 
   defmodule Opts do
@@ -34,23 +34,24 @@ defmodule ExqScheduler.Scheduler.Server do
   alias ExqScheduler.Storage
   alias ExqScheduler.Schedule.TimeRange
 
-  def start_link(opts) do
-    GenServer.start_link(__MODULE__, opts, name: __MODULE__)
+  def start_link(env) do
+    GenServer.start_link(__MODULE__, env, name: __MODULE__)
   end
 
   def load_schedules_config() do
     GenServer.cast(__MODULE__, :load_schedules_config)
   end
 
-  def init(opts) do
-    storage_opts = opts[:storage_opts]
+  def init(env) do
+    storage_opts = Storage.build_opts(env)
 
-    _ = Storage.load_schedules_config(storage_opts)
+    _ = Storage.load_schedules_config(storage_opts, env)
 
     state = %State{
       schedules: Storage.get_schedules(storage_opts),
       storage_opts: storage_opts,
-      server_opts: opts[:server_opts]
+      server_opts: build_opts(env),
+      env: env
     }
 
     Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
@@ -67,7 +68,7 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   def handle_cast(:load_schedules_config, state) do
-    _ = Storage.load_schedules_config(state.storage_opts)
+    _ = Storage.load_schedules_config(state.storage_opts, state.env)
     {:noreply, Storage.get_schedules(state.storage_opts)}
   end
 
@@ -85,5 +86,10 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defp get_range(state, time) do
     TimeRange.new(time, state.server_opts.missed_jobs_threshold_duration)
+  end
+
+  defp build_opts(env) do
+    Keyword.get(env, :server_opts)
+    |> Opts.new()
   end
 end

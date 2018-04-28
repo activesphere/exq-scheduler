@@ -1,6 +1,8 @@
 defmodule SchedulerSerdesTest do
   use ExUnit.Case, async: false
+  alias ExqScheduler.Storage
   import TestUtils
+  require Logger
 
   setup context do
     flush_redis()
@@ -11,7 +13,7 @@ defmodule SchedulerSerdesTest do
         System.cmd("#{sidekiq_path}/setup_sidekiq", [], cd: sidekiq_path)
       end)
 
-    IO.puts("Wait for 5 seconds for Sidekiq to initialize.")
+    Logger.info("Wait for 5 seconds for Sidekiq to initialize.")
     :timer.sleep(5000)
 
     on_exit(context, fn ->
@@ -21,7 +23,7 @@ defmodule SchedulerSerdesTest do
   end
 
   test "it makes sure the schedule has been serialized properly" do
-    [{_, storage_opts}, _] = ExqScheduler.build_opts()
+    storage_opts = Storage.build_opts(env())
 
     schedules = ExqScheduler.Storage.get_schedules(storage_opts)
     assert length(schedules) != 0

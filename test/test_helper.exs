@@ -24,7 +24,16 @@ defmodule TestUtils do
   end
 
   def storage_opts do
-    ExqScheduler.build_storage_opts(false)
+    Storage.build_opts(env())
+  end
+
+  def env() do
+    Application.get_all_env(:exq_scheduler)
+  end
+
+  def env(path, value) do
+    env()
+    |> put_in(path, value)
   end
 
   def flush_redis do

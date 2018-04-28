@@ -47,6 +47,12 @@ defmodule ExqScheduler.Storage do
     )
   end
 
+  def build_opts(env) do
+    Keyword.get(env, :storage_opts)
+    |> Keyword.put(:redis_pid, ExqScheduler.redis_name(env))
+    |> Storage.Opts.new()
+  end
+
   def persist_schedule_times(schedules, storage_opts) do
     Enum.each(schedules, fn schedule ->
       prev_times = Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset)
@@ -103,8 +109,8 @@ defmodule ExqScheduler.Storage do
     end)
   end
 
-  def load_schedules_config(storage_opts, persist \\ true) do
-    schedule_conf_list = ExqScheduler.get_config(:schedules)
+  def load_schedules_config(storage_opts, env, persist \\ true) do
+    schedule_conf_list = Keyword.get(env, :schedules)
 
     if is_nil(schedule_conf_list) or Enum.empty?(schedule_conf_list) do
       []
