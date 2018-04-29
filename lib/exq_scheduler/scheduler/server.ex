@@ -35,11 +35,7 @@ defmodule ExqScheduler.Scheduler.Server do
   alias ExqScheduler.Schedule.TimeRange
 
   def start_link(env) do
-    GenServer.start_link(__MODULE__, env, name: __MODULE__)
-  end
-
-  def load_schedules_config() do
-    GenServer.cast(__MODULE__, :load_schedules_config)
+    GenServer.start_link(__MODULE__, env)
   end
 
   def init(env) do
@@ -57,19 +53,14 @@ defmodule ExqScheduler.Scheduler.Server do
     Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
     |> Storage.persist_schedule_times(state.storage_opts)
 
-    next_tick(__MODULE__, 0)
+    next_tick(self(), 0)
     {:ok, state}
   end
 
   def handle_info({:tick, time}, state) do
     handle_tick(state, time)
-    next_tick(__MODULE__, state.server_opts.timeout)
+    next_tick(self(), state.server_opts.timeout)
     {:noreply, state}
-  end
-
-  def handle_cast(:load_schedules_config, state) do
-    _ = Storage.load_schedules_config(state.storage_opts, state.env)
-    {:noreply, Storage.get_schedules(state.storage_opts)}
   end
 
   defp handle_tick(state, time) do
