@@ -29,7 +29,7 @@ defmodule SchedulerSerdesTest do
     assert length(schedules) != 0
 
     schedule = Enum.at(schedules, 0)
-    target_cron = Crontab.CronExpression.Parser.parse("5 * * * * *") |> elem(1)
+    target_cron = Crontab.CronExpression.Parser.parse!("5 * * * * *")
     assert schedule.cron == target_cron
     assert schedule.job.class == "SidekiqWorker"
   end

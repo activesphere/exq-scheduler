@@ -66,7 +66,7 @@ defmodule ScheduleUtilsTest do
   test "to_cron_exp(): It normalizes cron expression with timezone support" do
     assert Utils.to_cron_exp("* * * * * Asia/Kolkata") ==
              {
-               Crontab.CronExpression.Parser.parse("* * * * *") |> elem(1),
+               Crontab.CronExpression.Parser.parse!("* * * * *"),
                Timex.Duration.from_clock({5, 30, 0, 0})
              }
   end

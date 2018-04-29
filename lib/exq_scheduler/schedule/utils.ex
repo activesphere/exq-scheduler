@@ -43,7 +43,7 @@ defmodule ExqScheduler.Schedule.Utils do
   def to_cron_exp(cron_str) do
     timezone = get_timezone(cron_str)
     cron_str = strip_timezone(cron_str)
-    cron_exp = Cron.Parser.parse(cron_str) |> elem(1)
+    cron_exp = Cron.Parser.parse!(cron_str)
 
     if timezone == nil do
       {cron_exp, nil}
