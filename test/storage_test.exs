@@ -1,14 +1,12 @@
 defmodule StorageTest do
-  use ExUnit.Case, async: true
+  use ExUnit.Case, async: false
   import TestUtils
   alias ExqScheduler.Storage
 
   setup do
+    start_supervised!({ExqScheduler, env([:schedules], [])})
     flush_redis()
-
-    on_exit(fn ->
-      flush_redis()
-    end)
+    :ok
   end
 
   defp build_and_enqueue(cron, offset, now, redis) do
@@ -45,14 +43,13 @@ defmodule StorageTest do
     assert length(schedules) >= 1
 
     Enum.map(schedules, fn schedule ->
-      schedule_props =
-        {
-          schedule.name,
-          schedule.description,
-          Crontab.CronExpression.Composer.compose(schedule.cron),
-          Exq.Support.Job.encode(schedule.job),
-          %{"enabled" => false}
-        }
+      schedule_props = {
+        schedule.name,
+        schedule.description,
+        Crontab.CronExpression.Composer.compose(schedule.cron),
+        Exq.Support.Job.encode(schedule.job),
+        %{"enabled" => false}
+      }
 
       Storage.persist_schedule(schedule_props, storage_opts)
       assert Storage.is_schedule_enabled?(storage_opts, schedule) == false

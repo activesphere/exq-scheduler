@@ -37,7 +37,7 @@ defmodule TestUtils do
   end
 
   def flush_redis do
-    Redis.flushdb(storage_opts().redis)
+    "OK" = Redis.flushdb(storage_opts().redis)
   end
 
   def default_queue_job_count do

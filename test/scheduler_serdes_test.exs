@@ -5,6 +5,7 @@ defmodule SchedulerSerdesTest do
   require Logger
 
   setup context do
+    start_supervised!({ExqScheduler, env()})
     flush_redis()
     sidekiq_path = System.cwd() |> Path.join("./sidekiq")
 
