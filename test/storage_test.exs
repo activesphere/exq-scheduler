@@ -2,6 +2,7 @@ defmodule StorageTest do
   use ExUnit.Case, async: false
   import TestUtils
   alias ExqScheduler.Storage
+  alias ExqScheduler.Time
 
   setup do
     start_supervised!({ExqScheduler, env([:schedules], [])})
@@ -23,12 +24,13 @@ defmodule StorageTest do
   end
 
   test "no duplicate jobs" do
-    all_jobs =
-      pmap(1..20, fn idx ->
-        build_and_enqueue("*/2 * * * *", 60, Timex.now(), redis_pid(idx))
-      end)
+    now = Time.now()
 
-    assert default_queue_job_count() == length(hd(all_jobs))
+    pmap(1..20, fn idx ->
+      build_and_enqueue("*/2 * * * *", 60, now, redis_pid(idx))
+    end)
+
+    assert_job_uniqueness()
   end
 
   test "it loads the schedules from the config file" do

@@ -26,6 +26,7 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Schedule.Parser
   alias ExqScheduler.Storage.Redis
   alias ExqScheduler.Storage
+  alias ExqScheduler.Time
   alias Exq.Support.Job
 
   def persist_schedule(schedule_props, storage_opts) do
@@ -87,7 +88,7 @@ defmodule ExqScheduler.Storage do
         )
       end
 
-      now = Timex.now() |> Timex.to_naive_datetime() |> Poison.encode!()
+      now = Time.now() |> Timex.to_naive_datetime() |> Poison.encode!()
 
       schedule_first_run = get_schedule_first_run_time(storage_opts, schedule)
 
@@ -196,6 +197,24 @@ defmodule ExqScheduler.Storage do
   # TODO: Update schedule.first_run, schedule.last_run
   defp enqueue_job(schedule, scheduled_job, storage_opts) do
     {job, time} = {scheduled_job.job, scheduled_job.time}
+
+    job =
+      if schedule.schedule_opts.include_metadata do
+        metadata = %{scheduled_at: time}
+        args = job.args
+
+        args =
+          cond do
+            is_list(args) -> List.insert_at(args, -1, metadata)
+            is_nil(args) -> [metadata]
+            true -> args
+          end
+
+        %Job{job | args: args}
+      else
+        job
+      end
+
     queue_name = job.queue || @default_queue
 
     commands = [

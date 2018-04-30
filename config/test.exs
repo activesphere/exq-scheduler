@@ -19,12 +19,14 @@ config :exq_scheduler, :schedules,
   schedule_cron_1m: %{
     "description" => "It's a 1 minute schedule",
     "cron" => "* * * * *",
-    "class" => "HardWorker"
+    "class" => "HardWorker1",
+    "include_metadata" => true
   },
   schedule_cron_2m: %{
     "description" => "It's 2 minute schedule",
     "cron" => "*/2 * * * *",
-    "class" => "HardWorker"
+    "class" => "HardWorker2",
+    "include_metadata" => true
   }
 
 config :exq_scheduler, start_on_application: false

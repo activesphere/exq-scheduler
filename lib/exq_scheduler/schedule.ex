@@ -1,13 +1,16 @@
 defmodule ExqScheduler.Schedule do
+  alias ExqScheduler.Time
+
   @default_queue "default"
 
   defmodule ScheduleOpts do
     @moduledoc false
-    defstruct enabled: nil
+    defstruct enabled: nil, include_metadata: nil
 
     def new(opts) do
       %__MODULE__{
-        enabled: Map.get(opts, :enabled, true)
+        enabled: Map.get(opts, :enabled, true),
+        include_metadata: Map.get(opts, :include_metadata, false)
       }
     end
   end
@@ -82,7 +85,7 @@ defmodule ExqScheduler.Schedule do
   end
 
   def get_missed_run_dates(storage_opts, schedule, lower_bound_time) do
-    now = add_tz(Timex.now(), schedule.tz_offset)
+    now = add_tz(Time.now(), schedule.tz_offset)
 
     schedule_last_run_time = Storage.get_schedule_last_run_time(storage_opts, schedule)
 
@@ -105,14 +108,14 @@ defmodule ExqScheduler.Schedule do
   end
 
   def get_previous_run_dates(cron, tz_offset) do
-    now = add_tz(Timex.now(), tz_offset)
+    now = add_tz(Time.now(), tz_offset)
 
     Scheduler.get_previous_run_dates(cron, now)
     |> get_dates(tz_offset)
   end
 
   def get_next_run_dates(cron, tz_offset) do
-    now = add_tz(Timex.now(), tz_offset)
+    now = add_tz(Time.now(), tz_offset)
 
     Scheduler.get_next_run_dates(cron, now)
     |> get_dates(tz_offset)

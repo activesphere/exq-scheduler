@@ -1,6 +1,7 @@
 defmodule ExqScheduler.Scheduler.Server do
   @moduledoc false
   use GenServer
+  alias ExqScheduler.Time
 
   defmodule State do
     @moduledoc false
@@ -71,7 +72,7 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp next_tick(server, timeout) do
-    time = Timex.now() |> Timex.to_naive_datetime()
+    time = Time.now() |> Timex.to_naive_datetime()
     Process.send_after(server, {:tick, time}, timeout)
   end
 

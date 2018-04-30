@@ -3,7 +3,8 @@ defmodule ExqScheduler.Schedule.Parser do
   alias ExqScheduler.Schedule.Utils
   @cron_key "cron"
   @description_key "description"
-  @non_job_keys [@cron_key, @description_key]
+  @include_metadata "include_metadata"
+  @non_job_keys [@cron_key, @description_key, @include_metadata]
 
   @doc """
     Parses the schedule as per the format (rufus-scheduler supported):
@@ -22,6 +23,7 @@ defmodule ExqScheduler.Schedule.Parser do
     else
       schedule_time = Map.fetch!(schedule, @cron_key)
       description = Map.get(schedule, @description_key, "")
+      opts = %{include_metadata: Map.get(schedule, @include_metadata, false)}
 
       if not Utils.is_string?(schedule_time) do
         [schedule_time, schedule_opts] = schedule_time
@@ -30,14 +32,14 @@ defmodule ExqScheduler.Schedule.Parser do
           description,
           normalize_time(schedule_time),
           create_job(schedule),
-          schedule_opts
+          Map.merge(opts, schedule_opts)
         }
       else
         {
           description,
           normalize_time(schedule_time),
           create_job(schedule),
-          %{}
+          opts
         }
       end
     end
