@@ -2,6 +2,8 @@ ExUnit.start()
 
 require Logger
 
+Redix.start_link([database: 1], name: :redix)
+
 defmodule ExqScheduler.Time do
   @base Timex.to_unix(Timex.now())
   @scale 60 * 60
@@ -32,10 +34,10 @@ defmodule TestUtils do
     %TimeRange{t_start: t_start, t_end: t_end}
   end
 
-  def build_scheduled_jobs(cron, offset, now \\ Time.now()) do
+  def build_scheduled_jobs(opts, cron, offset, now \\ Time.now()) do
     schedule = build_schedule(cron)
     time_range = build_time_range(now, offset)
-    {schedule, Schedule.get_jobs(storage_opts(), schedule, time_range)}
+    {schedule, Schedule.get_jobs(opts, schedule, time_range)}
   end
 
   def storage_opts do
@@ -52,13 +54,13 @@ defmodule TestUtils do
   end
 
   def flush_redis do
-    "OK" = Redis.flushdb(storage_opts().redis)
+    "OK" = Redix.command!(:redix, ["FLUSHDB"])
   end
 
   def assert_job_uniqueness do
     opts = storage_opts()
     queue_name = Storage.queue_key("default", opts)
-    jobs = Redix.command!(opts.redis, ["LRANGE", queue_name, "0", "-1"])
+    jobs = Redix.command!(:redix, ["LRANGE", queue_name, "0", "-1"])
     jobs = Enum.map(jobs, &Job.decode/1)
     assert length(jobs) > 0
     grouped = Enum.group_by(jobs, fn job -> List.first(job.args)["scheduled_at"] end)
@@ -68,6 +70,12 @@ defmodule TestUtils do
         assert(length(val) == 1, "Duplicate job scheduled #{inspect(val)}")
       end
     end)
+  end
+
+  def redis_pid(idx \\ "test") do
+    pid = "redis_#{idx}" |> String.to_atom()
+    {:ok, _} = Redix.start_link(Keyword.get(env(), :redis), name: pid)
+    pid
   end
 
   def pmap(collection, func) do

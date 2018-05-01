@@ -229,9 +229,10 @@ defmodule ExqScheduler.Storage do
 
   defp build_lock_key(job, time, enqueue_key) do
     serialized_job = Job.encode(job)
+    md5 = :crypto.hash(:md5, serialized_job) |> Base.encode16()
     time_string = NaiveDateTime.to_string(time)
 
-    [enqueue_key, serialized_job, time_string]
+    [enqueue_key, md5, time_string]
     |> build_key
   end
 

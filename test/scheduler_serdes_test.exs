@@ -5,7 +5,6 @@ defmodule SchedulerSerdesTest do
   require Logger
 
   setup context do
-    start_supervised!({ExqScheduler, env()})
     flush_redis()
     sidekiq_path = System.cwd() |> Path.join("./sidekiq")
 
@@ -24,7 +23,7 @@ defmodule SchedulerSerdesTest do
   end
 
   test "it makes sure the schedule has been serialized properly" do
-    storage_opts = Storage.build_opts(env())
+    storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
 
     schedules = ExqScheduler.Storage.get_schedules(storage_opts)
     assert length(schedules) != 0

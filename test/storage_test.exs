@@ -5,22 +5,15 @@ defmodule StorageTest do
   alias ExqScheduler.Time
 
   setup do
-    start_supervised!({ExqScheduler, env([:schedules], [])})
     flush_redis()
     :ok
   end
 
   defp build_and_enqueue(cron, offset, now, redis) do
     opts = Storage.build_opts(env([:redis, :name], redis))
-    {schedule, jobs} = build_scheduled_jobs(cron, offset, now)
+    {schedule, jobs} = build_scheduled_jobs(opts, cron, offset, now)
     Storage.enqueue_jobs(schedule, jobs, opts)
     jobs
-  end
-
-  defp redis_pid(idx) do
-    pid = "redis_#{idx}" |> String.to_atom()
-    {:ok, _} = Redix.start_link(Keyword.get(env(), :redis), name: pid)
-    pid
   end
 
   test "no duplicate jobs" do

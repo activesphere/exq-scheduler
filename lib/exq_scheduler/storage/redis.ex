@@ -35,10 +35,6 @@ defmodule ExqScheduler.Storage.Redis do
     Redix.command!(redis, ["LLEN", queue])
   end
 
-  def flushdb(redis) do
-    Redix.command!(redis, ["FLUSHDB"])
-  end
-
   defp decode(result) do
     if result != nil do
       result |> Poison.decode!()
