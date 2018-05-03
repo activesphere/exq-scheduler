@@ -63,7 +63,7 @@ defmodule TestUtils do
     jobs = Redix.command!(:redix, ["LRANGE", queue_name, "0", "-1"])
     jobs = Enum.map(jobs, &Job.decode/1)
     assert length(jobs) > 0
-    grouped = Enum.group_by(jobs, fn job -> List.first(job.args)["scheduled_at"] end)
+    grouped = Enum.group_by(jobs, fn job -> [job.class, List.first(job.args)["scheduled_at"]] end)
 
     Enum.each(grouped, fn {key, val} ->
       assert(length(val) == 1, "Duplicate job scheduled for #{inspect(key)} #{inspect(val)}")
