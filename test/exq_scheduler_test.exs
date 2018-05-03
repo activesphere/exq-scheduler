@@ -1,10 +1,8 @@
 defmodule ExqSchedulerTest do
-  use ExUnit.Case, async: false
+  use ExqScheduler.Case, async: false
   import TestUtils
 
   setup do
-    flush_redis()
-
     for i <- 0..4 do
       config =
         env()

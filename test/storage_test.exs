@@ -1,13 +1,8 @@
 defmodule StorageTest do
-  use ExUnit.Case, async: false
+  use ExqScheduler.Case, async: false
   import TestUtils
   alias ExqScheduler.Storage
   alias ExqScheduler.Time
-
-  setup do
-    flush_redis()
-    :ok
-  end
 
   defp build_and_enqueue(cron, offset, now, redis) do
     opts = Storage.build_opts(env([:redis, :name], redis))

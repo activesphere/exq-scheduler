@@ -1,5 +1,5 @@
 defmodule ScheduleTest do
-  use ExUnit.Case, async: false
+  use ExqScheduler.Case, async: false
   alias ExqScheduler.Time
   import TestUtils
 

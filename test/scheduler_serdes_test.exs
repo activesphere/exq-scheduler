@@ -1,11 +1,10 @@
 defmodule SchedulerSerdesTest do
-  use ExUnit.Case, async: false
+  use ExqScheduler.Case, async: false
   alias ExqScheduler.Storage
   import TestUtils
   require Logger
 
   setup context do
-    flush_redis()
     sidekiq_path = System.cwd() |> Path.join("./sidekiq")
 
     sidekiq_task =
