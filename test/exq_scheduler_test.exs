@@ -16,7 +16,7 @@ defmodule ExqSchedulerTest do
   end
 
   test "uniqueness" do
-    :timer.sleep(3)
+    :timer.sleep(2000)
     assert_job_uniqueness()
   end
 end
