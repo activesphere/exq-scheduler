@@ -66,9 +66,7 @@ defmodule TestUtils do
     grouped = Enum.group_by(jobs, fn job -> List.first(job.args)["scheduled_at"] end)
 
     Enum.each(grouped, fn {key, val} ->
-      if key do
-        assert(length(val) == 1, "Duplicate job scheduled #{inspect(val)}")
-      end
+      assert(length(val) == 1, "Duplicate job scheduled for #{inspect(key)} #{inspect(val)}")
     end)
   end
 

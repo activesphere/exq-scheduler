@@ -1,5 +1,5 @@
 defmodule ScheduleParserTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   alias ExqScheduler.Schedule.Parser
 
   test "it correctly parses a cron-based schedule containing bitstrings" do
@@ -19,7 +19,7 @@ defmodule ScheduleParserTest do
                  "queue" => "high",
                  "args" => ["/tmp/poop"]
                }),
-               %{"first_in" => "3m", :include_metadata => false}
+               %{"first_in" => "3m", "include_metadata" => false}
              }
   end
 
@@ -41,7 +41,7 @@ defmodule ScheduleParserTest do
                  "queue" => "high",
                  "args" => ["/tmp/poop"]
                }),
-               %{"first_in" => "3m", :include_metadata => false}
+               %{"first_in" => "3m", "include_metadata" => false}
              }
   end
 
@@ -62,7 +62,7 @@ defmodule ScheduleParserTest do
                  "queue" => "high",
                  "args" => ["/tmp/poop"]
                }),
-               %{"first_in" => "3m", :include_metadata => false}
+               %{"first_in" => "3m", "include_metadata" => false}
              }
   end
 
@@ -83,7 +83,7 @@ defmodule ScheduleParserTest do
                  "queue" => "high",
                  "args" => ["/tmp/poop"]
                }),
-               %{:include_metadata => false}
+               %{"include_metadata" => false}
              }
   end
 end

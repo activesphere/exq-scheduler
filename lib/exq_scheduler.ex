@@ -16,8 +16,10 @@ defmodule ExqScheduler do
   end
 
   def start_link(env) do
+    redis_opts = Keyword.get(env, :redis)
+
     children = [
-      worker(Redix, [Keyword.get(env, :redis), [name: redis_name(env)]]),
+      worker(Redix, [Keyword.drop(redis_opts, [:name]), [name: redis_name(env)]]),
       worker(Server, [env])
     ]
 
@@ -26,7 +28,7 @@ defmodule ExqScheduler do
 
   def child_spec(opts) do
     %{
-      id: __MODULE__,
+      id: Keyword.get(opts, :name, __MODULE__),
       start: {__MODULE__, :start_link, [opts]},
       type: :supervisor,
       restart: :permanent,

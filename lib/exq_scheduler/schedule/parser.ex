@@ -23,7 +23,7 @@ defmodule ExqScheduler.Schedule.Parser do
     else
       schedule_time = Map.fetch!(schedule, @cron_key)
       description = Map.get(schedule, @description_key, "")
-      opts = %{include_metadata: Map.get(schedule, @include_metadata, false)}
+      opts = %{"include_metadata" => Map.get(schedule, @include_metadata, false)}
 
       if not Utils.is_string?(schedule_time) do
         [schedule_time, schedule_opts] = schedule_time
