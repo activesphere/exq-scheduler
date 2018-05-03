@@ -9,7 +9,7 @@ defmodule ExqSchedulerTest do
         |> put_in([:redis, :name], String.to_atom("scheduler_redis_#{i}"))
         |> put_in([:name], String.to_atom("scheduler_#{i}"))
 
-      start_supervised!({ExqScheduler, config})
+      {:ok, _} = start_supervised({ExqScheduler, config})
     end
 
     :ok
