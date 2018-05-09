@@ -86,4 +86,14 @@ defmodule ScheduleParserTest do
                %{"include_metadata" => false}
              }
   end
+
+  test "Exit if class is not configured" do
+    schedule = %{
+      "cron" => "1 * * * *",
+      "queue" => "high",
+      "args" => ["/tmp/poop"]
+    }
+
+    catch_exit Parser.get_schedule(schedule) == "class is not configured for scheduler"
+  end
 end

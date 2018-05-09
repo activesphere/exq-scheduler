@@ -1,6 +1,7 @@
 defmodule ExqScheduler.Schedule.Parser do
   @moduledoc false
   alias ExqScheduler.Schedule.Utils
+  alias Exq.Support.Job
   @cron_key "cron"
   @description_key "description"
   @include_metadata "include_metadata"
@@ -54,6 +55,20 @@ defmodule ExqScheduler.Schedule.Parser do
   end
 
   defp create_job(schedule) do
-    Map.drop(schedule, @non_job_keys) |> Poison.encode!()
+    job = Map.drop(schedule, @non_job_keys)
+    validate_config(job)
+    job = job |> Poison.encode!()
+  end
+
+  defp validate_config(job) do
+    if job["class"] == nil do
+      exit "class is not configured for scheduler"
+    end
+
+    # case Crontab.CronExpression.Parser.parse(cron) do
+    #   {:error, description} -> exit(description)
+    #   _ -> :ok
+    # end
+    :ok
   end
 end
