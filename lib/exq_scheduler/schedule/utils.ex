@@ -1,4 +1,5 @@
 defmodule ExqScheduler.Schedule.Utils do
+  @moduledoc false
   alias Timex.Duration
   alias Crontab.CronExpression, as: Cron
 
@@ -42,7 +43,7 @@ defmodule ExqScheduler.Schedule.Utils do
   def to_cron_exp(cron_str) do
     timezone = get_timezone(cron_str)
     cron_str = strip_timezone(cron_str)
-    cron_exp = Cron.Parser.parse(cron_str) |> elem(1)
+    cron_exp = Cron.Parser.parse!(cron_str)
 
     if timezone == nil do
       {cron_exp, nil}
@@ -96,7 +97,7 @@ defmodule ExqScheduler.Schedule.Utils do
   end
 
   def get_timezone_config() do
-    server_opts = ExqScheduler.get_config(:server_opts)
+    server_opts = Application.get_env(:exq_scheduler, :server_opts)
 
     if server_opts != nil do
       tz_from_config = server_opts[:time_zone]
@@ -134,13 +135,12 @@ defmodule ExqScheduler.Schedule.Utils do
         timestring
       end
 
-    {date_part, time_part} =
-      {
-        Regex.run(~r/(\d+(\.{1}\d+)*y)?(\d+(\.{1}\d+)*M)?(\d+(\.{1}\d+)*d)?/, timestring)
-        |> get_elem(0),
-        Regex.run(~r/(\d+(\.{1}\d+)*h)?(\d+(\.{1}\d+)*m)?(\d+(\.{1}\d+)*s)?$/, timestring)
-        |> get_elem(0)
-      }
+    {date_part, time_part} = {
+      Regex.run(~r/(\d+(\.{1}\d+)*y)?(\d+(\.{1}\d+)*M)?(\d+(\.{1}\d+)*d)?/, timestring)
+      |> get_elem(0),
+      Regex.run(~r/(\d+(\.{1}\d+)*h)?(\d+(\.{1}\d+)*m)?(\d+(\.{1}\d+)*s)?$/, timestring)
+      |> get_elem(0)
+    }
 
     if {date_part, time_part} == {"", ""} do
       if num_weeks != 0 do

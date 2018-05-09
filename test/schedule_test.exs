@@ -1,9 +1,10 @@
 defmodule ScheduleTest do
-  use ExUnit.Case, async: true
+  use ExqScheduler.Case, async: false
+  alias ExqScheduler.Time
   import TestUtils
 
   test "correctly fetches prev and next dates when timezone specified" do
-    now_utc = Timex.now()
+    now_utc = Time.now()
     schedule = build_schedule("* * * * * Asia/Kolkata")
 
     prev_dates = ExqScheduler.Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset)

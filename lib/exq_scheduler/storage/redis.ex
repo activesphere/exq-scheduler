@@ -1,4 +1,6 @@
 defmodule ExqScheduler.Storage.Redis do
+  @moduledoc false
+
   def hkeys(redis, key) do
     Redix.command!(redis, ["HKEYS", key])
   end
@@ -31,10 +33,6 @@ defmodule ExqScheduler.Storage.Redis do
 
   def queue_len(redis, queue) do
     Redix.command!(redis, ["LLEN", queue])
-  end
-
-  def flushdb(redis) do
-    Redix.command!(redis, ["FLUSHDB"])
   end
 
   defp decode(result) do

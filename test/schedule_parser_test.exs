@@ -1,5 +1,5 @@
 defmodule ScheduleParserTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: false
   alias ExqScheduler.Schedule.Parser
 
   test "it correctly parses a cron-based schedule containing bitstrings" do
@@ -7,7 +7,7 @@ defmodule ScheduleParserTest do
       "cron" => ["* * * * * *", %{"first_in" => "3m"}],
       "class" => "SidekiqWorker",
       "queue" => "high",
-      "args" => "/tmp/poop"
+      "args" => ["/tmp/poop"]
     }
 
     assert Parser.get_schedule(schedule) ==
@@ -17,9 +17,9 @@ defmodule ScheduleParserTest do
                Poison.encode!(%{
                  "class" => "SidekiqWorker",
                  "queue" => "high",
-                 "args" => "/tmp/poop"
+                 "args" => ["/tmp/poop"]
                }),
-               %{"first_in" => "3m"}
+               %{"first_in" => "3m", "include_metadata" => false}
              }
   end
 
@@ -29,7 +29,7 @@ defmodule ScheduleParserTest do
       "cron" => ["* * * * * *", %{"first_in" => "3m"}],
       "class" => "SidekiqWorker",
       "queue" => "high",
-      "args" => "/tmp/poop"
+      "args" => ["/tmp/poop"]
     }
 
     assert Parser.get_schedule(schedule) ==
@@ -39,9 +39,9 @@ defmodule ScheduleParserTest do
                Poison.encode!(%{
                  "class" => "SidekiqWorker",
                  "queue" => "high",
-                 "args" => "/tmp/poop"
+                 "args" => ["/tmp/poop"]
                }),
-               %{"first_in" => "3m"}
+               %{"first_in" => "3m", "include_metadata" => false}
              }
   end
 
@@ -50,7 +50,7 @@ defmodule ScheduleParserTest do
       "cron" => ['* * * * * *', %{"first_in" => "3m"}],
       "class" => "SidekiqWorker",
       "queue" => "high",
-      "args" => "/tmp/poop"
+      "args" => ["/tmp/poop"]
     }
 
     assert Parser.get_schedule(schedule) ==
@@ -60,9 +60,9 @@ defmodule ScheduleParserTest do
                Poison.encode!(%{
                  "class" => "SidekiqWorker",
                  "queue" => "high",
-                 "args" => "/tmp/poop"
+                 "args" => ["/tmp/poop"]
                }),
-               %{"first_in" => "3m"}
+               %{"first_in" => "3m", "include_metadata" => false}
              }
   end
 
@@ -71,7 +71,7 @@ defmodule ScheduleParserTest do
       "cron" => "1 * * * *",
       "class" => "SidekiqWorker",
       "queue" => "high",
-      "args" => "/tmp/poop"
+      "args" => ["/tmp/poop"]
     }
 
     assert Parser.get_schedule(schedule) ==
@@ -81,9 +81,9 @@ defmodule ScheduleParserTest do
                Poison.encode!(%{
                  "class" => "SidekiqWorker",
                  "queue" => "high",
-                 "args" => "/tmp/poop"
+                 "args" => ["/tmp/poop"]
                }),
-               %{}
+               %{"include_metadata" => false}
              }
   end
 end

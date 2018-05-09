@@ -3,42 +3,52 @@ defmodule ExqScheduler do
 
   use Application
   import Supervisor.Spec
-  alias ExqScheduler.Storage
   alias ExqScheduler.Scheduler.Server
 
   def start(_type, _args) do
+    env = Application.get_all_env(:exq_scheduler)
+
+    if Keyword.get(env, :start_on_application, true) do
+      start_link(env)
+    else
+      Supervisor.start_link([], supervisor_opts(env))
+    end
+  end
+
+  def start_link(env) do
+    redis_opts = Keyword.get(env, :redis)
+
     children = [
-      worker(Redix, [get_config(:redis), [name: redis_pid()]]),
-      worker(ExqScheduler.Scheduler.Server, [build_opts()])
+      worker(Redix, [Keyword.drop(redis_opts, [:name]), [name: redis_name(env)]]),
+      worker(Server, [env])
     ]
 
-    opts = [strategy: :one_for_one, name: ExqScheduler.Supervisor]
-    Supervisor.start_link(children, opts)
+    Supervisor.start_link(children, supervisor_opts(env))
   end
 
-  def build_opts do
-    [
-      storage_opts: build_storage_opts(false),
-      server_opts: build_server_opts()
-    ]
+  def child_spec(opts) do
+    %{
+      id: Keyword.get(opts, :name, __MODULE__),
+      start: {__MODULE__, :start_link, [opts]},
+      type: :supervisor,
+      restart: :permanent,
+      shutdown: 500
+    }
   end
 
-  def build_storage_opts(redis) do
-    get_config(:storage_opts)
-    |> Keyword.merge(redis_pid: redis || redis_pid())
-    |> Storage.Opts.new()
+  def redis_name(env) do
+    Keyword.get(env, :redis)
+    |> Keyword.get(:name, "#{__MODULE__}.Client" |> String.to_atom())
   end
 
-  def get_config(key) do
-    Application.get_env(:exq_scheduler, key)
-  end
+  defp supervisor_opts(env) do
+    opts = [strategy: :one_for_one]
+    name = Keyword.get(env, :name)
 
-  defp build_server_opts do
-    get_config(:server_opts)
-    |> Server.Opts.new()
-  end
-
-  defp redis_pid do
-    "#{__MODULE__}.Client" |> String.to_atom()
+    if name do
+      Keyword.put(opts, :name, name)
+    else
+      opts
+    end
   end
 end
