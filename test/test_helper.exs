@@ -53,6 +53,14 @@ defmodule TestUtils do
     |> put_in(path, value)
   end
 
+  def configure_env(env, timeout, threshold_duration, schedules) do
+    env
+    |> put_in([:server_opts, :timeout], timeout)
+    |> put_in([:server_opts, :missed_jobs_threshold_duration], threshold_duration)
+    |> put_in([:schedules], schedules)
+  end
+
+
   def flush_redis do
     "OK" = Redix.command!(:redix, ["FLUSHDB"])
   end
