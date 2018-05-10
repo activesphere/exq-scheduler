@@ -3,6 +3,24 @@ defmodule ScheduleTest do
   alias ExqScheduler.Time
   import TestUtils
 
+  import Logger
+  test "check get_next_run_dates for different timezone" do
+    current_utc = Time.now()
+    next_date = get_next_date("0 * * * * America/New_York")
+    expected_next_date = {current_utc.hour()+1, 0}
+    assert expected_next_date == next_date
+
+    current_utc = Time.now()
+    next_date = get_next_date("0 * * * * Asia/Kolkata")
+    expected_next_date = {current_utc.hour()+1, 30}
+    assert expected_next_date == next_date
+
+    current_utc = Time.now()
+    next_date = get_next_date("0 * * * * Asia/Katmandu")
+    expected_next_date = {current_utc.hour()+1, 15}
+    assert expected_next_date == next_date
+  end
+
   test "correctly fetches prev and next dates when timezone specified" do
     now_utc = Time.now()
     schedule = build_schedule("* * * * * Asia/Kolkata")
