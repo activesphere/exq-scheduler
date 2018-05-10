@@ -4,11 +4,17 @@ defmodule ExqSchedulerTest do
   alias ExqScheduler.Storage
   alias Exq.Support.Job
   require Logger
+  alias ExqScheduler.Time
 
-  setup do
+  setup context do
     for i <- 0..4 do
-      config =
+      config = if context[:config] do
+        context[:config]
+      else
         env()
+      end
+      config =
+        config
         |> put_in([:redis, :name], String.to_atom("scheduler_redis_#{i}"))
         |> put_in([:name], String.to_atom("scheduler_#{i}"))
 
@@ -23,15 +29,14 @@ defmodule ExqSchedulerTest do
     assert_job_uniqueness()
   end
 
-  test "check continuity" do
-    redis = redis_pid("continuity")
-    storage_opts = Storage.build_opts(env([:redis, :name], redis))
-    config = configure_env(env(), 1500, 1000,[schedule_cron_1h: %{
+  @tag config: configure_env(env(), 1500, 1000,[schedule_cron_1h: %{
                                                  "cron" => "0 * * * * *",
                                                  "class" => "QWorker",
                                                  "queue" => "SuperQ",
                                                  "include_metadata" => true}])
-    ExqScheduler.start_link(config)
+  test "check continuity" do
+    redis = redis_pid("continuity")
+    storage_opts = Storage.build_opts(env([:redis, :name], redis))
     :timer.sleep(4000) # 3+ Hour
 
     jobs = get_jobs_from_storage(redis, Storage.queue_key("default", storage_opts))
@@ -40,32 +45,29 @@ defmodule ExqSchedulerTest do
     assert_continuity(jobs, 3600)
   end
 
-  test "check for missing jobs" do
-    redis = redis_pid("missing_jobs")
-    storage_opts = Storage.build_opts(env([:redis, :name], redis)) 
-    config = configure_env(env(), 100, 1000*1200, [schedule_cron_1m: %{
-                                                   "cron" => "*/10 * * * * *",
+  @tag config: configure_env(env(), 1, 10000000, [schedule_cron_1m: %{
+                                                   "cron" => "* * * * * *",
                                                    "class" => "DummyWorker2",
                                                    "include_metadata" => true
                                                 }])
-    ExqScheduler.start_link(config)
-    :timer.sleep(4000)
+  test "check for missing jobs" do
+    redis = redis_pid("missing_jobs")
+    storage_opts = Storage.build_opts(env([:redis, :name], redis))
+    :timer.sleep(3000) # 3+ Hour
 
     jobs = get_jobs_from_storage(redis, Storage.queue_key("default", storage_opts))
            |> Enum.filter(fn job -> job.class == "DummyWorker2" end)
-
     assert_continuity(jobs, 10*60)
   end
 
-  test "Check schedules are getting added to correct queues" do
-    redis = redis_pid("queue")
-    storage_opts = Storage.build_opts(env([:redis, :name], redis))
-    config = configure_env(env(), 1000, 10000, [schedule_cron_1m: %{
+  @tag config: configure_env(env(), 1000, 10000, [schedule_cron_1m: %{
                                                    "cron" => "* * * * * *",
                                                    "class" => "QWorker",
                                                    "queue" => "SuperQ"
                                                 }])
-    ExqScheduler.start_link(config)
+  test "Check schedules are getting added to correct queues" do
+    redis = redis_pid("queue")
+    storage_opts = Storage.build_opts(env([:redis, :name], redis))
     :timer.sleep(3000) # 3+ Hour
 
     jobs = get_jobs_from_storage(redis, Storage.queue_key("SuperQ", storage_opts))
@@ -73,18 +75,16 @@ defmodule ExqSchedulerTest do
     assert length(jobs) >= 1
   end
 
-  alias ExqScheduler.Time
-  test "scheduler should not consider dates before its started" do
-    redis = redis_pid("old_dates")
-    storage_opts = Storage.build_opts(env([:redis, :name], redis))
-    config = configure_env(env(), 10, 10000000, [schedule_cron_1h: %{
+  @tag config: configure_env(env(), 10, 10000000, [schedule_cron_1h: %{
                                                     "cron" => "0 * * * * *",
                                                     "class" => "TimeWorker",
                                                     "queue" => "TimeQ",
                                                     "include_metadata" => true
                                                  }])
+  test "scheduler should not consider dates before its started" do
+    redis = redis_pid("old_dates")
+    storage_opts = Storage.build_opts(env([:redis, :name], redis))
     start_time = Timex.to_unix(Time.now())
-    ExqScheduler.start_link(config)
     :timer.sleep(100) # 3+ Hour
 
     jobs =
@@ -126,12 +126,5 @@ defmodule ExqSchedulerTest do
             "index: #{index} job: #{inspect(Enum.at(jobs, index))} job+1: #{inspect(Enum.at(jobs, index+1))} ")
         end
      end)
-  end
-
-  defp configure_env(env, timeout, threshold_duration, schedules) do
-    env
-    |> put_in([:server_opts, :timeout], timeout)
-    |> put_in([:server_opts, :missed_jobs_threshold_duration], threshold_duration)
-    |> put_in([:schedules], schedules)
   end
 end
