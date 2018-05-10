@@ -45,15 +45,15 @@ defmodule ExqSchedulerTest do
     assert_continuity(jobs, 3600)
   end
 
-  @tag config: configure_env(env(), 1, 10000000, [schedule_cron_1m: %{
-                                                   "cron" => "* * * * * *",
+  @tag config: configure_env(env(), 100, 1000*1200, [schedule_cron_1m: %{
+                                                   "cron" => "*/10 * * * * *",
                                                    "class" => "DummyWorker2",
                                                    "include_metadata" => true
                                                 }])
   test "check for missing jobs" do
     redis = redis_pid("missing_jobs")
     storage_opts = Storage.build_opts(env([:redis, :name], redis))
-    :timer.sleep(3000) # 3+ Hour
+    :timer.sleep(4000) # 3+ Hour
 
     jobs = get_jobs_from_storage(redis, Storage.queue_key("default", storage_opts))
            |> Enum.filter(fn job -> job.class == "DummyWorker2" end)
