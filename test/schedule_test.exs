@@ -23,4 +23,37 @@ defmodule ScheduleTest do
       assert Timex.between?(next_date, now_utc, after_now_1min)
     end)
   end
+
+  test "clock should have correct precision" do
+    ref =  Time.now()
+    :timer.sleep(500)  # scaled: 30*60sec  (1sec <=> 1hour)
+    received = Time.now()
+    actual = add_seconds(ref, (30 * 60)) # scale time to (60*60)
+
+    converted_received = convert_time(received)
+    converted_actual = convert_time(actual)
+
+    # Logger.info("actual: #{converted_actual} received: #{converted_received}")
+    Logger.info("Ref: #{inspect(ref)}. After 30min Actual: #{inspect(actual)} Received: #{inspect(received)}")
+    assert converted_actual == converted_received
+  end
+
+  defp convert_time(time) do
+    ignore_precision = 10
+    Timex.to_unix(time)
+    |> div(ignore_precision)
+  end
+
+  defp add_seconds(time, seconds) do
+    Timex.to_unix(time) + seconds
+    |> Timex.from_unix
+  end
+
+  defp get_next_date(cron) do
+    schedule = build_schedule(cron)
+    date =
+      ExqScheduler.Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset)
+      |> Enum.at(0)
+    {date.hour(), date.minute()}
+  end
 end

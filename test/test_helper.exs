@@ -5,12 +5,12 @@ require Logger
 Redix.start_link([database: 1], name: :redix)
 
 defmodule ExqScheduler.Time do
-  @base Timex.to_unix(Timex.now())
+  @base DateTime.to_unix(Timex.now(), :microsecond)
   @scale 60 * 60
 
   def now do
-    elapsed = Timex.to_unix(Timex.now()) - @base
-    Timex.from_unix(@base + elapsed * @scale)
+    elapsed = DateTime.to_unix(Timex.now(), :microsecond) - @base
+    Timex.from_unix(@base + elapsed * @scale, :microsecond)
   end
 end
 
