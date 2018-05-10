@@ -43,18 +43,18 @@ defmodule ExqSchedulerTest do
   test "check for missing jobs" do
     redis = redis_pid("missing_jobs")
     storage_opts = Storage.build_opts(env([:redis, :name], redis)) 
-    config = configure_env(env(), 1, 10000000, [schedule_cron_1m: %{
-                                                   "cron" => "* * * * * *",
+    config = configure_env(env(), 100, 1000*1200, [schedule_cron_1m: %{
+                                                   "cron" => "*/10 * * * * *",
                                                    "class" => "DummyWorker2",
                                                    "include_metadata" => true
                                                 }])
     ExqScheduler.start_link(config)
-    :timer.sleep(3000) # 3+ Hour
+    :timer.sleep(4000)
 
     jobs = get_jobs_from_storage(redis, Storage.queue_key("default", storage_opts))
            |> Enum.filter(fn job -> job.class == "DummyWorker2" end)
 
-    assert_continuity(jobs, 60)
+    assert_continuity(jobs, 10*60)
   end
 
   test "Check schedules are getting added to correct queues" do
