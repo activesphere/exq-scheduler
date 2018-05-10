@@ -26,77 +26,45 @@ defmodule ExqSchedulerTest do
   test "check continuity" do
     redis = redis_pid("continuity")
     storage_opts = Storage.build_opts(env([:redis, :name], redis))
-    config =
-      env()
-      |> put_in([:server_opts, :timeout], 1500)
-      |> put_in([:server_opts, :missed_jobs_threshold_duration], 1000)
-      |> put_in([:schedules],[schedule_cron_1h: %{
-                                          "cron" => "0 * * * * *",
-                                          "class" => "DummyWorker1",
-                                          "include_metadata" => true
-                                       }])
-
+    config = configure_env(env(), 1500, 1000,[schedule_cron_1h: %{
+                                                 "cron" => "0 * * * * *",
+                                                 "class" => "QWorker",
+                                                 "queue" => "SuperQ",
+                                                 "include_metadata" => true}])
     ExqScheduler.start_link(config)
     :timer.sleep(4000) # 3+ Hour
 
     jobs = get_jobs_from_storage(redis, Storage.queue_key("default", storage_opts))
            |> Enum.filter(fn job -> job.class == "DummyWorker1" end)
 
-    schedule_times =
-      jobs
-      |> Enum.map(fn job -> List.first(job.args)["scheduled_at"] <> "Z" end) # ISO format requires Z at the end
-      |> Enum.map(&convert_from_iso_to_unixtime(&1))
-      |> Enum.sort()
-
-    sum = calculate_sum(List.first(schedule_times), List.last(schedule_times), length(schedule_times))
-    Logger.info(inspect("Values sum: #{schedule_times |> Enum.sum} calculated sum: #{sum}"))
-    assert schedule_times |> Enum.sum == sum
+    assert_continuity(jobs, 3600)
   end
 
   test "check for missing jobs" do
     redis = redis_pid("missing_jobs")
-    storage_opts = Storage.build_opts(env([:redis, :name], redis))
-    config =
-      env()
-      |> put_in([:server_opts, :timeout], 1000)
-      |> put_in([:server_opts, :missed_jobs_threshold_duration], 10000)
-      |> put_in([:schedules],[schedule_cron_1m: %{
-                                                 "cron" => "* * * * * *",
-                                                 "class" => "DummyWorker2",
-                                                 "include_metadata" => true
-                                              }])
+    storage_opts = Storage.build_opts(env([:redis, :name], redis)) 
+    config = configure_env(env(), 1, 10000000, [schedule_cron_1m: %{
+                                                   "cron" => "* * * * * *",
+                                                   "class" => "DummyWorker2",
+                                                   "include_metadata" => true
+                                                }])
     ExqScheduler.start_link(config)
     :timer.sleep(3000) # 3+ Hour
 
     jobs = get_jobs_from_storage(redis, Storage.queue_key("default", storage_opts))
            |> Enum.filter(fn job -> job.class == "DummyWorker2" end)
 
-    schedule_times =
-      jobs
-      |> Enum.map(fn job -> List.first(job.args)["scheduled_at"] <> "Z" end) # ISO format requires Z at the end
-      |> Enum.map(&convert_from_iso_to_unixtime(&1))
-      |> Enum.sort()
-
-
-    expected_sum = calculate_sum(List.first(schedule_times), List.last(schedule_times), length(schedule_times))
-    actual_sum = schedule_times |> Enum.sum
-
-    Logger.info(inspect("Values sum: #{actual_sum} calculated sum: #{expected_sum}"))
-    assert  actual_sum == expected_sum
+    assert_continuity(jobs, 60)
   end
 
-  test "Check schedules are gettinga added to correct queues" do
+  test "Check schedules are getting added to correct queues" do
     redis = redis_pid("queue")
     storage_opts = Storage.build_opts(env([:redis, :name], redis))
-    config =
-      env()
-      |> put_in([:server_opts, :timeout], 1000)
-      |> put_in([:server_opts, :missed_jobs_threshold_duration], 10000)
-      |> put_in([:schedules],[schedule_cron_1m: %{
-                                                 "cron" => "* * * * * *",
-                                                 "class" => "QWorker",
-                                                 "queue" => "SuperQ"
-                                              }])
+    config = configure_env(env(), 1000, 10000, [schedule_cron_1m: %{
+                                                   "cron" => "* * * * * *",
+                                                   "class" => "QWorker",
+                                                   "queue" => "SuperQ"
+                                                }])
     ExqScheduler.start_link(config)
     :timer.sleep(3000) # 3+ Hour
 
@@ -105,17 +73,65 @@ defmodule ExqSchedulerTest do
     assert length(jobs) >= 1
   end
 
+  alias ExqScheduler.Time
+  test "scheduler should not consider dates before its started" do
+    redis = redis_pid("old_dates")
+    storage_opts = Storage.build_opts(env([:redis, :name], redis))
+    config = configure_env(env(), 10, 10000000, [schedule_cron_1h: %{
+                                                    "cron" => "0 * * * * *",
+                                                    "class" => "TimeWorker",
+                                                    "queue" => "TimeQ",
+                                                    "include_metadata" => true
+                                                 }])
+    start_time = Timex.to_unix(Time.now())
+    ExqScheduler.start_link(config)
+    :timer.sleep(100) # 3+ Hour
+
+    jobs =
+      get_jobs_from_storage(redis, Storage.queue_key("TimeQ", storage_opts))
+      |> Enum.filter(fn job -> job.class == "TimeWorker" end)
+
+    is_jobs_scheduled_before_start =
+      jobs
+      |> Enum.all?(
+         fn job ->
+           st = List.first(job.args)["scheduled_at"]
+           convert_from_iso_to_unixtime(st) > start_time
+         end)
+    assert(is_jobs_scheduled_before_start == true, inspect(jobs))
+  end
+
   defp get_jobs_from_storage(redis, queue_name) do
     jobs = Redix.command!(redis, ["LRANGE", queue_name, "0", "-1"])
     Enum.map(jobs, &Job.decode/1)
   end
 
   defp convert_from_iso_to_unixtime(date) do
-    {:ok, dt, _} = DateTime.from_iso8601(date)
-    DateTime.to_unix(dt)
+    Timex.parse!(date, "{ISO:Extended:Z}")
+    |> Timex.to_unix()
   end
 
-  defp calculate_sum(first, last, count) do
-    count*(first+last)/2
+  defp assert_continuity(jobs, diff) do
+    schedule_times =
+      jobs
+      |> Enum.map(fn job -> List.first(job.args)["scheduled_at"] end)
+      |> Enum.map(&convert_from_iso_to_unixtime(&1))
+
+    len = length(schedule_times)
+    Enum.with_index(schedule_times)
+    |> Enum.map(
+      fn {time, index} ->
+        if index < len-1 do
+          assert(diff == time - Enum.at(schedule_times, index+1),
+            "index: #{index} job: #{inspect(Enum.at(jobs, index))} job+1: #{inspect(Enum.at(jobs, index+1))} ")
+        end
+     end)
+  end
+
+  defp configure_env(env, timeout, threshold_duration, schedules) do
+    env
+    |> put_in([:server_opts, :timeout], timeout)
+    |> put_in([:server_opts, :missed_jobs_threshold_duration], threshold_duration)
+    |> put_in([:schedules], schedules)
   end
 end
