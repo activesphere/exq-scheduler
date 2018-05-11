@@ -62,6 +62,7 @@ defmodule ExqSchedulerTest do
   end
 
   defp assert_continuity(jobs, diff) do
+    assert length(jobs) > 0, "Jobs list is empty"
     jobs
     |> Enum.chunk_every(2, 1, :discard)
     |> Enum.map( fn [job1, job2] ->
