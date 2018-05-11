@@ -27,7 +27,7 @@ defmodule StorageTest do
     assert length(schedules) == 2
   end
 
-  test "Check if default schedule state is 'ture'" do
+  test "if schedule is enabled by default" do
     storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
     schedules = Storage.load_schedules_config(storage_opts, env())
     schedule = Enum.at(schedules, 0)
