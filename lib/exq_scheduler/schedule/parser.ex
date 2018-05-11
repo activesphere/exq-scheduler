@@ -25,7 +25,7 @@ defmodule ExqScheduler.Schedule.Parser do
       description = Map.get(schedule, @description_key, "")
       opts = %{"include_metadata" => Map.get(schedule, @include_metadata, false)}
 
-      if not Utils.is_string?(schedule_time) do
+      if !is_binary(schedule_time) do
         [schedule_time, schedule_opts] = schedule_time
 
         {
