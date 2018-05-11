@@ -99,6 +99,11 @@ defmodule TestUtils do
     Redix.command!(:redix, ["LRANGE", queue_name, "0", "-1"])
     |> Enum.map(&Job.decode/1)
   end
+
+  def iso_to_unixtime(date) do
+    Timex.parse!(date, "{ISO:Extended:Z}")
+    |> Timex.to_unix()
+  end
 end
 
 defmodule ExqScheduler.Case do

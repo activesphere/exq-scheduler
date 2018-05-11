@@ -61,34 +61,6 @@ defmodule ExqSchedulerTest do
     assert length(jobs) >= 1
   end
 
-  @tag config: configure_env(env(), 10, 10000000, [schedule_cron_1h: %{
-                                                    "cron" => "0 * * * * *",
-                                                    "class" => "TimeWorker",
-                                                    "queue" => "TimeQ",
-                                                    "include_metadata" => true
-                                                 }])
-  test "scheduler should not consider dates before its started" do
-    start_time = Timex.to_unix(Time.now())
-    :timer.sleep(100)
-
-    jobs = get_jobs("TimeWorker", "TimeQ")
-
-    is_jobs_scheduled_before_start =
-      jobs
-      |> Enum.all?(
-         fn job ->
-           st = List.last(job.args)["scheduled_at"]
-           iso_to_unixtime(st) >= start_time
-         end)
-    assert(is_jobs_scheduled_before_start == true,
-      "Start time: #{start_time}  jobs: #{inspect(jobs)}")
-  end
-
-  defp iso_to_unixtime(date) do
-    Timex.parse!(date, "{ISO:Extended:Z}")
-    |> Timex.to_unix()
-  end
-
   defp assert_continuity(jobs, diff) do
     jobs
     |> Enum.chunk_every(2, 1, :discard)
