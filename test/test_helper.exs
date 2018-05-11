@@ -5,12 +5,12 @@ require Logger
 Redix.start_link([database: 1], name: :redix)
 
 defmodule ExqScheduler.Time do
-  @base Timex.to_unix(Timex.now())
+  @base DateTime.to_unix(Timex.now(), :microsecond)
   @scale 60 * 60
 
   def now do
-    elapsed = Timex.to_unix(Timex.now()) - @base
-    Timex.from_unix(@base + elapsed * @scale)
+    elapsed = DateTime.to_unix(Timex.now(), :microsecond) - @base
+    Timex.from_unix(@base + elapsed * @scale, :microsecond)
   end
 end
 
@@ -18,7 +18,6 @@ defmodule TestUtils do
   alias ExqScheduler.Schedule
   alias ExqScheduler.Schedule.TimeRange
   alias ExqScheduler.Storage
-  alias ExqScheduler.Storage.Redis
   alias ExqScheduler.Time
   alias Exq.Support.Job
   import ExUnit.Assertions
@@ -53,6 +52,14 @@ defmodule TestUtils do
     |> put_in(path, value)
   end
 
+  def configure_env(env, timeout, threshold_duration, schedules) do
+    env
+    |> put_in([:server_opts, :timeout], timeout)
+    |> put_in([:server_opts, :missed_jobs_threshold_duration], threshold_duration)
+    |> put_in([:schedules], schedules)
+  end
+
+
   def flush_redis do
     "OK" = Redix.command!(:redix, ["FLUSHDB"])
   end
@@ -80,6 +87,22 @@ defmodule TestUtils do
     collection
     |> Enum.map(&Task.async(fn -> func.(&1) end))
     |> Enum.map(&Task.await/1)
+  end
+
+  def get_jobs(class_name, queue_name \\ "default") do
+    opts = storage_opts()
+    get_jobs_from_storage(Storage.queue_key(queue_name, opts))
+    |> Enum.filter(fn job -> job.class == class_name end)
+  end
+
+  defp get_jobs_from_storage(queue_name) do
+    Redix.command!(:redix, ["LRANGE", queue_name, "0", "-1"])
+    |> Enum.map(&Job.decode/1)
+  end
+
+  def iso_to_unixtime(date) do
+    Timex.parse!(date, "{ISO:Extended:Z}")
+    |> Timex.to_unix()
   end
 end
 

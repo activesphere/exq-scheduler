@@ -86,4 +86,16 @@ defmodule ScheduleParserTest do
                %{"include_metadata" => false}
              }
   end
+
+  test "Raise exception if class is not configured" do
+    schedule = %{
+      "cron" => "1 * * * *",
+      "queue" => "high",
+      "args" => ["/tmp/poop"]
+    }
+
+    assert_raise(ExqScheduler.Schedule.Parser.ConfigurationError, fn ->
+      Parser.get_schedule(schedule)
+    end)
+  end
 end

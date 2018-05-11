@@ -54,6 +54,21 @@ defmodule ExqScheduler.Schedule.Parser do
   end
 
   defp create_job(schedule) do
-    Map.drop(schedule, @non_job_keys) |> Poison.encode!()
+    validate_config(schedule)
+    Map.drop(schedule, @non_job_keys)
+    |> Poison.encode!()
+  end
+
+  defmodule ConfigurationError do
+    defexception message: "Invalid configuration!"
+  end
+
+  defp validate_config(job) do
+    if job["class"] == nil do
+      cron = Map.get(job, "cron")
+      raise ExqScheduler.Schedule.Parser.ConfigurationError,
+        message: "Class is not configured for cron: #{inspect(cron)}. Scheduler: #{inspect(job)}"
+    end
+    :ok
   end
 end

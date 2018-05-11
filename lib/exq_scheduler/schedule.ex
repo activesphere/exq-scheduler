@@ -62,7 +62,7 @@ defmodule ExqScheduler.Schedule do
       description: description,
       cron: cron_exp,
       tz_offset: tz_offset,
-      job: Map.merge(Job.decode(job), %{args: []}),
+      job: Job.decode(job),
       schedule_opts: ScheduleOpts.new(schedule_opts)
     }
   end

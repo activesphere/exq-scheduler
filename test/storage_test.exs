@@ -27,6 +27,13 @@ defmodule StorageTest do
     assert length(schedules) == 2
   end
 
+  test "if schedule is enabled by default" do
+    storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
+    schedules = Storage.load_schedules_config(storage_opts, env())
+    schedule = Enum.at(schedules, 0)
+    assert Storage.is_schedule_enabled?(storage_opts, schedule) == true
+  end
+
   test "is_schedule_enabled?(): It checks if the schedule is enabled or not" do
     storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
     schedules = Storage.load_schedules_config(storage_opts, env())
@@ -45,4 +52,20 @@ defmodule StorageTest do
       assert Storage.is_schedule_enabled?(storage_opts, schedule) == false
     end)
   end
+
+  test "Check if args getting passed to the scheduler" do
+    storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
+    env_local = put_in(env()[:schedules],[schedule_cron_1m: %{
+                                                 "cron" => "* * * * * *",
+                                                 "class" => "SidekiqWorker",
+                                                 "args" => ["cron_1"]
+                                              }])
+
+    schedules = Storage.load_schedules_config(storage_opts, env_local, true)
+    assert length(schedules) >= 1
+
+    schedule = schedules |> Enum.at(0)
+   assert length(schedule.job.args) >= 1
+  end
+
 end
