@@ -9,7 +9,7 @@ defmodule ExqScheduler.Schedule.Utils do
         true
 
       is_list(item) ->
-        Enum.all?(item, fn char -> is_integer(char) and char >= 32 and char <= 128 end)
+        Enum.all?(item, fn char -> is_integer(char) and char >= 32 and char <= 126 end)
 
       true ->
         false
