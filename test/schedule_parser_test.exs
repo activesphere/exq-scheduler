@@ -87,13 +87,15 @@ defmodule ScheduleParserTest do
              }
   end
 
-  test "Exit if class is not configured" do
+  test "Raise exception if class is not configured" do
     schedule = %{
       "cron" => "1 * * * *",
       "queue" => "high",
       "args" => ["/tmp/poop"]
     }
 
-    catch_exit Parser.get_schedule(schedule) == "class is not configured for scheduler"
+    assert_raise(ExqScheduler.Schedule.Parser.ConfigurationError, fn ->
+      Parser.get_schedule(schedule)
+    end)
   end
 end

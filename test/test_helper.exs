@@ -18,7 +18,6 @@ defmodule TestUtils do
   alias ExqScheduler.Schedule
   alias ExqScheduler.Schedule.TimeRange
   alias ExqScheduler.Storage
-  alias ExqScheduler.Storage.Redis
   alias ExqScheduler.Time
   alias Exq.Support.Job
   import ExUnit.Assertions
@@ -88,6 +87,17 @@ defmodule TestUtils do
     collection
     |> Enum.map(&Task.async(fn -> func.(&1) end))
     |> Enum.map(&Task.await/1)
+  end
+
+  def get_jobs(class_name, queue_name \\ "default") do
+    opts = storage_opts()
+    get_jobs_from_storage(Storage.queue_key(queue_name, opts))
+    |> Enum.filter(fn job -> job.class == class_name end)
+  end
+
+  defp get_jobs_from_storage(queue_name) do
+    Redix.command!(:redix, ["LRANGE", queue_name, "0", "-1"])
+    |> Enum.map(&Job.decode/1)
   end
 end
 

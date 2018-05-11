@@ -3,19 +3,15 @@ defmodule ScheduleTest do
   alias ExqScheduler.Time
   import TestUtils
 
-  import Logger
   test "check get_next_run_dates for different timezone" do
-    current_utc = Time.now()
     next_date = get_next_date("0 2 * * * America/New_York")
     expected_next_date = {7, 0}
     assert expected_next_date == next_date
 
-    current_utc = Time.now()
     next_date = get_next_date("0 9 * * * Asia/Kolkata")
     expected_next_date = {3, 30}
     assert expected_next_date == next_date
 
-    current_utc = Time.now()
     next_date = get_next_date("0 12 * * * Asia/Katmandu")
     expected_next_date = {6, 15}
     assert expected_next_date == next_date
@@ -47,7 +43,7 @@ defmodule ScheduleTest do
 
     ref =  Time.now()
     :timer.sleep(500)  # scaled: 30*60sec  (1sec <=> 1hour)
-    diff = Timex.diff(Time.now(), ref, :seconds)    
+    diff = Timex.diff(Time.now(), ref, :seconds)
     assert abs(diff-1800) < acceptable_err
   end
 
