@@ -104,6 +104,26 @@ defmodule TestUtils do
     Timex.parse!(date, "{ISO:Extended:Z}")
     |> Timex.to_unix()
   end
+
+  def assert_continuity(jobs, diff) do
+    assert length(jobs) > 0, "Jobs list is empty"
+    jobs
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.map( fn [job1, job2] ->
+      %{"scheduled_at" => t1} = List.last(job1.args)
+      %{"scheduled_at" => t2} = List.last(job2.args)
+      assert(diff == iso_to_unixtime(t1)-iso_to_unixtime(t2),
+        "Failed. job1: #{inspect(job1)} job2: #{inspect(job2)} ")
+    end)
+  end
+
+  def down(service) do
+    {:ok, _} = Toxiproxy.update(%{name: service, enabled: false})
+  end
+
+  def up(service) do
+    {:ok, _} = Toxiproxy.update(%{name: service, enabled: true})
+  end
 end
 
 defmodule ExqScheduler.Case do
