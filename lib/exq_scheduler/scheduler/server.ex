@@ -57,9 +57,14 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   def update_initial_schedule_times(:first, state) do
-    if Storage.storage_connected?(state.storage_opts) do
-      Enum.filter(state.schedules, &Storage.is_schedule_enabled?(state.storage_opts, &1))
-      |> Storage.persist_schedule_times(state.storage_opts)
+    storage_opts = state.storage_opts
+    if Storage.storage_connected?(storage_opts) do
+      Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
+      |> Storage.persist_schedule_times(storage_opts)
+
+      Enum.map(state.schedules, fn schedule ->
+        Storage.persist_schedule(schedule, storage_opts)
+      end)
 
       next_tick(self(), 0)
     else

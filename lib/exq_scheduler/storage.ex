@@ -29,21 +29,18 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Time
   alias Exq.Support.Job
 
-  def persist_schedule(schedule_props, storage_opts) do
-    {name, desc, cron, job, opts} = schedule_props
-    schedule = Schedule.new(name, desc, cron, job, opts)
-
+  def persist_schedule(schedule, storage_opts) do
     val = Schedule.encode(schedule)
-    _ = Redis.hset(storage_opts.redis, build_schedules_key(storage_opts), name, val)
+    _ = Redis.hset(storage_opts.redis, build_schedules_key(storage_opts), schedule.name, val)
 
     schedule_state =
-      %{enabled: Map.get(opts, "enabled", true)}
+      %{enabled: schedule.schedule_opts.enabled}
       |> Poison.encode!()
 
     Redis.hset(
       storage_opts.redis,
       build_schedule_states_key(storage_opts),
-      name,
+      schedule.name,
       schedule_state
     )
   end

@@ -39,16 +39,14 @@ defmodule StorageTest do
     assert length(schedules) >= 1
 
     Enum.map(schedules, fn schedule ->
-      schedule_props = {
-        schedule.name,
-        schedule.description,
-        Crontab.CronExpression.Composer.compose(schedule.cron),
-        Exq.Support.Job.encode(schedule.job),
-        %{"enabled" => false}
-      }
+      sch = ExqScheduler.Schedule.new(schedule.name,
+      schedule.description,
+      Crontab.CronExpression.Composer.compose(schedule.cron),
+      Exq.Support.Job.encode(schedule.job),
+      %{"enabled" => false})
 
-      Storage.persist_schedule(schedule_props, storage_opts)
-      assert Storage.is_schedule_enabled?(storage_opts, schedule) == false
+      Storage.persist_schedule(sch, storage_opts)
+      assert Storage.is_schedule_enabled?(storage_opts, sch) == false
     end)
   end
 
