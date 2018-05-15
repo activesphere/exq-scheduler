@@ -110,7 +110,7 @@ defmodule ExqScheduler.Storage do
     end)
   end
 
-  def load_schedules_config(storage_opts, env, persist \\ true) do
+  def load_schedules_config(env) do
     schedule_conf_list = Keyword.get(env, :schedules)
 
     if is_nil(schedule_conf_list) or Enum.empty?(schedule_conf_list) do
@@ -118,12 +118,6 @@ defmodule ExqScheduler.Storage do
     else
       Enum.map(schedule_conf_list, fn {name, schedule_conf} ->
         {description, cron, job, opts} = ExqScheduler.Schedule.Parser.get_schedule(schedule_conf)
-
-        if persist do
-          schedule_props = {name, description, cron, job, opts}
-          persist_schedule(schedule_props, storage_opts)
-        end
-
         Schedule.new(name, description, cron, job, opts)
       end)
     end

@@ -22,21 +22,20 @@ defmodule StorageTest do
   end
 
   test "it loads the schedules from the config file" do
-    storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
-    schedules = Storage.load_schedules_config(storage_opts, env())
+    schedules = Storage.load_schedules_config(env())
     assert length(schedules) == 2
   end
 
   test "if schedule is enabled by default" do
     storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
-    schedules = Storage.load_schedules_config(storage_opts, env())
+    schedules = Storage.load_schedules_config(env())
     schedule = Enum.at(schedules, 0)
     assert Storage.is_schedule_enabled?(storage_opts, schedule) == true
   end
 
   test "is_schedule_enabled?(): It checks if the schedule is enabled or not" do
     storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
-    schedules = Storage.load_schedules_config(storage_opts, env())
+    schedules = Storage.load_schedules_config(env())
     assert length(schedules) >= 1
 
     Enum.map(schedules, fn schedule ->
@@ -54,14 +53,13 @@ defmodule StorageTest do
   end
 
   test "Check if args getting passed to the scheduler" do
-    storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
     env_local = put_in(env()[:schedules],[schedule_cron_1m: %{
                                                  "cron" => "* * * * * *",
                                                  "class" => "SidekiqWorker",
                                                  "args" => ["cron_1"]
                                               }])
 
-    schedules = Storage.load_schedules_config(storage_opts, env_local, true)
+    schedules = Storage.load_schedules_config(env_local)
     assert length(schedules) >= 1
 
     schedule = schedules |> Enum.at(0)

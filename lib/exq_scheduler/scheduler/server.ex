@@ -1,5 +1,7 @@
 defmodule ExqScheduler.Scheduler.Server do
   @moduledoc false
+  @storage_reconnect_timeout 500
+
   use GenServer
   alias ExqScheduler.Time
 
@@ -41,8 +43,7 @@ defmodule ExqScheduler.Scheduler.Server do
 
   def init(env) do
     storage_opts = Storage.build_opts(env)
-
-    schedules = Storage.load_schedules_config(storage_opts, env, false)
+    schedules = Storage.load_schedules_config(env)
 
     state = %State{
       schedules: schedules,
@@ -51,15 +52,25 @@ defmodule ExqScheduler.Scheduler.Server do
       env: env
     }
 
-    next_tick(self(), 0)
+    update_initial_schedule_times(:first, state)
     {:ok, state}
+  end
+
+  def update_initial_schedule_times(:first, state) do
+    if Storage.storage_connected?(state.storage_opts) do
+      Enum.filter(state.schedules, &Storage.is_schedule_enabled?(state.storage_opts, &1))
+      |> Storage.persist_schedule_times(state.storage_opts)
+
+      next_tick(self(), 0)
+    else
+      Process.send_after(self(), :first, @storage_reconnect_timeout)
+    end
   end
 
   def handle_info({:tick, time}, state) do
     timeout =
-    if not Storage.is_redis_connected(state.storage_opts) do
-      :timer.sleep(1000)
-      0
+    if not Storage.storage_connected?(state.storage_opts) do
+      @storage_reconnect_timeout # sleep for a while and retry
     else
       handle_tick(state, time)
       state.server_opts.timeout
