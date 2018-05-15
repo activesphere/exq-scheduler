@@ -60,4 +60,14 @@ defmodule ExqSchedulerTest do
     jobs = get_jobs("QWorker", "SuperQ")
     assert length(jobs) >= 1
   end
+
+  @tag config: configure_env(env(), 1000, 1000*3600*2,[schedule_cron_10m: %{
+                                                 "cron" => "*/10 * * * * *",
+                                                 "class" => "DummyWorker1",
+                                                 "include_metadata" => true}])
+  test "order of the jobs should be reverse (recent job first)" do
+    :timer.sleep(2000)
+    jobs = get_jobs("DummyWorker1")
+    assert_continuity(jobs, 10*60)
+  end
 end
