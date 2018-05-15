@@ -29,6 +29,7 @@ defmodule ConnectionTest do
                                                         "cron" => "*/30 * * * * *",
                                                         "class" => "DummyWorker2",
                                                         "include_metadata" => true}])
+  @tag :connection_test
   test "reconnects automatically" do
     down("redis")
     :timer.sleep(500)
