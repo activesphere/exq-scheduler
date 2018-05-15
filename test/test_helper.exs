@@ -79,7 +79,8 @@ defmodule TestUtils do
 
   def redis_pid(idx \\ "test") do
     pid = "redis_#{idx}" |> String.to_atom()
-    {:ok, _} = Redix.start_link(Keyword.get(env(), :redis), name: pid)
+    [redis_opts, redix_opts] = ExqScheduler.redix_args(put_in(env(), [:redis, :name], pid))
+    {:ok, _} = Redix.start_link(redis_opts, redix_opts)
     pid
   end
 

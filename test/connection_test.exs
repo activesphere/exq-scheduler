@@ -26,15 +26,15 @@ defmodule ConnectionTest do
   end
 
   @tag config: configure_env(env(), 100, 1000*1200, [schedule_cron_10m: %{
-                                                        "cron" => "*/10 * * * * *",
+                                                        "cron" => "*/30 * * * * *",
                                                         "class" => "DummyWorker2",
                                                         "include_metadata" => true}])
   test "reconnects automatically" do
     down("redis")
     :timer.sleep(500)
     up("redis")
-    :timer.sleep(1000)
+    :timer.sleep(2000)
     jobs = get_jobs("DummyWorker2")
-    assert_continuity(jobs, 600)
+    assert_continuity(jobs, 1800)
   end
 end

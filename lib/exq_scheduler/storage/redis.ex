@@ -35,6 +35,13 @@ defmodule ExqScheduler.Storage.Redis do
     Redix.command!(redis, ["LLEN", queue])
   end
 
+  def connected?(redis) do
+    case Redix.command(redis, ["PING"]) do
+      {:error, _} -> false
+      {:ok, _} -> true
+    end
+  end
+
   defp decode(result) do
     if result != nil do
       result |> Poison.decode!()

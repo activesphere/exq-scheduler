@@ -162,6 +162,10 @@ defmodule ExqScheduler.Storage do
     end
   end
 
+  def storage_connected?(storage_opts) do
+    Redis.connected?(storage_opts.redis)
+  end
+
   def get_schedules(storage_opts) do
     schedules_key = build_schedules_key(storage_opts)
     keys = Redis.hkeys(storage_opts.redis, schedules_key)

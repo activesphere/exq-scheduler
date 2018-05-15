@@ -16,10 +16,8 @@ defmodule ExqScheduler do
   end
 
   def start_link(env) do
-    redis_opts = Keyword.get(env, :redis)
-
     children = [
-      worker(Redix, [Keyword.drop(redis_opts, [:name]), [name: redis_name(env)]]),
+      worker(Redix, redix_args(env)),
       worker(Server, [env])
     ]
 
@@ -50,5 +48,13 @@ defmodule ExqScheduler do
     else
       opts
     end
+  end
+
+  def redix_args(env) do
+    redis_opts = Keyword.get(env, :redis)
+    [Keyword.drop(redis_opts,[:name, :backoff_initial, :backoff_max]),
+     [name: redis_name(env),
+      backoff_max: redis_opts[:backoff_max],
+      backoff_initial: redis_opts[:backoff_initial]]]
   end
 end

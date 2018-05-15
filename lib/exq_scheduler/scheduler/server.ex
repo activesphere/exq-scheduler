@@ -42,25 +42,30 @@ defmodule ExqScheduler.Scheduler.Server do
   def init(env) do
     storage_opts = Storage.build_opts(env)
 
-    _ = Storage.load_schedules_config(storage_opts, env)
+    schedules = Storage.load_schedules_config(storage_opts, env, false)
 
     state = %State{
-      schedules: Storage.get_schedules(storage_opts),
+      schedules: schedules,
       storage_opts: storage_opts,
       server_opts: build_opts(env),
       env: env
     }
-
-    Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
-    |> Storage.persist_schedule_times(state.storage_opts)
 
     next_tick(self(), 0)
     {:ok, state}
   end
 
   def handle_info({:tick, time}, state) do
-    handle_tick(state, time)
-    next_tick(self(), state.server_opts.timeout)
+    timeout =
+    if not Storage.is_redis_connected(state.storage_opts) do
+      :timer.sleep(1000)
+      0
+    else
+      handle_tick(state, time)
+      state.server_opts.timeout
+    end
+
+    next_tick(self(), timeout)
     {:noreply, state}
   end
 
