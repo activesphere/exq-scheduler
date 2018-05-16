@@ -40,6 +40,13 @@ defmodule ScheduleTest do
     assert abs(diff-1800) < acceptable_err
   end
 
+  test "order of the jobs should be reverse (recent job first)" do
+    build_and_enqueue("* * * * *", 240, Time.now(), redis_pid(0))
+    :timer.sleep(100)
+    jobs = get_jobs("TestJob")
+    assert_continuity(jobs, 60)
+  end
+
   defp get_next_date(cron) do
     schedule = build_schedule(cron)
     date =

@@ -4,13 +4,6 @@ defmodule StorageTest do
   alias ExqScheduler.Storage
   alias ExqScheduler.Time
 
-  defp build_and_enqueue(cron, offset, now, redis) do
-    opts = Storage.build_opts(env([:redis, :name], redis))
-    {schedule, jobs} = build_scheduled_jobs(opts, cron, offset, now)
-    Storage.enqueue_jobs(schedule, jobs, opts)
-    jobs
-  end
-
   test "no duplicate jobs" do
     now = Time.now()
 
