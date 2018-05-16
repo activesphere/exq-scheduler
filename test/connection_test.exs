@@ -25,17 +25,24 @@ defmodule ConnectionTest do
     :ok
   end
 
-  @tag config: configure_env(env(), 100, 1000*1200, [schedule_cron_10m: %{
+  @tag config: configure_env(env(), 500, 1000*60*60, [schedule_cron_10m: %{
                                                         "cron" => "*/30 * * * * *",
                                                         "class" => "DummyWorker2",
                                                         "include_metadata" => true}])
   @tag :connection_test
   test "reconnects automatically" do
     down("redis")
-    :timer.sleep(500)
+    :timer.sleep(1000)
+    max_first_sch_time = Timex.to_unix(Time.now())
+
     up("redis")
-    :timer.sleep(2000)
+    :timer.sleep(1000)
     jobs = get_jobs("DummyWorker2")
-    assert_continuity(jobs, 1800)
+
+    assert_continuity(jobs, 30*60)
+    first_job = List.last(jobs)
+    first_sch_time = schedule_time_from_job(first_job) |> iso_to_unixtime()
+
+    assert first_sch_time < max_first_sch_time
   end
 end
