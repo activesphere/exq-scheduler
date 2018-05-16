@@ -8,7 +8,7 @@ defmodule StorageTest do
     now = Time.now()
 
     pmap(1..20, fn idx ->
-      build_and_enqueue("*/2 * * * *", 60, now, redis_pid(idx))
+      build_and_enqueue("*/2 * * * *", 180, now, redis_pid(idx))
     end)
 
     assert_job_uniqueness()
