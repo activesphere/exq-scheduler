@@ -60,6 +60,9 @@ defmodule ExqScheduler.Scheduler.Server do
     storage_opts = state.storage_opts
     if Storage.storage_connected?(storage_opts) do
       Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
+      |> Enum.filter(fn schedule ->
+        Storage.get_schedule_first_run_time(storage_opts, schedule) == nil
+      end)
       |> Storage.persist_schedule_times(storage_opts)
 
       Enum.map(state.schedules, fn schedule ->
