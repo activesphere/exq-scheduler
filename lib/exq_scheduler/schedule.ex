@@ -107,20 +107,20 @@ defmodule ExqScheduler.Schedule do
     get_dates(enum, schedule.tz_offset, collect_till)
   end
 
-  def get_previous_run_dates(cron, tz_offset, ref_time \\ nil) do
+  def get_previous_schedule_date(cron, tz_offset, ref_time \\ nil) do
     ref_time = ref_time || Time.now()
     now = add_tz(ref_time, tz_offset)
 
-    Scheduler.get_previous_run_dates(cron, now)
-    |> get_dates(tz_offset)
+    Scheduler.get_previous_run_date!(cron, now)
+    |> Timex.subtract(tz_offset)
   end
 
-  def get_next_run_dates(cron, tz_offset, ref_time \\ nil) do
+  def get_next_schedule_date(cron, tz_offset, ref_time \\ nil) do
     ref_time = ref_time || Time.now()  
     now = add_tz(ref_time, tz_offset)
 
-    Scheduler.get_next_run_dates(cron, now)
-    |> get_dates(tz_offset)
+    Scheduler.get_next_run_date!(cron, now)
+    |> Timex.subtract(tz_offset)
   end
 
   defp add_tz(time, tz_offset) do

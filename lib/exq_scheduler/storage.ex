@@ -55,37 +55,33 @@ defmodule ExqScheduler.Storage do
     ref_time = ref_time || Time.now()
 
     Enum.each(schedules, fn schedule ->
-      prev_times = Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset, ref_time)
+      prev_time = Schedule.get_previous_schedule_date(schedule.cron, schedule.tz_offset, ref_time)
 
-      if not Enum.empty?(prev_times) do
-        prev_time =
-          Enum.at(prev_times, 0)
-          |> Timex.add(schedule.tz_offset)
-          |> Poison.encode!()
+      prev_time =
+        prev_time
+        |> Timex.add(schedule.tz_offset)
+        |> Poison.encode!()
+      
+      Redis.hset(
+        storage_opts.redis,
+        build_schedule_times_key(storage_opts, :prev),
+        schedule.name,
+        prev_time
+      )
 
-        Redis.hset(
-          storage_opts.redis,
-          build_schedule_times_key(storage_opts, :prev),
-          schedule.name,
-          prev_time
-        )
-      end
+      next_time = Schedule.get_next_schedule_date(schedule.cron, schedule.tz_offset, ref_time)
 
-      next_times = Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset, ref_time)
-
-      if not Enum.empty?(next_times) do
-        next_time =
-          Enum.at(next_times, 0)
-          |> Timex.add(schedule.tz_offset)
-          |> Poison.encode!()
-
-        Redis.hset(
-          storage_opts.redis,
-          build_schedule_times_key(storage_opts, :next),
-          schedule.name,
-          next_time
-        )
-      end
+      next_time =
+        next_time
+        |> Timex.add(schedule.tz_offset)
+        |> Poison.encode!()
+      
+      Redis.hset(
+        storage_opts.redis,
+        build_schedule_times_key(storage_opts, :next),
+        schedule.name,
+        next_time
+      )
 
       now = ref_time |> Timex.to_naive_datetime() |> Poison.encode!()
 

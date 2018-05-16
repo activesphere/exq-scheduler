@@ -3,7 +3,7 @@ defmodule ScheduleTest do
   alias ExqScheduler.Time
   import TestUtils
 
-  test "check get_next_run_dates for different timezone" do
+  test "check get_next_schedule_date for different timezone" do
     next_date = get_next_date("0 2 * * * America/New_York") # -06:00
     expected_next_date = {7, 0}
     assert expected_next_date == next_date
@@ -17,7 +17,7 @@ defmodule ScheduleTest do
     assert expected_next_date == next_date
   end
 
-  test "check get_prev_run_dates for different timezone" do
+  test "check get_previous_schedule_date for different timezone" do
     prev_date = get_prev_date("0 2 * * * America/New_York") # -06:00
     expected_prev_date = {7, 0}
     assert expected_prev_date == prev_date
@@ -50,16 +50,14 @@ defmodule ScheduleTest do
   defp get_next_date(cron) do
     schedule = build_schedule(cron)
     date =
-      ExqScheduler.Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset)
-      |> Enum.at(0)
+      ExqScheduler.Schedule.get_next_schedule_date(schedule.cron, schedule.tz_offset)
     {date.hour(), date.minute()}
   end
 
   defp get_prev_date(cron) do
     schedule = build_schedule(cron)
     date =
-      ExqScheduler.Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset)
-      |> Enum.at(0)
+      ExqScheduler.Schedule.get_previous_schedule_date(schedule.cron, schedule.tz_offset)
     {date.hour(), date.minute()}
   end
 end
