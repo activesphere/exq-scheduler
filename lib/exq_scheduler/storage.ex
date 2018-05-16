@@ -51,9 +51,11 @@ defmodule ExqScheduler.Storage do
     |> Storage.Opts.new()
   end
 
-  def persist_schedule_times(schedules, storage_opts) do
+  def persist_schedule_times(schedules, storage_opts, ref_time \\ nil) do
+    ref_time = ref_time || Time.now()
+
     Enum.each(schedules, fn schedule ->
-      prev_times = Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset)
+      prev_times = Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset, ref_time)
 
       if not Enum.empty?(prev_times) do
         prev_time =
@@ -69,7 +71,7 @@ defmodule ExqScheduler.Storage do
         )
       end
 
-      next_times = Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset)
+      next_times = Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset, ref_time)
 
       if not Enum.empty?(next_times) do
         next_time =
@@ -85,7 +87,7 @@ defmodule ExqScheduler.Storage do
         )
       end
 
-      now = Time.now() |> Timex.to_naive_datetime() |> Poison.encode!()
+      now = ref_time |> Timex.to_naive_datetime() |> Poison.encode!()
 
       schedule_first_run = get_schedule_first_run_time(storage_opts, schedule)
 

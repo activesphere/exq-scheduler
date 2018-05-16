@@ -7,7 +7,7 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defmodule State do
     @moduledoc false
-    defstruct schedules: nil, storage_opts: nil, server_opts: nil, range: nil, env: nil
+    defstruct schedules: nil, storage_opts: nil, server_opts: nil, range: nil, env: nil, start_time: nil
   end
 
   defmodule Opts do
@@ -49,7 +49,8 @@ defmodule ExqScheduler.Scheduler.Server do
       schedules: schedules,
       storage_opts: storage_opts,
       server_opts: build_opts(env),
-      env: env
+      env: env,
+      start_time: Time.now()
     }
 
     update_initial_schedule_times(:first, state)
@@ -63,7 +64,7 @@ defmodule ExqScheduler.Scheduler.Server do
       |> Enum.filter(fn schedule ->
         Storage.get_schedule_first_run_time(storage_opts, schedule) == nil
       end)
-      |> Storage.persist_schedule_times(storage_opts)
+      |> Storage.persist_schedule_times(storage_opts, state.start_time)
 
       Enum.map(state.schedules, fn schedule ->
         Storage.persist_schedule(schedule, storage_opts)
