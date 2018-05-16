@@ -81,7 +81,6 @@ defmodule ExqScheduler.Schedule do
   def get_jobs(storage_opts, schedule, time_range) do
     get_missed_run_dates(storage_opts, schedule, time_range.t_start)
     |> Enum.reverse
-    |> Enum.concat(get_next_run_dates(schedule.cron, schedule.tz_offset))
     |> Enum.map(&ScheduledJob.new(schedule.job, &1))
   end
 

@@ -61,5 +61,24 @@ defmodule ExqSchedulerTest do
     assert length(jobs) >= 1
   end
 
+  @tag config: configure_env(env(), 200, 10000, [schedule_cron_1m: %{
+                                                     "cron" => "0 0 30 1 * *",
+                                                     #1st of jan every year
+                                                     "class" => "AheadTimeWorker",
+                                                     "include_metadata" => true
+                                                  }])
+  test "jobs should not be added ahead of time" do
+    :timer.sleep(500)
+    
+    jobs = get_jobs("AheadTimeWorker")
+    now = Time.now()
+
+    if length(jobs) > 0 do
+      latest_job_time =
+        List.first(jobs)
+        |> schedule_time_from_job()
+        |> Timex.parse!( "{ISO:Extended:Z}")
+      assert latest_job_time.year() < now.year()
+    end
   end
 end
