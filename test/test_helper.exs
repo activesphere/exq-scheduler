@@ -113,13 +113,17 @@ defmodule TestUtils do
     |> Timex.to_unix()
   end
 
+  def schedule_time_from_job(job) do
+    List.last(job.args)["scheduled_at"]
+  end
+
   def assert_continuity(jobs, diff) do
     assert length(jobs) > 0, "Jobs list is empty"
     jobs
     |> Enum.chunk_every(2, 1, :discard)
     |> Enum.map( fn [job1, job2] ->
-      %{"scheduled_at" => t1} = List.last(job1.args)
-      %{"scheduled_at" => t2} = List.last(job2.args)
+      t1 = schedule_time_from_job(job1)
+      t2 = schedule_time_from_job(job2)
       assert(diff == iso_to_unixtime(t1)-iso_to_unixtime(t2),
         "Failed. job1: #{inspect(job1)} job2: #{inspect(job2)} ")
     end)
