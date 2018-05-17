@@ -1,7 +1,6 @@
 defmodule ExqSchedulerTest do
   use ExqScheduler.Case, async: false
   import TestUtils
-  require Logger
   alias ExqScheduler.Time
 
   setup context do

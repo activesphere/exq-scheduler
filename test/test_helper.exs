@@ -1,7 +1,5 @@
 ExUnit.start(exclude: [:integration]) # Skip connection test by default
 
-require Logger
-
 Redix.start_link([database: 1], name: :redix)
 
 defmodule ExqScheduler.Time do
