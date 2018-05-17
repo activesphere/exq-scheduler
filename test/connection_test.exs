@@ -33,11 +33,17 @@ defmodule ConnectionTest do
     down("redis")
     :timer.sleep(250)
 
+    min_sch_time = Timex.to_unix(Time.now())
     up("redis")
     :timer.sleep(1000)
-    jobs = get_jobs("DummyWorker2")
 
-    assert_continuity(jobs, 30*60)
+    jobs = get_jobs("DummyWorker2")
+    new_jobs_added? =
+      Enum.any?(jobs, fn job ->
+        sch_time = schedule_time_from_job(job) |> iso_to_unixtime()
+        sch_time > min_sch_time
+      end)
+    assert new_jobs_added?
   end
 
   @tag config: configure_env(env(), 500, 1000*60*60, [schedule_cron: %{
