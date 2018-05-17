@@ -1,4 +1,4 @@
-ExUnit.start()
+ExUnit.start(exclude: [:integration])
 
 Redix.start_link([database: 1], name: :redix)
 
