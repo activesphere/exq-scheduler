@@ -92,9 +92,9 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defp handle_tick(state) do
     now = Time.now()
-    Storage.filter_active_jobs(state.storage_opts, state.schedules, get_range(state, now))
+    Storage.filter_active_jobs(state.storage_opts, state.schedules, get_range(state, now), now)
     |> Enum.map(fn {schedule, jobs} ->
-      Storage.enqueue_jobs(schedule, jobs, state.storage_opts)
+      Storage.enqueue_jobs(schedule, jobs, state.storage_opts, now)
     end)
   end
 

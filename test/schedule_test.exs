@@ -50,14 +50,14 @@ defmodule ScheduleTest do
   defp get_next_date(cron) do
     schedule = build_schedule(cron)
     date =
-      ExqScheduler.Schedule.get_next_schedule_date(schedule.cron, schedule.tz_offset)
+      ExqScheduler.Schedule.get_next_schedule_date(schedule.cron, schedule.tz_offset, Time.now())
     {date.hour(), date.minute()}
   end
 
   defp get_prev_date(cron) do
     schedule = build_schedule(cron)
     date =
-      ExqScheduler.Schedule.get_previous_schedule_date(schedule.cron, schedule.tz_offset)
+      ExqScheduler.Schedule.get_previous_schedule_date(schedule.cron, schedule.tz_offset, Time.now())
     {date.hour(), date.minute()}
   end
 end

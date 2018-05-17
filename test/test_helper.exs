@@ -34,13 +34,13 @@ defmodule TestUtils do
   def build_scheduled_jobs(opts, cron, offset, now \\ Time.now()) do
     schedule = build_schedule(cron)
     time_range = build_time_range(now, offset)
-    {schedule, Schedule.get_jobs(opts, schedule, time_range)}
+    {schedule, Schedule.get_jobs(opts, schedule, time_range, now)}
   end
 
   def build_and_enqueue(cron, offset, now, redis) do
     opts = Storage.build_opts(env([:redis, :name], redis))
     {schedule, jobs} = build_scheduled_jobs(opts, cron, offset, now)
-    Storage.enqueue_jobs(schedule, jobs, opts)
+    Storage.enqueue_jobs(schedule, jobs, opts, now)
     jobs
   end
 

@@ -46,7 +46,7 @@ defmodule ConnectionTest do
     assert new_jobs_added?
   end
 
-  @tag config: configure_env(env(), 500, 1000*60*60, [schedule_cron: %{
+  @tag config: configure_env(env(), 500, 1000*60*120, [schedule_cron: %{
                                                          "cron" => "*/30 * * * * *",
                                                          "class" => "DummyWorker2",
                                                          "include_metadata" => true}])

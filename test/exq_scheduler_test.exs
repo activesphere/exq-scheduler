@@ -48,13 +48,13 @@ defmodule ExqSchedulerTest do
     assert_continuity(jobs, 20*60)
   end
 
-  @tag config: configure_env(env(), 1000, 10000, [schedule_cron_1m: %{
-                                                   "cron" => "* * * * * *",
-                                                   "class" => "QWorker",
-                                                   "queue" => "SuperQ"
-                                                }])
+  @tag config: configure_env(env(), 500, 1000*60*45, [schedule_cron_1m: %{
+                                                         "cron" => "* * * * * *",
+                                                         "class" => "QWorker",
+                                                         "queue" => "SuperQ"
+                                                      }])
   test "Check schedules are getting added to correct queues" do
-    :timer.sleep(3000)
+    :timer.sleep(1000)
 
     jobs = get_jobs("QWorker", "SuperQ")
     assert length(jobs) >= 1
