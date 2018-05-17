@@ -27,10 +27,10 @@ defmodule ExqSchedulerTest do
     assert_job_uniqueness()
   end
 
-  @tag config: configure_env(env(), 1500, 1000,[schedule_cron_1h: %{
-                                                 "cron" => "0 * * * * *",
-                                                 "class" => "DummyWorker1",
-                                                 "include_metadata" => true}])
+  @tag config: configure_env(env(), 1250, 1000, [schedule_cron_1h: %{
+                                                    "cron" => "0 * * * * *",
+                                                    "class" => "DummyWorker1",
+                                                    "include_metadata" => true}])
   test "check continuity" do
     :timer.sleep(4000)
 
@@ -38,15 +38,15 @@ defmodule ExqSchedulerTest do
     assert_continuity(jobs, 3600)
   end
 
-  @tag config: configure_env(env(), 100, 1000*1200, [schedule_cron_1m: %{
-                                                   "cron" => "*/10 * * * * *",
+  @tag config: configure_env(env(), 500, 1000*3600, [schedule_cron_1m: %{
+                                                   "cron" => "*/20 * * * * *",
                                                    "class" => "DummyWorker2",
                                                    "include_metadata" => true}])
   test "check for missing jobs" do
     :timer.sleep(4000)
 
     jobs = get_jobs("DummyWorker2")
-    assert_continuity(jobs, 10*60)
+    assert_continuity(jobs, 20*60)
   end
 
   @tag config: configure_env(env(), 1000, 10000, [schedule_cron_1m: %{
