@@ -53,11 +53,11 @@ defmodule ExqScheduler.Scheduler.Server do
       start_time: Time.now()
     }
 
-    update_initial_schedule_times(:first, state)
+    Process.send_after(self(), :first, @storage_reconnect_timeout)
     {:ok, state}
   end
 
-  def update_initial_schedule_times(:first, state) do
+  def handle_info(:first, state) do
     storage_opts = state.storage_opts
     if Storage.storage_connected?(storage_opts) do
       Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
@@ -74,15 +74,16 @@ defmodule ExqScheduler.Scheduler.Server do
     else
       Process.send_after(self(), :first, @storage_reconnect_timeout)
     end
+    {:noreply, state}
   end
 
   def handle_info({:tick, time}, state) do
     timeout =
-    if not Storage.storage_connected?(state.storage_opts) do
-      @storage_reconnect_timeout # sleep for a while and retry
-    else
+    if Storage.storage_connected?(state.storage_opts) do
       handle_tick(state, time)
       state.server_opts.timeout
+    else
+      @storage_reconnect_timeout # sleep for a while and retry
     end
 
     next_tick(self(), timeout)
