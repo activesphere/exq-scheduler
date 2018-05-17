@@ -1,4 +1,4 @@
-ExUnit.start(exclude: [:integration]) # Skip connection test by default
+ExUnit.start()
 
 require Logger
 
