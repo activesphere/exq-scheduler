@@ -26,7 +26,7 @@ defmodule ExqSchedulerTest do
     assert_job_uniqueness()
   end
 
-  @tag config: configure_env(env(), 1250, 1000, [schedule_cron_1h: %{
+  @tag config: configure_env(env(), 1250, 1000*60*120, [schedule_cron_1h: %{
                                                     "cron" => "0 * * * * *",
                                                     "class" => "DummyWorker1",
                                                     "include_metadata" => true}])

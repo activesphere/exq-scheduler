@@ -77,10 +77,10 @@ defmodule ExqScheduler.Scheduler.Server do
     {:noreply, state}
   end
 
-  def handle_info({:tick, time}, state) do
+  def handle_info(:tick, state) do
     timeout =
     if Storage.storage_connected?(state.storage_opts) do
-      handle_tick(state, time)
+      handle_tick(state)
       state.server_opts.timeout
     else
       @storage_reconnect_timeout # sleep for a while and retry
@@ -90,7 +90,7 @@ defmodule ExqScheduler.Scheduler.Server do
     {:noreply, state}
   end
 
-  defp handle_tick(state, time) do
+  defp handle_tick(state) do
     now = Time.now()
     Storage.filter_active_jobs(state.storage_opts, state.schedules, get_range(state, now))
     |> Enum.map(fn {schedule, jobs} ->
@@ -99,8 +99,7 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp next_tick(server, timeout) do
-    time = Time.now() |> Timex.to_naive_datetime()
-    Process.send_after(server, {:tick, time}, timeout)
+    Process.send_after(server, :tick, timeout)
   end
 
   defp get_range(state, time) do
