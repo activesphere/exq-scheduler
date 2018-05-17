@@ -29,8 +29,48 @@ defmodule ConnectionTest do
                                                         "cron" => "*/30 * * * * *",
                                                         "class" => "DummyWorker2",
                                                         "include_metadata" => true}])
-  @tag :connection_test
-  test "reconnects automatically" do
+  @tag :integration
+  test "whether reconnects automatically" do
+    down("redis")
+    :timer.sleep(250)
+
+    up("redis")
+    :timer.sleep(1000)
+    jobs = get_jobs("DummyWorker2")
+
+    assert_continuity(jobs, 30*60)
+  end
+
+  require Logger
+  @tag config: configure_env(env(), 500, 1000*60*60, [schedule_cron: %{
+                                                         "cron" => "*/30 * * * * *",
+                                                         "class" => "DummyWorker2",
+                                                         "include_metadata" => true}])
+  @tag :integration
+  test "continuity during network failure" do
+    :timer.sleep(2000)
+    jobs = get_jobs("DummyWorker2")
+    Logger.info(length(jobs))
+    assert_continuity(jobs, 30*60)
+    
+    down("redis")
+    :timer.sleep(1000)
+
+    up("redis")
+    :timer.sleep(1000)
+    jobs = get_jobs("DummyWorker2")
+    Logger.info(length(jobs))
+    assert_continuity(jobs, 30*60)
+  end
+
+  
+  require Logger
+  @tag config: configure_env(env(), 500, 1000*60*60, [schedule_cron: %{
+                                                        "cron" => "*/30 * * * * *",
+                                                        "class" => "DummyWorker2",
+                                                        "include_metadata" => true}])
+  @tag :integration
+  test "to check whether scheduler considers window after reconnection" do
     down("redis")
     :timer.sleep(1000)
     max_first_sch_time = Timex.to_unix(Time.now())
