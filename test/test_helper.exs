@@ -10,6 +10,10 @@ defmodule ExqScheduler.Time do
     elapsed = DateTime.to_unix(Timex.now(), :microsecond) - @base
     Timex.from_unix(@base + elapsed * @scale, :microsecond)
   end
+
+  def scale_duration(duration) do
+    div(duration, @scale)
+  end
 end
 
 defmodule TestUtils do
