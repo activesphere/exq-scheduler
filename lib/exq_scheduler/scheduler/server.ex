@@ -119,7 +119,7 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp get_timeout(schedule_time, current_time) do
-    diff = Timex.diff(schedule_time, Time.now(), :milliseconds)
+    diff = Timex.diff(schedule_time, current_time, :milliseconds)
     if diff > 0 do
       if diff > @max_timeout do
         @max_timeout + @failsafe_delay
