@@ -14,22 +14,19 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defmodule Opts do
     @moduledoc false
-    @enforce_keys [:timeout]
-    defstruct timeout: nil, enqueue_missed_jobs: false, missed_jobs_threshold_duration: nil
+    defstruct enqueue_missed_jobs: false, missed_jobs_threshold_duration: nil
 
     def new(opts) do
-      timeout = opts[:timeout]
       enqueue_missed_jobs = opts[:enqueue_missed_jobs]
 
       missed_jobs_threshold_duration =
         if enqueue_missed_jobs do
           opts[:missed_jobs_threshold_duration]
         else
-          timeout
+          0
         end
 
       %__MODULE__{
-        timeout: timeout,
         enqueue_missed_jobs: enqueue_missed_jobs,
         missed_jobs_threshold_duration: missed_jobs_threshold_duration
       }

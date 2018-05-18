@@ -26,7 +26,7 @@ defmodule ExqSchedulerTest do
     assert_job_uniqueness()
   end
 
-  @tag config: configure_env(env(), 1250, 1000*60*120, [schedule_cron_1h: %{
+  @tag config: configure_env(env(), 1000*60*120, [schedule_cron_1h: %{
                                                     "cron" => "0 * * * * *",
                                                     "class" => "DummyWorker1",
                                                     "include_metadata" => true}])
@@ -37,7 +37,7 @@ defmodule ExqSchedulerTest do
     assert_continuity(jobs, 3600)
   end
 
-  @tag config: configure_env(env(), 500, 1000*3600, [schedule_cron_1m: %{
+  @tag config: configure_env(env(), 1000*3600, [schedule_cron_1m: %{
                                                    "cron" => "*/20 * * * * *",
                                                    "class" => "DummyWorker2",
                                                    "include_metadata" => true}])
@@ -48,7 +48,7 @@ defmodule ExqSchedulerTest do
     assert_continuity(jobs, 20*60)
   end
 
-  @tag config: configure_env(env(), 500, 1000*60*45, [schedule_cron_1m: %{
+  @tag config: configure_env(env(), 1000*60*45, [schedule_cron_1m: %{
                                                          "cron" => "* * * * * *",
                                                          "class" => "QWorker",
                                                          "queue" => "SuperQ"
@@ -60,7 +60,7 @@ defmodule ExqSchedulerTest do
     assert length(jobs) >= 1
   end
 
-  @tag config: configure_env(env(), 200, 10000, [schedule_cron_1m: %{
+  @tag config: configure_env(env(), 10000, [schedule_cron_1m: %{
                                                      "cron" => "0 0 30 1 * *",
                                                      #1st of jan every year
                                                      "class" => "AheadTimeWorker",

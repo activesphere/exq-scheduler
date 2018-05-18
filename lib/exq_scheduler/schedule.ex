@@ -1,6 +1,4 @@
 defmodule ExqScheduler.Schedule do
-  alias ExqScheduler.Time
-
   @default_queue "default"
 
   defmodule ScheduleOpts do
@@ -128,7 +126,7 @@ defmodule ExqScheduler.Schedule do
     end
   end
 
-  defp get_dates(enum, tz_offset, collect_till \\ nil) do
+  defp get_dates(enum, tz_offset, collect_till) do
     dates =
       if collect_till do
         Stream.take_while(enum, collect_till) |> Enum.to_list()

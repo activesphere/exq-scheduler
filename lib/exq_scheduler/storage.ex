@@ -26,7 +26,6 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Schedule.Parser
   alias ExqScheduler.Storage.Redis
   alias ExqScheduler.Storage
-  alias ExqScheduler.Time
   alias Exq.Support.Job
 
   def persist_schedule(schedule, storage_opts) do

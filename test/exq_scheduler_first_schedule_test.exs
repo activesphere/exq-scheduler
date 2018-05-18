@@ -17,7 +17,7 @@ defmodule ExqSchedulerFirstScheduleTest do
 
 
   test "scheduler should not consider dates before its started" do
-    config = configure_env(env(), 10, 10000000, [schedule_cron_1h: %{
+    config = configure_env(env(), 10000000, [schedule_cron_1h: %{
                                                     "cron" => "0 * * * * *",
                                                     "class" => "TimeWorker",
                                                     "queue" => "TimeQ",
