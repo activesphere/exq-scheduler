@@ -33,7 +33,7 @@ defmodule ExqSchedulerFirstScheduleTest do
       jobs
       |> Enum.all?(
          fn job ->
-           st = List.last(job.args)["scheduled_at"]
+           st = schedule_time_from_job(job)
            iso_to_unixtime(st) >= start_time
          end)
     assert(is_jobs_scheduled_before_start,

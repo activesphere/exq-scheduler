@@ -29,21 +29,18 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Time
   alias Exq.Support.Job
 
-  def persist_schedule(schedule_props, storage_opts) do
-    {name, desc, cron, job, opts} = schedule_props
-    schedule = Schedule.new(name, desc, cron, job, opts)
-
+  def persist_schedule(schedule, storage_opts) do
     val = Schedule.encode(schedule)
-    _ = Redis.hset(storage_opts.redis, build_schedules_key(storage_opts), name, val)
+    _ = Redis.hset(storage_opts.redis, build_schedules_key(storage_opts), schedule.name, val)
 
     schedule_state =
-      %{enabled: Map.get(opts, "enabled", true)}
+      %{enabled: schedule.schedule_opts.enabled}
       |> Poison.encode!()
 
     Redis.hset(
       storage_opts.redis,
       build_schedule_states_key(storage_opts),
-      name,
+      schedule.name,
       schedule_state
     )
   end
@@ -54,41 +51,37 @@ defmodule ExqScheduler.Storage do
     |> Storage.Opts.new()
   end
 
-  def persist_schedule_times(schedules, storage_opts) do
+  def persist_schedule_times(schedules, storage_opts, ref_time) do
     Enum.each(schedules, fn schedule ->
-      prev_times = Schedule.get_previous_run_dates(schedule.cron, schedule.tz_offset)
+      prev_time = Schedule.get_previous_schedule_date(schedule.cron, schedule.tz_offset, ref_time)
 
-      if not Enum.empty?(prev_times) do
-        prev_time =
-          Enum.at(prev_times, 0)
-          |> Timex.add(schedule.tz_offset)
-          |> Poison.encode!()
+      prev_time =
+        prev_time
+        |> Timex.add(schedule.tz_offset)
+        |> Poison.encode!()
+      
+      Redis.hset(
+        storage_opts.redis,
+        build_schedule_times_key(storage_opts, :prev),
+        schedule.name,
+        prev_time
+      )
 
-        Redis.hset(
-          storage_opts.redis,
-          build_schedule_times_key(storage_opts, :prev),
-          schedule.name,
-          prev_time
-        )
-      end
+      next_time = Schedule.get_next_schedule_date(schedule.cron, schedule.tz_offset, ref_time)
 
-      next_times = Schedule.get_next_run_dates(schedule.cron, schedule.tz_offset)
+      next_time =
+        next_time
+        |> Timex.add(schedule.tz_offset)
+        |> Poison.encode!()
+      
+      Redis.hset(
+        storage_opts.redis,
+        build_schedule_times_key(storage_opts, :next),
+        schedule.name,
+        next_time
+      )
 
-      if not Enum.empty?(next_times) do
-        next_time =
-          Enum.at(next_times, 0)
-          |> Timex.add(schedule.tz_offset)
-          |> Poison.encode!()
-
-        Redis.hset(
-          storage_opts.redis,
-          build_schedule_times_key(storage_opts, :next),
-          schedule.name,
-          next_time
-        )
-      end
-
-      now = Time.now() |> Timex.to_naive_datetime() |> Poison.encode!()
+      now = ref_time |> Timex.to_naive_datetime() |> Poison.encode!()
 
       schedule_first_run = get_schedule_first_run_time(storage_opts, schedule)
 
@@ -110,7 +103,7 @@ defmodule ExqScheduler.Storage do
     end)
   end
 
-  def load_schedules_config(storage_opts, env, persist \\ true) do
+  def load_schedules_config(env) do
     schedule_conf_list = Keyword.get(env, :schedules)
 
     if is_nil(schedule_conf_list) or Enum.empty?(schedule_conf_list) do
@@ -118,12 +111,6 @@ defmodule ExqScheduler.Storage do
     else
       Enum.map(schedule_conf_list, fn {name, schedule_conf} ->
         {description, cron, job, opts} = ExqScheduler.Schedule.Parser.get_schedule(schedule_conf)
-
-        if persist do
-          schedule_props = {name, description, cron, job, opts}
-          persist_schedule(schedule_props, storage_opts)
-        end
-
         Schedule.new(name, description, cron, job, opts)
       end)
     end
@@ -162,6 +149,10 @@ defmodule ExqScheduler.Storage do
     end
   end
 
+  def storage_connected?(storage_opts) do
+    Redis.connected?(storage_opts.redis)
+  end
+
   def get_schedules(storage_opts) do
     schedules_key = build_schedules_key(storage_opts)
     keys = Redis.hkeys(storage_opts.redis, schedules_key)
@@ -175,18 +166,18 @@ defmodule ExqScheduler.Storage do
     end)
   end
 
-  def filter_active_jobs(storage_opts, schedules, time_range) do
+  def filter_active_jobs(storage_opts, schedules, time_range, ref_time) do
     Enum.filter(schedules, fn schedule ->
       Storage.is_schedule_enabled?(storage_opts, schedule)
     end)
     |> Enum.map(fn schedule ->
-      jobs = Schedule.get_jobs(storage_opts, schedule, time_range)
+      jobs = Schedule.get_jobs(storage_opts, schedule, time_range, ref_time)
       {schedule, jobs}
     end)
   end
 
-  def enqueue_jobs(schedule, jobs, storage_opts) do
-    Enum.each(jobs, &enqueue_job(schedule, &1, storage_opts))
+  def enqueue_jobs(schedule, jobs, storage_opts, ref_time) do
+    Enum.each(jobs, &enqueue_job(schedule, &1, storage_opts, ref_time))
   end
 
   def queue_key(queue_name, storage_opts) do
@@ -195,7 +186,7 @@ defmodule ExqScheduler.Storage do
   end
 
   # TODO: Update schedule.first_run, schedule.last_run
-  defp enqueue_job(schedule, scheduled_job, storage_opts) do
+  defp enqueue_job(schedule, scheduled_job, storage_opts, ref_time) do
     {job, time} = {scheduled_job.job, scheduled_job.time}
 
     job =
@@ -223,7 +214,7 @@ defmodule ExqScheduler.Storage do
     ]
 
     enqueue_key = build_enqueued_jobs_key(storage_opts)
-    persist_schedule_times([schedule], storage_opts)
+    persist_schedule_times([schedule], storage_opts, ref_time)
     Redis.cas(storage_opts.redis, build_lock_key(job, time, enqueue_key), commands)
   end
 

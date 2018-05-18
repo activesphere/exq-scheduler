@@ -1,6 +1,4 @@
-ExUnit.start()
-
-require Logger
+ExUnit.start(exclude: [:integration])
 
 Redix.start_link([database: 1], name: :redix)
 
@@ -36,7 +34,14 @@ defmodule TestUtils do
   def build_scheduled_jobs(opts, cron, offset, now \\ Time.now()) do
     schedule = build_schedule(cron)
     time_range = build_time_range(now, offset)
-    {schedule, Schedule.get_jobs(opts, schedule, time_range)}
+    {schedule, Schedule.get_jobs(opts, schedule, time_range, now)}
+  end
+
+  def build_and_enqueue(cron, offset, now, redis) do
+    opts = Storage.build_opts(env([:redis, :name], redis))
+    {schedule, jobs} = build_scheduled_jobs(opts, cron, offset, now)
+    Storage.enqueue_jobs(schedule, jobs, opts, now)
+    jobs
   end
 
   def storage_opts do
@@ -79,7 +84,8 @@ defmodule TestUtils do
 
   def redis_pid(idx \\ "test") do
     pid = "redis_#{idx}" |> String.to_atom()
-    {:ok, _} = Redix.start_link(Keyword.get(env(), :redis), name: pid)
+    [redis_opts, redix_opts] = ExqScheduler.redix_args(put_in(env(), [:redis, :name], pid))
+    {:ok, _} = Redix.start_link(redis_opts, redix_opts)
     pid
   end
 
@@ -103,6 +109,30 @@ defmodule TestUtils do
   def iso_to_unixtime(date) do
     Timex.parse!(date, "{ISO:Extended:Z}")
     |> Timex.to_unix()
+  end
+
+  def schedule_time_from_job(job) do
+    List.last(job.args)["scheduled_at"]
+  end
+
+  def assert_continuity(jobs, diff) do
+    assert length(jobs) > 0, "Jobs list is empty"
+    jobs
+    |> Enum.chunk_every(2, 1, :discard)
+    |> Enum.map( fn [job1, job2] ->
+      t1 = schedule_time_from_job(job1)
+      t2 = schedule_time_from_job(job2)
+      assert(diff == iso_to_unixtime(t1)-iso_to_unixtime(t2),
+        "Failed. job1: #{inspect(job1)} job2: #{inspect(job2)} ")
+    end)
+  end
+
+  def down(service) do
+    {:ok, _} = Toxiproxy.update(%{name: service, enabled: false})
+  end
+
+  def up(service) do
+    {:ok, _} = Toxiproxy.update(%{name: service, enabled: true})
   end
 end
 

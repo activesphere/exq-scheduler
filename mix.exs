@@ -33,6 +33,7 @@ defmodule ExqScheduler.Mixfile do
       {:exq, "~> 0.9.1"},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.15.0", only: :dev},
+      {:toxiproxy, "~> 0.3", only: :test}
     ]
   end
 end

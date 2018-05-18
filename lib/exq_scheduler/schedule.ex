@@ -78,17 +78,16 @@ defmodule ExqScheduler.Schedule do
     |> Poison.encode!()
   end
 
-  def get_jobs(storage_opts, schedule, time_range) do
-    get_missed_run_dates(storage_opts, schedule, time_range.t_start)
-    |> Enum.concat(get_next_run_dates(schedule.cron, schedule.tz_offset))
+  def get_jobs(storage_opts, schedule, time_range, ref_time) do
+    get_missed_run_dates(storage_opts, schedule, time_range.t_start, ref_time)
+    |> Enum.reverse
     |> Enum.map(&ScheduledJob.new(schedule.job, &1))
   end
 
-  def get_missed_run_dates(storage_opts, schedule, lower_bound_time) do
-    now = add_tz(Time.now(), schedule.tz_offset)
-
+  def get_missed_run_dates(storage_opts, schedule, lower_bound_time, ref_time) do
+    now = add_tz(ref_time, schedule.tz_offset)
     schedule_last_run_time = Storage.get_schedule_last_run_time(storage_opts, schedule)
-
+    
     lower_bound_time =
       if schedule_last_run_time != nil do
         schedule_last_run_time =
@@ -107,18 +106,18 @@ defmodule ExqScheduler.Schedule do
     get_dates(enum, schedule.tz_offset, collect_till)
   end
 
-  def get_previous_run_dates(cron, tz_offset) do
-    now = add_tz(Time.now(), tz_offset)
+  def get_previous_schedule_date(cron, tz_offset, ref_time) do
+    now = add_tz(ref_time, tz_offset)
 
-    Scheduler.get_previous_run_dates(cron, now)
-    |> get_dates(tz_offset)
+    Scheduler.get_previous_run_date!(cron, now)
+    |> Timex.subtract(tz_offset)
   end
 
-  def get_next_run_dates(cron, tz_offset) do
-    now = add_tz(Time.now(), tz_offset)
+  def get_next_schedule_date(cron, tz_offset, ref_time) do
+    now = add_tz(ref_time, tz_offset)
 
-    Scheduler.get_next_run_dates(cron, now)
-    |> get_dates(tz_offset)
+    Scheduler.get_next_run_date!(cron, now)
+    |> Timex.subtract(tz_offset)
   end
 
   defp add_tz(time, tz_offset) do

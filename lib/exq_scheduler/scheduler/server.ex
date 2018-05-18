@@ -1,11 +1,13 @@
 defmodule ExqScheduler.Scheduler.Server do
   @moduledoc false
+  @storage_reconnect_timeout 500
+
   use GenServer
   alias ExqScheduler.Time
 
   defmodule State do
     @moduledoc false
-    defstruct schedules: nil, storage_opts: nil, server_opts: nil, range: nil, env: nil
+    defstruct schedules: nil, storage_opts: nil, server_opts: nil, range: nil, env: nil, start_time: nil
   end
 
   defmodule Opts do
@@ -41,39 +43,63 @@ defmodule ExqScheduler.Scheduler.Server do
 
   def init(env) do
     storage_opts = Storage.build_opts(env)
-
-    _ = Storage.load_schedules_config(storage_opts, env)
+    schedules = Storage.load_schedules_config(env)
 
     state = %State{
-      schedules: Storage.get_schedules(storage_opts),
+      schedules: schedules,
       storage_opts: storage_opts,
       server_opts: build_opts(env),
-      env: env
+      env: env,
+      start_time: Time.now()
     }
 
-    Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
-    |> Storage.persist_schedule_times(state.storage_opts)
-
-    next_tick(self(), 0)
+    Process.send_after(self(), :first, @storage_reconnect_timeout)
     {:ok, state}
   end
 
-  def handle_info({:tick, time}, state) do
-    handle_tick(state, time)
-    next_tick(self(), state.server_opts.timeout)
+  def handle_info(:first, state) do
+    storage_opts = state.storage_opts
+    if Storage.storage_connected?(storage_opts) do
+      Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
+      |> Enum.filter(fn schedule ->
+        Storage.get_schedule_first_run_time(storage_opts, schedule) == nil
+      end)
+      |> Storage.persist_schedule_times(storage_opts, state.start_time)
+
+      Enum.map(state.schedules, fn schedule ->
+        Storage.persist_schedule(schedule, storage_opts)
+      end)
+
+      next_tick(self(), 0)
+    else
+      Process.send_after(self(), :first, @storage_reconnect_timeout)
+    end
     {:noreply, state}
   end
 
-  defp handle_tick(state, time) do
-    Storage.filter_active_jobs(state.storage_opts, state.schedules, get_range(state, time))
+  def handle_info(:tick, state) do
+    timeout =
+    if Storage.storage_connected?(state.storage_opts) do
+      handle_tick(state)
+      state.server_opts.timeout
+    else
+      @storage_reconnect_timeout # sleep for a while and retry
+    end
+
+    next_tick(self(), timeout)
+    {:noreply, state}
+  end
+
+  defp handle_tick(state) do
+    now = Time.now()
+    Storage.filter_active_jobs(state.storage_opts, state.schedules, get_range(state, now), now)
     |> Enum.map(fn {schedule, jobs} ->
-      Storage.enqueue_jobs(schedule, jobs, state.storage_opts)
+      Storage.enqueue_jobs(schedule, jobs, state.storage_opts, now)
     end)
   end
 
   defp next_tick(server, timeout) do
-    time = Time.now() |> Timex.to_naive_datetime()
-    Process.send_after(server, {:tick, time}, timeout)
+    Process.send_after(server, :tick, timeout)
   end
 
   defp get_range(state, time) do

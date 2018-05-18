@@ -1,7 +1,6 @@
 defmodule ExqSchedulerTest do
   use ExqScheduler.Case, async: false
   import TestUtils
-  require Logger
   alias ExqScheduler.Time
 
   setup context do
@@ -27,10 +26,10 @@ defmodule ExqSchedulerTest do
     assert_job_uniqueness()
   end
 
-  @tag config: configure_env(env(), 1500, 1000,[schedule_cron_1h: %{
-                                                 "cron" => "0 * * * * *",
-                                                 "class" => "DummyWorker1",
-                                                 "include_metadata" => true}])
+  @tag config: configure_env(env(), 1250, 1000*60*120, [schedule_cron_1h: %{
+                                                    "cron" => "0 * * * * *",
+                                                    "class" => "DummyWorker1",
+                                                    "include_metadata" => true}])
   test "check continuity" do
     :timer.sleep(4000)
 
@@ -38,38 +37,47 @@ defmodule ExqSchedulerTest do
     assert_continuity(jobs, 3600)
   end
 
-  @tag config: configure_env(env(), 100, 1000*1200, [schedule_cron_1m: %{
-                                                   "cron" => "*/10 * * * * *",
+  @tag config: configure_env(env(), 500, 1000*3600, [schedule_cron_1m: %{
+                                                   "cron" => "*/20 * * * * *",
                                                    "class" => "DummyWorker2",
                                                    "include_metadata" => true}])
   test "check for missing jobs" do
     :timer.sleep(4000)
 
     jobs = get_jobs("DummyWorker2")
-    assert_continuity(jobs, 10*60)
+    assert_continuity(jobs, 20*60)
   end
 
-  @tag config: configure_env(env(), 1000, 10000, [schedule_cron_1m: %{
-                                                   "cron" => "* * * * * *",
-                                                   "class" => "QWorker",
-                                                   "queue" => "SuperQ"
-                                                }])
+  @tag config: configure_env(env(), 500, 1000*60*45, [schedule_cron_1m: %{
+                                                         "cron" => "* * * * * *",
+                                                         "class" => "QWorker",
+                                                         "queue" => "SuperQ"
+                                                      }])
   test "Check schedules are getting added to correct queues" do
-    :timer.sleep(3000)
+    :timer.sleep(1000)
 
     jobs = get_jobs("QWorker", "SuperQ")
     assert length(jobs) >= 1
   end
 
-  defp assert_continuity(jobs, diff) do
-    assert length(jobs) > 0, "Jobs list is empty"
-    jobs
-    |> Enum.chunk_every(2, 1, :discard)
-    |> Enum.map( fn [job1, job2] ->
-      %{"scheduled_at" => t1} = List.last(job1.args)
-      %{"scheduled_at" => t2} = List.last(job2.args)
-      assert(diff == iso_to_unixtime(t1)-iso_to_unixtime(t2),
-        "Failed. job1: #{inspect(job1)} job2: #{inspect(job2)} ")
-    end)
+  @tag config: configure_env(env(), 200, 10000, [schedule_cron_1m: %{
+                                                     "cron" => "0 0 30 1 * *",
+                                                     #1st of jan every year
+                                                     "class" => "AheadTimeWorker",
+                                                     "include_metadata" => true
+                                                  }])
+  test "jobs should not be added ahead of time" do
+    :timer.sleep(500)
+    
+    jobs = get_jobs("AheadTimeWorker")
+    now = Time.now()
+
+    if length(jobs) > 0 do
+      latest_job_time =
+        List.first(jobs)
+        |> schedule_time_from_job()
+        |> Timex.parse!( "{ISO:Extended:Z}")
+      assert latest_job_time.year() < now.year()
+    end
   end
 end
