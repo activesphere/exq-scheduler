@@ -1,4 +1,4 @@
-defmodule ExqSchedulerFirstScheduleTest do
+defmodule ExqSchedulerTimeTest do
   use ExqScheduler.Case, async: false
   import TestUtils
   alias ExqScheduler.Time
