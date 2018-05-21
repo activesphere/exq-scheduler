@@ -1,6 +1,9 @@
 defmodule ScheduleTest do
   use ExqScheduler.Case, async: false
   alias ExqScheduler.Time
+  alias Timex.Duration
+  alias ExqScheduler.Schedule
+  alias ExqScheduler.Storage
   import TestUtils
 
   test "check get_next_schedule_date for different timezone" do
@@ -47,12 +50,7 @@ defmodule ScheduleTest do
     assert_continuity(jobs, 60)
   end
 
-  alias Timex.Duration
-  alias ExqScheduler.Schedule
-  alias ExqScheduler.Storage
-  require Logger
-
-  test "get_missed_run_dates()" do
+  test "get_missed_run_dates(): should work correct across different timezones" do
     config = configure_env(env(), 1000*60*60, [schedule_cron: %{
                                                   "cron" => "*/20 * * * * *",
                                                   "class" => "FutureWorker",
