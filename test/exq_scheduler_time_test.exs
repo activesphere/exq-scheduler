@@ -62,7 +62,6 @@ defmodule ExqSchedulerTimeTest do
     start_scheduler(config)
     :timer.sleep(2000)
 
-    jobs = get_jobs("FutureWorker")
-    assert_continuity(jobs, 20*60)
+    assert_properties("FutureWorker", 20*60)
   end
 end

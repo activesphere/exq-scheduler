@@ -32,9 +32,7 @@ defmodule ExqSchedulerTest do
                                                     "include_metadata" => true}])
   test "check continuity" do
     :timer.sleep(4000)
-
-    jobs = get_jobs("DummyWorker1")
-    assert_continuity(jobs, 3600)
+    assert_properties("DummyWorker1", 3600)
   end
 
   @tag config: configure_env(env(), 1000*3600, [schedule_cron_1m: %{
@@ -43,20 +41,20 @@ defmodule ExqSchedulerTest do
                                                    "include_metadata" => true}])
   test "check for missing jobs" do
     :timer.sleep(4000)
-
-    jobs = get_jobs("DummyWorker2")
-    assert_continuity(jobs, 20*60)
+    assert_properties("DummyWorker2", 20*60)
   end
 
   @tag config: configure_env(env(), 1000*60*45, [schedule_cron_1m: %{
-                                                         "cron" => "* * * * * *",
+                                                         "cron" => "*/20 * * * * *",
                                                          "class" => "QWorker",
-                                                         "queue" => "SuperQ"
+                                                         "queue" => "SuperQ",
+                                                         "include_metadata" => true
                                                       }])
   test "Check schedules are getting added to correct queues" do
     :timer.sleep(1000)
 
     jobs = get_jobs("QWorker", "SuperQ")
+    assert_properties("QWorker", 20*60, "SuperQ")
     assert length(jobs) >= 1
   end
 

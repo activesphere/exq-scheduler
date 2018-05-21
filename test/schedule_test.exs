@@ -46,8 +46,7 @@ defmodule ScheduleTest do
   test "order of the jobs should be reverse (recent job first)" do
     build_and_enqueue("* * * * *", 240, Time.now(), redis_pid(0))
     :timer.sleep(100)
-    jobs = get_jobs("TestJob")
-    assert_continuity(jobs, 60)
+    assert_properties("TestJob", 60)
   end
 
   test "get_missed_run_dates(): should work correct across different timezones" do

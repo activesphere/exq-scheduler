@@ -37,6 +37,7 @@ defmodule ConnectionTest do
     up("redis")
     :timer.sleep(1000)
 
+    assert_properties("DummyWorker2", 30*60)
     jobs = get_jobs("DummyWorker2")
     new_jobs_added? =
       Enum.any?(jobs, fn job ->
@@ -53,16 +54,14 @@ defmodule ConnectionTest do
   @tag :integration
   test "continuity during network failure" do
     :timer.sleep(2000)
-    jobs = get_jobs("DummyWorker2")
-    assert_continuity(jobs, 30*60)
+    assert_properties("DummyWorker2", 30*60)
     
     down("redis")
     :timer.sleep(1000)
 
     up("redis")
     :timer.sleep(1000)
-    jobs = get_jobs("DummyWorker2")
-    assert_continuity(jobs, 30*60)
+    assert_properties("DummyWorker2", 30*60)
   end
 
   
@@ -80,7 +79,7 @@ defmodule ConnectionTest do
     :timer.sleep(1000)
     jobs = get_jobs("DummyWorker2")
 
-    assert_continuity(jobs, 30*60)
+    assert_properties("DummyWorker2", 30*60)
     first_job = List.last(jobs)
     first_sch_time = schedule_time_from_job(first_job) |> iso_to_unixtime()
 
