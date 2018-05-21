@@ -168,14 +168,30 @@ defmodule ExqScheduler.Schedule.Utils do
     end
   end
 
-  def get_nearer_date(ref_date, date1, date2) do
-    diff1 = Timex.diff(ref_date, date1) |> abs
-    diff2 = Timex.diff(ref_date, date2) |> abs
-
-    if diff1 < diff2 do
-      date1
+  defp clamp_negative_value(duration, min_value) do
+    if duration < 0 do
+      min_value
     else
-      date2
+      duration
+    end
+  end
+
+  def get_nearer_date(ref_date, date1, date2) do
+    diff1 = clamp_negative_value(Timex.diff(ref_date, date1), -1)
+    diff2 = clamp_negative_value(Timex.diff(ref_date, date2), -1)
+
+    if (diff1 > -1 && diff2 > -1) do
+      if diff1 < diff2 do
+        date1
+      else
+        date2
+      end
+    else
+      if (diff1 > -1) do
+        date1
+      else
+        date2
+      end
     end
   end
 end
