@@ -47,6 +47,38 @@ defmodule ScheduleTest do
     assert_continuity(jobs, 60)
   end
 
+  alias Timex.Duration
+  alias ExqScheduler.Schedule
+  alias ExqScheduler.Storage
+  require Logger
+
+  test "get_missed_run_dates()" do
+    config = configure_env(env(), 1000*60*60, [schedule_cron: %{
+                                                  "cron" => "*/20 * * * * *",
+                                                  "class" => "FutureWorker",
+                                                  "include_metadata" => true
+                                               }])
+    config =
+      config
+      |> put_in([:redis, :name], :redix)
+      |> put_in([:name], String.to_atom("scheduler_0"))
+
+    storage_opts = Storage.build_opts(config)
+    schedules = Storage.load_schedules_config(config)
+
+    now = Time.now()
+    start_time = Timex.subtract(now, Duration.from_hours(1))
+    lower_bound_time = Timex.subtract(now, Duration.from_hours(2))
+
+    Storage.persist_schedule_times(schedules, storage_opts, start_time)
+
+    newest_schedule =
+      Schedule.get_missed_run_dates(storage_opts, Enum.at(schedules, 0), lower_bound_time, now)
+      |> List.first()
+
+    assert Timex.compare(newest_schedule, now, :seconds) != 1
+  end
+  
   defp get_next_date(cron) do
     schedule = build_schedule(cron)
     date =

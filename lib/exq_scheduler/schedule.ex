@@ -83,7 +83,7 @@ defmodule ExqScheduler.Schedule do
   end
 
   def get_missed_run_dates(storage_opts, schedule, lower_bound_time, ref_time) do
-    now = add_tz(ref_time, schedule.tz_offset)
+    now = ref_time |> Timex.to_naive_datetime()
     schedule_last_run_time = Storage.get_schedule_last_run_time(storage_opts, schedule)
     
     lower_bound_time =
@@ -98,6 +98,7 @@ defmodule ExqScheduler.Schedule do
       end
       |> add_tz(schedule.tz_offset)
 
+    now = add_tz(now, schedule.tz_offset)
     enum = Scheduler.get_previous_run_dates(schedule.cron, now)
 
     collect_till = &(Timex.compare(&1, lower_bound_time) != -1)
