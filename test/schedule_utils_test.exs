@@ -78,4 +78,11 @@ defmodule ScheduleUtilsTest do
     date2 = Timex.shift(now, seconds: -10)
     assert Utils.get_nearer_date(now, date1, date2) |> Timex.equal?(date1)
   end
+
+  test "get_nearer_date(): If dates are greater than ref_date ignore that date" do
+    now = Time.now()
+    date1 = Timex.shift(now, seconds: 5)
+    date2 = Timex.shift(now, seconds: -10)
+    assert Utils.get_nearer_date(now, date1, date2) |> Timex.equal?(date2)
+  end
 end
