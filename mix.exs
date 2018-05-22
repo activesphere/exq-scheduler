@@ -30,7 +30,6 @@ defmodule ExqScheduler.Mixfile do
       {:redix, ">= 0.0.0"},
       {:poison, "~> 3.1"},
       {:crontab, "~> 1.1"},
-      {:exq, "~> 0.9.1"},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.15.0", only: :dev},
       {:toxiproxy, "~> 0.3", only: :test}
