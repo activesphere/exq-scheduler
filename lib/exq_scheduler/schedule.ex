@@ -39,7 +39,33 @@ defmodule ExqScheduler.Schedule do
     end
   end
 
-  alias Exq.Support.Job
+  defmodule Job do
+    @moduledoc """
+    Serializable Job format used by Exq
+    """
+    defstruct error_message: nil,
+      error_class: nil,
+      failed_at: nil,
+      retry: false,
+      retry_count: 0,
+      processor: nil,
+      queue: nil,
+      class: nil,
+      args: nil,
+      jid: nil,
+      finished_at: nil,
+      enqueued_at: nil
+
+    def decode(serialized) do
+      Poison.decode!(serialized, as: %__MODULE__{})
+    end
+
+    def encode(job) do
+      Poison.encode!(job)
+    end
+  end
+
+
   alias ExqScheduler.Schedule.Utils
   alias ExqScheduler.Storage
   alias Crontab.Scheduler

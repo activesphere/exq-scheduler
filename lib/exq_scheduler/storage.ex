@@ -26,7 +26,7 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Schedule.Parser
   alias ExqScheduler.Storage.Redis
   alias ExqScheduler.Storage
-  alias Exq.Support.Job
+  alias ExqScheduler.Schedule.Job
 
   def persist_schedule(schedule, storage_opts) do
     val = Schedule.encode(schedule)

@@ -21,7 +21,7 @@ defmodule TestUtils do
   alias ExqScheduler.Schedule.TimeRange
   alias ExqScheduler.Storage
   alias ExqScheduler.Time
-  alias Exq.Support.Job
+  alias ExqScheduler.Schedule.Job
   import ExUnit.Assertions
 
   def build_schedule(cron) do
