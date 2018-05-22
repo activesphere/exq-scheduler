@@ -213,7 +213,6 @@ defmodule ExqScheduler.Storage do
     ]
 
     enqueue_key = build_enqueued_jobs_key(storage_opts)
-    persist_schedule_times([schedule], storage_opts, ref_time)
     Redis.cas(storage_opts.redis, build_lock_key(job, time, enqueue_key), commands)
   end
 

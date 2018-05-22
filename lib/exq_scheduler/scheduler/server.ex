@@ -93,6 +93,8 @@ defmodule ExqScheduler.Scheduler.Server do
     |> Enum.map(fn {schedule, jobs} ->
       Storage.enqueue_jobs(schedule, jobs, state.storage_opts, ref_time)
     end)
+
+    Storage.persist_schedule_times(state.schedules, state.storage_opts, ref_time)
   end
 
   defp next_tick(server, timeout) do

@@ -78,4 +78,43 @@ defmodule ExqSchedulerTest do
       assert latest_job_time.year() < now.year()
     end
   end
+
+  @tag config: configure_env(env(), 1000*60*60, [schedule_cron: %{
+                                                    "cron" => "*/10 * * * * *",
+                                                    "class" => "TestWorker",
+                                                    "include_metadata" => true
+                                                 }])
+  test "after re-enabling should not consider too old jobs" do
+    class = "TestWorker"
+    sch_name = "schedule_cron"
+
+    :timer.sleep(750)
+
+    assert_properties(class, 10*60)
+
+    set_scheduler_state(sch_name, false)
+    old_last_sch = List.first(get_jobs(class)) |> schedule_unix_time()
+    :timer.sleep(500)
+
+    set_scheduler_state(sch_name, true)
+    :timer.sleep(500)
+
+    jobs = get_jobs(class)
+    new_schs =
+      Enum.map(jobs, &schedule_unix_time(&1))
+      |> Enum.filter(fn time -> (time > old_last_sch) end)
+
+    # Should have a missing job 'disabled' and 'enabled' states
+    assert (List.last(new_schs) - old_last_sch) > 10*60
+
+    # Check properties for newly added jobs
+    new_jobs = Enum.take(jobs, length(new_schs))
+    assert_job_uniqueness(new_jobs)
+    assert_continuity(new_jobs, 10*60)
+  end
+
+  defp schedule_unix_time(job) do
+    schedule_time_from_job(job)
+    |> iso_to_unixtime()
+  end
 end
