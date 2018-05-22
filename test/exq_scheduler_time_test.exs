@@ -42,7 +42,7 @@ defmodule ExqSchedulerTimeTest do
       "Start time: #{start_time}  jobs: #{inspect(jobs)}")
   end
 
-  test "if last_run_time is future time, its handle gracefully or not" do
+  test "if last_run_time is future time, should be handled gracefully" do
     config = configure_env(env(), 1000*60*60*2, [schedule_cron: %{
                                                 "cron" => "*/20 * * * * *",
                                                 "class" => "FutureWorker",
