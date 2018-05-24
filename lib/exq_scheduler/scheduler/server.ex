@@ -2,7 +2,7 @@ defmodule ExqScheduler.Scheduler.Server do
   @moduledoc false
   @storage_reconnect_timeout 500
   @failsafe_delay 10 # milliseconds
-  @max_timeout 1000*3600*24*10 # 10 days
+  @max_timeout 1000*3600 # 1 hour
 
   use GenServer
   alias ExqScheduler.Time
