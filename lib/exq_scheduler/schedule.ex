@@ -1,6 +1,4 @@
 defmodule ExqScheduler.Schedule do
-  alias ExqScheduler.Time
-
   @default_queue "default"
 
   defmodule ScheduleOpts do
@@ -41,7 +39,33 @@ defmodule ExqScheduler.Schedule do
     end
   end
 
-  alias Exq.Support.Job
+  defmodule Job do
+    @moduledoc """
+    Serializable Job format used by Exq
+    """
+    defstruct error_message: nil,
+      error_class: nil,
+      failed_at: nil,
+      retry: false,
+      retry_count: 0,
+      processor: nil,
+      queue: nil,
+      class: nil,
+      args: nil,
+      jid: nil,
+      finished_at: nil,
+      enqueued_at: nil
+
+    def decode(serialized) do
+      Poison.decode!(serialized, as: %__MODULE__{})
+    end
+
+    def encode(job) do
+      Poison.encode!(job)
+    end
+  end
+
+
   alias ExqScheduler.Schedule.Utils
   alias ExqScheduler.Storage
   alias Crontab.Scheduler
@@ -85,7 +109,7 @@ defmodule ExqScheduler.Schedule do
   end
 
   def get_missed_run_dates(storage_opts, schedule, lower_bound_time, ref_time) do
-    now = add_tz(ref_time, schedule.tz_offset)
+    now = ref_time |> Timex.to_naive_datetime()
     schedule_last_run_time = Storage.get_schedule_last_run_time(storage_opts, schedule)
     
     lower_bound_time =
@@ -100,6 +124,7 @@ defmodule ExqScheduler.Schedule do
       end
       |> add_tz(schedule.tz_offset)
 
+    now = add_tz(now, schedule.tz_offset)
     enum = Scheduler.get_previous_run_dates(schedule.cron, now)
 
     collect_till = &(Timex.compare(&1, lower_bound_time) != -1)
@@ -128,7 +153,7 @@ defmodule ExqScheduler.Schedule do
     end
   end
 
-  defp get_dates(enum, tz_offset, collect_till \\ nil) do
+  defp get_dates(enum, tz_offset, collect_till) do
     dates =
       if collect_till do
         Stream.take_while(enum, collect_till) |> Enum.to_list()

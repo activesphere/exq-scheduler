@@ -5,8 +5,6 @@ config :exq_scheduler, :storage_opts,
   exq_namespace: "exq"
 
 config :exq_scheduler, :server_opts,
-  timeout: 10,
-  enqueue_missed_jobs: true,
   missed_jobs_threshold_duration: 60 * 60 * 1000,
   time_zone: "Asia/Kolkata"
 

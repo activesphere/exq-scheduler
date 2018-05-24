@@ -1,6 +1,8 @@
 defmodule ExqScheduler.Scheduler.Server do
   @moduledoc false
   @storage_reconnect_timeout 500
+  @failsafe_delay 10 # milliseconds
+  @max_timeout 1000*3600 # 1 hour
 
   use GenServer
   alias ExqScheduler.Time
@@ -12,29 +14,19 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defmodule Opts do
     @moduledoc false
-    @enforce_keys [:timeout]
-    defstruct timeout: nil, enqueue_missed_jobs: false, missed_jobs_threshold_duration: nil
+    defstruct missed_jobs_threshold_duration: nil
 
     def new(opts) do
-      timeout = opts[:timeout]
-      enqueue_missed_jobs = opts[:enqueue_missed_jobs]
-
-      missed_jobs_threshold_duration =
-        if enqueue_missed_jobs do
-          opts[:missed_jobs_threshold_duration]
-        else
-          timeout
-        end
+      missed_jobs_threshold_duration = opts[:missed_jobs_threshold_duration]
 
       %__MODULE__{
-        timeout: timeout,
-        enqueue_missed_jobs: enqueue_missed_jobs,
         missed_jobs_threshold_duration: missed_jobs_threshold_duration
       }
     end
   end
 
   alias ExqScheduler.Storage
+  alias ExqScheduler.Schedule
   alias ExqScheduler.Schedule.TimeRange
 
   def start_link(env) do
@@ -66,9 +58,7 @@ defmodule ExqScheduler.Scheduler.Server do
       end)
       |> Storage.persist_schedule_times(storage_opts, state.start_time)
 
-      Enum.map(state.schedules, fn schedule ->
-        Storage.persist_schedule(schedule, storage_opts)
-      end)
+      Enum.map(state.schedules, &Storage.persist_schedule(&1, storage_opts))
 
       next_tick(self(), 0)
     else
@@ -80,8 +70,14 @@ defmodule ExqScheduler.Scheduler.Server do
   def handle_info(:tick, state) do
     timeout =
     if Storage.storage_connected?(state.storage_opts) do
-      handle_tick(state)
-      state.server_opts.timeout
+      now = Time.now()
+      handle_tick(state, now)
+
+      sch_time = nearest_schedule_time(state, now)
+
+      # Use *immediate* current time, not previous time to find the timeout
+      timeout = get_timeout(sch_time, Time.now())
+      Time.scale_duration(timeout)
     else
       @storage_reconnect_timeout # sleep for a while and retry
     end
@@ -90,16 +86,38 @@ defmodule ExqScheduler.Scheduler.Server do
     {:noreply, state}
   end
 
-  defp handle_tick(state) do
-    now = Time.now()
-    Storage.filter_active_jobs(state.storage_opts, state.schedules, get_range(state, now), now)
+  defp handle_tick(state, ref_time) do
+    Storage.filter_active_jobs(state.storage_opts, state.schedules, get_range(state, ref_time), ref_time)
     |> Enum.map(fn {schedule, jobs} ->
-      Storage.enqueue_jobs(schedule, jobs, state.storage_opts, now)
+      Storage.enqueue_jobs(schedule, jobs, state.storage_opts, ref_time)
     end)
+
+    Storage.persist_schedule_times(state.schedules, state.storage_opts, ref_time)
   end
 
   defp next_tick(server, timeout) do
     Process.send_after(server, :tick, timeout)
+  end
+
+  defp nearest_schedule_time(state, ref_time) do
+    state.schedules
+    |> Enum.map(fn schedule ->
+      Schedule.get_next_schedule_date(schedule.cron, schedule.tz_offset, ref_time)
+    end)
+    |> Enum.min_by(&Timex.to_unix(&1))
+  end
+
+  defp get_timeout(schedule_time, current_time) do
+    diff = Timex.diff(schedule_time, current_time, :milliseconds)
+    if diff > 0 do
+      if diff > @max_timeout do
+        @max_timeout + @failsafe_delay
+      else
+        diff + @failsafe_delay
+      end
+    else
+      0
+    end
   end
 
   defp get_range(state, time) do

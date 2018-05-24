@@ -10,6 +10,10 @@ defmodule ExqScheduler.Time do
     elapsed = DateTime.to_unix(Timex.now(), :microsecond) - @base
     Timex.from_unix(@base + elapsed * @scale, :microsecond)
   end
+
+  def scale_duration(duration) do
+    div(duration, @scale)
+  end
 end
 
 defmodule TestUtils do
@@ -17,7 +21,7 @@ defmodule TestUtils do
   alias ExqScheduler.Schedule.TimeRange
   alias ExqScheduler.Storage
   alias ExqScheduler.Time
-  alias Exq.Support.Job
+  alias ExqScheduler.Schedule.Job
   import ExUnit.Assertions
 
   def build_schedule(cron) do
@@ -57,9 +61,8 @@ defmodule TestUtils do
     |> put_in(path, value)
   end
 
-  def configure_env(env, timeout, threshold_duration, schedules) do
+  def configure_env(env, threshold_duration, schedules) do
     env
-    |> put_in([:server_opts, :timeout], timeout)
     |> put_in([:server_opts, :missed_jobs_threshold_duration], threshold_duration)
     |> put_in([:schedules], schedules)
   end
@@ -70,10 +73,11 @@ defmodule TestUtils do
   end
 
   def assert_job_uniqueness do
-    opts = storage_opts()
-    queue_name = Storage.queue_key("default", opts)
-    jobs = Redix.command!(:redix, ["LRANGE", queue_name, "0", "-1"])
-    jobs = Enum.map(jobs, &Job.decode/1)
+    jobs = get_jobs()
+    assert_job_uniqueness(jobs)
+  end
+
+  def assert_job_uniqueness(jobs) do
     assert length(jobs) > 0
     grouped = Enum.group_by(jobs, fn job -> [job.class, List.first(job.args)["scheduled_at"]] end)
 
@@ -95,10 +99,10 @@ defmodule TestUtils do
     |> Enum.map(&Task.await/1)
   end
 
-  def get_jobs(class_name, queue_name \\ "default") do
+  def get_jobs(class_name \\ nil, queue_name \\ "default") do
     opts = storage_opts()
     get_jobs_from_storage(Storage.queue_key(queue_name, opts))
-    |> Enum.filter(fn job -> job.class == class_name end)
+    |> Enum.filter(fn job -> (class_name == nil) || (job.class == class_name) end)
   end
 
   defp get_jobs_from_storage(queue_name) do
@@ -125,6 +129,24 @@ defmodule TestUtils do
       assert(diff == iso_to_unixtime(t1)-iso_to_unixtime(t2),
         "Failed. job1: #{inspect(job1)} job2: #{inspect(job2)} ")
     end)
+  end
+
+  def assert_properties(class, interval, queue_name \\ "default") do
+    jobs = get_jobs(class, queue_name)
+    assert_job_uniqueness(jobs)
+    assert_continuity(jobs, interval)
+  end
+
+  def set_scheduler_state(schedule_name, state) do
+    schedule_state = %{"enabled" => state}
+    Redix.command!(
+      :redix,
+      ["HSET",
+       "exq:sidekiq-scheduler:states",
+       schedule_name,
+       Poison.encode!(schedule_state)
+      ]
+    )
   end
 
   def down(service) do

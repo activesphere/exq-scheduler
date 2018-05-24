@@ -24,7 +24,7 @@ defmodule ConnectionTest do
     :ok
   end
 
-  @tag config: configure_env(env(), 500, 1000*60*60, [schedule_cron_10m: %{
+  @tag config: configure_env(env(), 1000*60*60, [schedule_cron_10m: %{
                                                         "cron" => "*/30 * * * * *",
                                                         "class" => "DummyWorker2",
                                                         "include_metadata" => true}])
@@ -37,6 +37,7 @@ defmodule ConnectionTest do
     up("redis")
     :timer.sleep(1000)
 
+    assert_properties("DummyWorker2", 30*60)
     jobs = get_jobs("DummyWorker2")
     new_jobs_added? =
       Enum.any?(jobs, fn job ->
@@ -46,41 +47,39 @@ defmodule ConnectionTest do
     assert new_jobs_added?
   end
 
-  @tag config: configure_env(env(), 500, 1000*60*120, [schedule_cron: %{
+  @tag config: configure_env(env(), 1000*60*120, [schedule_cron: %{
                                                          "cron" => "*/30 * * * * *",
                                                          "class" => "DummyWorker2",
                                                          "include_metadata" => true}])
   @tag :integration
   test "continuity during network failure" do
     :timer.sleep(2000)
-    jobs = get_jobs("DummyWorker2")
-    assert_continuity(jobs, 30*60)
+    assert_properties("DummyWorker2", 30*60)
     
     down("redis")
     :timer.sleep(1000)
 
     up("redis")
     :timer.sleep(1000)
-    jobs = get_jobs("DummyWorker2")
-    assert_continuity(jobs, 30*60)
+    assert_properties("DummyWorker2", 30*60)
   end
 
   
-  @tag config: configure_env(env(), 500, 1000*60*60, [schedule_cron: %{
-                                                        "cron" => "*/30 * * * * *",
+  @tag config: configure_env(env(), 1000*60*60, [schedule_cron: %{
+                                                        "cron" => "*/10 * * * * *",
                                                         "class" => "DummyWorker2",
                                                         "include_metadata" => true}])
   @tag :integration
   test "to check whether scheduler considers window after reconnection" do
     down("redis")
-    :timer.sleep(1000)
-    max_first_sch_time = Timex.to_unix(Time.now())
+    :timer.sleep(500)
 
+    max_first_sch_time = Timex.to_unix(Time.now())
     up("redis")
     :timer.sleep(1000)
     jobs = get_jobs("DummyWorker2")
 
-    assert_continuity(jobs, 30*60)
+    assert_properties("DummyWorker2", 10*60)
     first_job = List.last(jobs)
     first_sch_time = schedule_time_from_job(first_job) |> iso_to_unixtime()
 

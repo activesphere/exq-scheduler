@@ -35,7 +35,7 @@ defmodule StorageTest do
       sch = ExqScheduler.Schedule.new(schedule.name,
       schedule.description,
       Crontab.CronExpression.Composer.compose(schedule.cron),
-      Exq.Support.Job.encode(schedule.job),
+      ExqScheduler.Schedule.Job.encode(schedule.job),
       %{"enabled" => false})
 
       Storage.persist_schedule(sch, storage_opts)
