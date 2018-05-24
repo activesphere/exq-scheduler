@@ -42,7 +42,7 @@ defmodule TestUtils do
   def build_and_enqueue(cron, offset, now, redis) do
     opts = Storage.build_opts(add_redis_name(env(), redis))
     {schedule, jobs} = build_scheduled_jobs(opts, cron, offset, now)
-    Storage.enqueue_jobs(schedule, jobs, opts, now)
+    Storage.enqueue_jobs(schedule, jobs, opts)
     jobs
   end
 

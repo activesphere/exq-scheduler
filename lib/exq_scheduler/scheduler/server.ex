@@ -89,7 +89,7 @@ defmodule ExqScheduler.Scheduler.Server do
   defp handle_tick(state, ref_time) do
     Storage.filter_active_jobs(state.storage_opts, state.schedules, get_range(state, ref_time), ref_time)
     |> Enum.map(fn {schedule, jobs} ->
-      Storage.enqueue_jobs(schedule, jobs, state.storage_opts, ref_time)
+      Storage.enqueue_jobs(schedule, jobs, state.storage_opts)
     end)
 
     Storage.persist_schedule_times(state.schedules, state.storage_opts, ref_time)

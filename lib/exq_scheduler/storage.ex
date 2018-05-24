@@ -188,8 +188,8 @@ defmodule ExqScheduler.Storage do
     end)
   end
 
-  def enqueue_jobs(schedule, jobs, storage_opts, ref_time) do
-    Enum.each(jobs, &enqueue_job(schedule, &1, storage_opts, ref_time))
+  def enqueue_jobs(schedule, jobs, storage_opts) do
+    Enum.each(jobs, &enqueue_job(schedule, &1, storage_opts))
   end
 
   def queue_key(queue_name, storage_opts) do
@@ -198,7 +198,7 @@ defmodule ExqScheduler.Storage do
   end
 
   # TODO: Update schedule.first_run, schedule.last_run
-  defp enqueue_job(schedule, scheduled_job, storage_opts, ref_time) do
+  defp enqueue_job(schedule, scheduled_job, storage_opts) do
     {job, time} = {scheduled_job.job, scheduled_job.time}
 
     job =
