@@ -57,7 +57,7 @@ defmodule ScheduleTest do
                                                }])
     config =
       config
-      |> put_in([:redis, :name], :redix)
+      |> add_redis_name(:redix)
       |> put_in([:name], String.to_atom("scheduler_0"))
 
     storage_opts = Storage.build_opts(config)

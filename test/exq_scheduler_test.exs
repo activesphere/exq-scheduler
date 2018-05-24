@@ -12,7 +12,7 @@ defmodule ExqSchedulerTest do
       end
       config =
         config
-        |> put_in([:redis, :name], String.to_atom("scheduler_redis_#{i}"))
+        |> add_redis_name(String.to_atom("scheduler_redis_#{i}"))
         |> put_in([:name], String.to_atom("scheduler_#{i}"))
 
       {:ok, _} = start_supervised({ExqScheduler, config})

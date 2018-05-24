@@ -1,42 +1,42 @@
 defmodule ExqScheduler.Storage.Redis do
   @moduledoc false
 
-  def hkeys(redis, key) do
-    Redix.command!(redis, ["HKEYS", key])
+  def hkeys(lib, pid, key) do
+    lib.command!(pid, ["HKEYS", key])
   end
 
-  def hget(redis, key, field) do
-    Redix.command!(redis, ["HGET", key, field]) |> decode
+  def hget(lib, pid, key, field) do
+    lib.command!(pid, ["HGET", key, field]) |> decode
   end
 
-  def hset(redis, key, field, val) do
-    Redix.command!(redis, ["HSET", key, field, val])
+  def hset(lib, pid, key, field, val) do
+    lib.command!(pid, ["HSET", key, field, val])
   end
 
-  def cas(redis, lock_key, commands) do
+  def cas(lib, pid, lock_key, commands) do
     watch = ["WATCH", lock_key]
     get = ["GET", lock_key]
 
-    ["OK", is_locked] = Redix.pipeline!(redis, [watch, get])
+    ["OK", is_locked] = lib.pipeline!(pid, [watch, get])
 
     if is_locked do
-      Redix.pipeline!(redis, [["UNWATCH", lock_key]])
+      lib.pipeline!(pid, [["UNWATCH", lock_key]])
     else
       pipeline_command =
         [["MULTI"], ["SET", lock_key, true]]
         |> Enum.concat(commands)
         |> Enum.concat([["EXEC"]])
 
-      Redix.pipeline!(redis, pipeline_command)
+      lib.pipeline!(pid, pipeline_command)
     end
   end
 
-  def queue_len(redis, queue) do
-    Redix.command!(redis, ["LLEN", queue])
+  def queue_len(lib, pid, queue) do
+    lib.command!(pid, ["LLEN", queue])
   end
 
-  def connected?(redis) do
-    case Redix.command(redis, ["PING"]) do
+  def connected?(lib, pid) do
+    case lib.command(pid, ["PING"]) do
       {:error, _} -> false
       {:ok, _} -> true
     end

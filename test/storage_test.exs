@@ -20,14 +20,14 @@ defmodule StorageTest do
   end
 
   test "if schedule is enabled by default" do
-    storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
+    storage_opts = Storage.build_opts(add_redis_name(env(), redis_pid("test")))
     schedules = Storage.load_schedules_config(env())
     schedule = Enum.at(schedules, 0)
     assert Storage.is_schedule_enabled?(storage_opts, schedule) == true
   end
 
   test "is_schedule_enabled?(): It checks if the schedule is enabled or not" do
-    storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
+    storage_opts = Storage.build_opts(add_redis_name(env(), redis_pid("test")))
     schedules = Storage.load_schedules_config(env())
     assert length(schedules) >= 1
 

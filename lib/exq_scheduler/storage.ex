@@ -10,14 +10,15 @@ defmodule ExqScheduler.Storage do
 
   defmodule Opts do
     @moduledoc false
-    @enforce_keys [:namespace, :exq_namespace, :redis]
+    @enforce_keys [:namespace, :exq_namespace, :redis, :lib]
     defstruct @enforce_keys
 
     def new(opts) do
       %__MODULE__{
         namespace: opts[:namespace],
         exq_namespace: opts[:exq_namespace],
-        redis: opts[:redis_pid]
+        redis: opts[:redis_pid],
+        lib: opts[:lib]
       }
     end
   end
@@ -30,13 +31,17 @@ defmodule ExqScheduler.Storage do
 
   def persist_schedule(schedule, storage_opts) do
     val = Schedule.encode(schedule)
-    _ = Redis.hset(storage_opts.redis, build_schedules_key(storage_opts), schedule.name, val)
+    _ = Redis.hset(storage_opts.lib,
+      storage_opts.redis,
+      build_schedules_key(storage_opts),
+      schedule.name, val)
 
     schedule_state =
       %{enabled: schedule.schedule_opts.enabled}
       |> Poison.encode!()
 
     Redis.hset(
+      storage_opts.lib,
       storage_opts.redis,
       build_schedule_states_key(storage_opts),
       schedule.name,
@@ -47,6 +52,7 @@ defmodule ExqScheduler.Storage do
   def build_opts(env) do
     Keyword.get(env, :storage_opts)
     |> Keyword.put(:redis_pid, ExqScheduler.redis_name(env))
+    |> Keyword.put(:lib, ExqScheduler.redis_lib(env))
     |> Storage.Opts.new()
   end
 
@@ -60,6 +66,7 @@ defmodule ExqScheduler.Storage do
         |> Poison.encode!()
       
       Redis.hset(
+        storage_opts.lib,
         storage_opts.redis,
         build_schedule_times_key(storage_opts, :prev),
         schedule.name,
@@ -74,6 +81,7 @@ defmodule ExqScheduler.Storage do
         |> Poison.encode!()
       
       Redis.hset(
+        storage_opts.lib,
         storage_opts.redis,
         build_schedule_times_key(storage_opts, :next),
         schedule.name,
@@ -86,6 +94,7 @@ defmodule ExqScheduler.Storage do
 
       if schedule_first_run == nil do
         Redis.hset(
+          storage_opts.lib,
           storage_opts.redis,
           build_schedule_runs_key(storage_opts, :first),
           schedule.name,
@@ -94,6 +103,7 @@ defmodule ExqScheduler.Storage do
       end
 
       Redis.hset(
+        storage_opts.lib,
         storage_opts.redis,
         build_schedule_runs_key(storage_opts, :last),
         schedule.name,
@@ -117,6 +127,7 @@ defmodule ExqScheduler.Storage do
 
   def get_schedule_last_run_time(storage_opts, schedule) do
     Redis.hget(
+      storage_opts.lib,
       storage_opts.redis,
       build_schedule_runs_key(storage_opts, :last),
       schedule.name
@@ -125,6 +136,7 @@ defmodule ExqScheduler.Storage do
 
   def get_schedule_first_run_time(storage_opts, schedule) do
     Redis.hget(
+      storage_opts.lib,
       storage_opts.redis,
       build_schedule_runs_key(storage_opts, :first),
       schedule.name
@@ -134,6 +146,7 @@ defmodule ExqScheduler.Storage do
   def is_schedule_enabled?(storage_opts, schedule) do
     schedule_state =
       Redis.hget(
+        storage_opts.lib,
         storage_opts.redis,
         build_schedule_states_key(storage_opts),
         schedule.name
@@ -149,16 +162,16 @@ defmodule ExqScheduler.Storage do
   end
 
   def storage_connected?(storage_opts) do
-    Redis.connected?(storage_opts.redis)
+    Redis.connected?(storage_opts.lib, storage_opts.redis)
   end
 
   def get_schedules(storage_opts) do
     schedules_key = build_schedules_key(storage_opts)
-    keys = Redis.hkeys(storage_opts.redis, schedules_key)
+    keys = Redis.hkeys(storage_opts.lib, storage_opts.redis, schedules_key)
 
     Enum.map(keys, fn name ->
       {description, cron, job, opts} =
-        Redis.hget(storage_opts.redis, schedules_key, name)
+        Redis.hget(storage_opts.lib, storage_opts.redis, schedules_key, name)
         |> Parser.get_schedule()
 
       Schedule.new(name, description, cron, job, opts)
@@ -213,7 +226,12 @@ defmodule ExqScheduler.Storage do
     ]
 
     enqueue_key = build_enqueued_jobs_key(storage_opts)
-    Redis.cas(storage_opts.redis, build_lock_key(job, time, enqueue_key), commands)
+    Redis.cas(
+      storage_opts.lib,
+      storage_opts.redis,
+      build_lock_key(job, time, enqueue_key),
+      commands
+    )
   end
 
   defp build_lock_key(job, time, enqueue_key) do

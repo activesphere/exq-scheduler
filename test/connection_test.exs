@@ -16,7 +16,7 @@ defmodule ConnectionTest do
     end
     config =
       config
-      |> put_in([:redis, :name], String.to_atom("scheduler_redis"))
+      |> add_redis_name(String.to_atom("scheduler_redis"))
       |> put_in([:redis, :port], 26379) # change redis port to use toxiproxy
       |> put_in([:name], String.to_atom("scheduler"))
 

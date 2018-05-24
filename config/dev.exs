@@ -9,11 +9,14 @@ config :exq_scheduler, :server_opts,
   time_zone: "Asia/Kolkata"
 
 config :exq_scheduler, :redis,
-  host: "127.0.0.1",
-  backoff_max: 1000,
-  backoff_initial: 1000,
-  port: 6379,
-  database: 0
+  spec: {
+    Redix,
+    [[host: "127.0.0.1",
+      port: 6379,
+      database: 0],
+     [backoff_max: 1000,
+      backoff_initial: 1000]]
+  }
 
 config :exq_scheduler, :schedules,
   schedule_cron_1m: %{ "description" => "It's a 1 minute schedule",
