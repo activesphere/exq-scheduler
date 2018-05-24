@@ -94,17 +94,17 @@ defmodule ExqSchedulerTest do
 
     set_scheduler_state(sch_name, false)
     old_last_sch = List.first(get_jobs(class)) |> schedule_unix_time()
-    :timer.sleep(500)
+    :timer.sleep(750)
 
     set_scheduler_state(sch_name, true)
-    :timer.sleep(500)
+    :timer.sleep(750)
 
     jobs = get_jobs(class)
     new_schs =
       Enum.map(jobs, &schedule_unix_time(&1))
       |> Enum.filter(fn time -> (time > old_last_sch) end)
 
-    # Should have a missing job 'disabled' and 'enabled' states
+    # Should have a missing job between 'disabled' and 'enabled' states
     assert (List.last(new_schs) - old_last_sch) > 10*60
 
     # Check properties for newly added jobs

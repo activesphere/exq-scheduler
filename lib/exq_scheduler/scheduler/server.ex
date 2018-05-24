@@ -58,9 +58,7 @@ defmodule ExqScheduler.Scheduler.Server do
       end)
       |> Storage.persist_schedule_times(storage_opts, state.start_time)
 
-      Enum.map(state.schedules, fn schedule ->
-        Storage.persist_schedule(schedule, storage_opts)
-      end)
+      Enum.map(state.schedules, &Storage.persist_schedule(&1, storage_opts))
 
       next_tick(self(), 0)
     else
