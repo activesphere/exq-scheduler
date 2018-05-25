@@ -17,7 +17,6 @@ defmodule ExqSchedulerTimeTest do
     :ok
   end
 
-
   test "scheduler should not consider dates before its started" do
     config = configure_env(env(), 10000000, [schedule_cron_1h: %{
                                                     "cron" => "0 * * * * *",
