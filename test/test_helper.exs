@@ -24,7 +24,7 @@ defmodule TestUtils do
 
   def build_schedule(cron) do
     {:ok, job} = %{class: "TestJob"} |> Poison.encode()
-    Schedule.new("test_schedule", "test description", cron, job, %{"include_metadata" => true})
+    Schedule.new("test_schedule", "test description", cron, job, %{:include_metadata => true})
   end
 
   def build_time_range(now, offset) do
@@ -165,7 +165,7 @@ defmodule TestUtils do
   end
 
   def set_scheduler_state(schedule_name, state) do
-    schedule_state = %{"enabled" => state}
+    schedule_state = %{:enabled => state}
     redis_lib().command!(
       :redix,
       ["HSET",

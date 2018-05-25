@@ -1,10 +1,11 @@
 defmodule ExqScheduler.Schedule.Parser do
   @moduledoc false
   alias ExqScheduler.Schedule.Utils
-  @cron_key "cron"
-  @description_key "description"
-  @include_metadata "include_metadata"
-  @non_job_keys [@cron_key, @description_key, @include_metadata]
+  @cron_key :cron
+  @description_key :description
+  @class_key :class
+  @metadata_key :include_metadata
+  @non_job_keys [@cron_key, @description_key, @metadata_key]
 
   @doc """
     Parses the schedule as per the format (rufus-scheduler supported):
@@ -23,7 +24,7 @@ defmodule ExqScheduler.Schedule.Parser do
     else
       schedule_time = Map.fetch!(schedule, @cron_key)
       description = Map.get(schedule, @description_key, "")
-      opts = %{"include_metadata" => Map.get(schedule, @include_metadata, false)}
+      opts = %{@metadata_key => Map.get(schedule, @metadata_key, false)}
 
       if !is_binary(schedule_time) do
         [schedule_time, schedule_opts] = schedule_time
@@ -45,6 +46,12 @@ defmodule ExqScheduler.Schedule.Parser do
     end
   end
 
+  def convert_keys(schedule) do
+    Map.new(schedule,
+      fn {k, v} -> {String.to_atom(k), v}
+    end)
+  end
+
   defp normalize_time(time) do
     time = to_string(time)
 
@@ -64,8 +71,8 @@ defmodule ExqScheduler.Schedule.Parser do
   end
 
   defp validate_config(job) do
-    if job["class"] == nil do
-      cron = Map.get(job, "cron")
+    if job[@class_key] == nil do
+      cron = Map.get(job, @cron_key)
       raise ExqScheduler.Schedule.Parser.ConfigurationError,
         message: "Class is not configured for cron: #{inspect(cron)}. Scheduler: #{inspect(job)}"
     end

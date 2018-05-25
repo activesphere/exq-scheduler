@@ -172,6 +172,7 @@ defmodule ExqScheduler.Storage do
     Enum.map(keys, fn name ->
       {description, cron, job, opts} =
         Redis.hget(storage_opts.lib, storage_opts.redis, schedules_key, name)
+        |> Parser.convert_keys()
         |> Parser.get_schedule()
 
       Schedule.new(name, description, cron, job, opts)

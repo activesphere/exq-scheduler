@@ -20,9 +20,9 @@ defmodule RedisSentinelTest do
       env(),
       1000*60*60,
       [schedule_cron_1h: %{
-          "cron" => "*/20 * * * * *",
-          "class" => "SentinelWorker",
-          "include_metadata" => true}]
+          :cron => "*/20 * * * * *",
+          :class => "SentinelWorker",
+          :include_metadata => true}]
     )
 
     config = put_in(config[:redis][:spec],

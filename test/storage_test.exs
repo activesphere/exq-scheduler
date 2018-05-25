@@ -36,7 +36,7 @@ defmodule StorageTest do
       schedule.description,
       Crontab.CronExpression.Composer.compose(schedule.cron),
       ExqScheduler.Schedule.Job.encode(schedule.job),
-      %{"enabled" => false})
+      %{enabled: false})
 
       Storage.persist_schedule(sch, storage_opts)
       assert Storage.is_schedule_enabled?(storage_opts, sch) == false
@@ -45,9 +45,9 @@ defmodule StorageTest do
 
   test "Check if args getting passed to the scheduler" do
     env_local = put_in(env()[:schedules],[schedule_cron_1m: %{
-                                                 "cron" => "* * * * * *",
-                                                 "class" => "SidekiqWorker",
-                                                 "args" => ["cron_1"]
+                                                 :cron => "* * * * * *",
+                                                 :class => "SidekiqWorker",
+                                                 :args => ["cron_1"]
                                               }])
 
     schedules = Storage.load_schedules_config(env_local)

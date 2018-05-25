@@ -19,10 +19,10 @@ defmodule ExqSchedulerTimeTest do
 
   test "scheduler should not consider dates before its started" do
     config = configure_env(env(), 10000000, [schedule_cron_1h: %{
-                                                    "cron" => "0 * * * * *",
-                                                    "class" => "TimeWorker",
-                                                    "queue" => "TimeQ",
-                                                    "include_metadata" => true
+                                                    :cron => "0 * * * * *",
+                                                    :class => "TimeWorker",
+                                                    :queue => "TimeQ",
+                                                    :include_metadata => true
                                                  }])
     start_time = Timex.to_unix(Time.now())
     start_scheduler(config)
@@ -43,9 +43,9 @@ defmodule ExqSchedulerTimeTest do
 
   test "if last_run_time is future time, should be handled gracefully" do
     config = configure_env(env(), 1000*60*60*2, [schedule_cron: %{
-                                                "cron" => "*/20 * * * * *",
-                                                "class" => "FutureWorker",
-                                                "include_metadata" => true
+                                                :cron => "*/20 * * * * *",
+                                                :class => "FutureWorker",
+                                                :include_metadata => true
                                              }])
     config =
       config

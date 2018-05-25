@@ -51,9 +51,9 @@ defmodule ScheduleTest do
 
   test "get_missed_run_dates(): should work correct across different timezones" do
     config = configure_env(env(), 1000*60*60, [schedule_cron: %{
-                                                  "cron" => "*/20 * * * * *",
-                                                  "class" => "FutureWorker",
-                                                  "include_metadata" => true
+                                                  :cron => "*/20 * * * * *",
+                                                  :class => "FutureWorker",
+                                                  :include_metadata => true
                                                }])
     config =
       config
