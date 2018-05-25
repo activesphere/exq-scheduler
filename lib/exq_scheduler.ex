@@ -28,9 +28,7 @@ defmodule ExqScheduler do
     %{
       id: Keyword.get(opts, :name, __MODULE__),
       start: {__MODULE__, :start_link, [opts]},
-      type: :supervisor,
-      restart: :permanent,
-      shutdown: 500
+      type: :supervisor
     }
   end
 
