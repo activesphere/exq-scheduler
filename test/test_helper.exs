@@ -84,6 +84,7 @@ defmodule TestUtils do
 
   def redis_pid(idx \\ "test") do
     pid = "redis_#{idx}" |> String.to_atom()
+
     opts =
       add_redis_name(env(), pid)
       |> ExqScheduler.redix_spec()
@@ -113,7 +114,7 @@ defmodule TestUtils do
     spec =
       ExqScheduler.redix_spec(env)
       |> put_in([:id], name)
-    
+
     opts = update_opts(get_opts(spec), name)
     spec = set_opts(spec, opts)
 
@@ -128,8 +129,9 @@ defmodule TestUtils do
 
   def get_jobs(class_name \\ nil, queue_name \\ "default") do
     opts = storage_opts()
+
     get_jobs_from_storage(Storage.queue_key(queue_name, opts))
-    |> Enum.filter(fn job -> (class_name == nil) || (job.class == class_name) end)
+    |> Enum.filter(fn job -> class_name == nil || job.class == class_name end)
   end
 
   defp get_jobs_from_storage(queue_name) do
@@ -148,13 +150,17 @@ defmodule TestUtils do
 
   def assert_continuity(jobs, diff) do
     assert length(jobs) > 0, "Jobs list is empty"
+
     jobs
     |> Enum.chunk_every(2, 1, :discard)
-    |> Enum.map( fn [job1, job2] ->
+    |> Enum.map(fn [job1, job2] ->
       t1 = schedule_time_from_job(job1)
       t2 = schedule_time_from_job(job2)
-      assert(diff == iso_to_unixtime(t1)-iso_to_unixtime(t2),
-        "Failed. job1: #{inspect(job1)} job2: #{inspect(job2)} ")
+
+      assert(
+        diff == iso_to_unixtime(t1) - iso_to_unixtime(t2),
+        "Failed. job1: #{inspect(job1)} job2: #{inspect(job2)} "
+      )
     end)
   end
 
@@ -166,13 +172,10 @@ defmodule TestUtils do
 
   def set_scheduler_state(schedule_name, state) do
     schedule_state = %{:enabled => state}
+
     redis_module().command!(
       :redix,
-      ["HSET",
-       "exq:sidekiq-scheduler:states",
-       schedule_name,
-       Poison.encode!(schedule_state)
-      ]
+      ["HSET", "exq:sidekiq-scheduler:states", schedule_name, Poison.encode!(schedule_state)]
     )
   end
 
@@ -200,6 +203,7 @@ defmodule ExqScheduler.Case do
 end
 
 test_env = Application.get_all_env(:exq_scheduler)
+
 opts =
   TestUtils.add_redis_name(test_env, :redix)
   |> ExqScheduler.redix_spec()

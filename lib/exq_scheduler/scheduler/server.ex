@@ -1,15 +1,22 @@
 defmodule ExqScheduler.Scheduler.Server do
   @moduledoc false
   @storage_reconnect_timeout 500
-  @failsafe_delay 10 # milliseconds
-  @max_timeout 1000*3600 # 1 hour
+  # milliseconds
+  @failsafe_delay 10
+  # 1 hour
+  @max_timeout 1000 * 3600
 
   use GenServer
   alias ExqScheduler.Time
 
   defmodule State do
     @moduledoc false
-    defstruct schedules: nil, storage_opts: nil, server_opts: nil, range: nil, env: nil, start_time: nil
+    defstruct schedules: nil,
+              storage_opts: nil,
+              server_opts: nil,
+              range: nil,
+              env: nil,
+              start_time: nil
   end
 
   defmodule Opts do
@@ -51,6 +58,7 @@ defmodule ExqScheduler.Scheduler.Server do
 
   def handle_info(:first, state) do
     storage_opts = state.storage_opts
+
     if Storage.storage_connected?(storage_opts) do
       Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
       |> Enum.filter(&(!Storage.get_schedule_first_run_time(storage_opts, &1)))
@@ -62,32 +70,39 @@ defmodule ExqScheduler.Scheduler.Server do
     else
       Process.send_after(self(), :first, @storage_reconnect_timeout)
     end
+
     {:noreply, state}
   end
 
   def handle_info(:tick, state) do
     timeout =
-    if Storage.storage_connected?(state.storage_opts) do
-      now = Time.now()
-      handle_tick(state, now)
+      if Storage.storage_connected?(state.storage_opts) do
+        now = Time.now()
+        handle_tick(state, now)
 
-      sch_time = nearest_schedule_time(state, now)
+        sch_time = nearest_schedule_time(state, now)
 
-      # Use *immediate* current time, not previous time to find the timeout
-      timeout = get_timeout(sch_time, Time.now())
-      Time.scale_duration(timeout)
-    else
-      @storage_reconnect_timeout # sleep for a while and retry
-    end
+        # Use *immediate* current time, not previous time to find the timeout
+        timeout = get_timeout(sch_time, Time.now())
+        Time.scale_duration(timeout)
+      else
+        # sleep for a while and retry
+        @storage_reconnect_timeout
+      end
 
     next_tick(self(), timeout)
     {:noreply, state}
   end
 
   defp handle_tick(state, ref_time) do
-    Storage.filter_active_jobs(state.storage_opts, state.schedules, get_range(state, ref_time), ref_time)
+    Storage.filter_active_jobs(
+      state.storage_opts,
+      state.schedules,
+      get_range(state, ref_time),
+      ref_time
+    )
     |> Enum.map(fn {schedule, jobs} ->
-     Storage.enqueue_jobs(schedule, jobs, state.storage_opts)
+      Storage.enqueue_jobs(schedule, jobs, state.storage_opts)
     end)
 
     Storage.persist_schedule_times(state.schedules, state.storage_opts, ref_time)
@@ -107,6 +122,7 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defp get_timeout(schedule_time, current_time) do
     diff = Timex.diff(schedule_time, current_time, :milliseconds)
+
     if diff > 0 do
       if diff > @max_timeout do
         @max_timeout + @failsafe_delay

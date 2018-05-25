@@ -44,17 +44,17 @@ defmodule ExqScheduler.Schedule do
     Serializable Job format used by Exq
     """
     defstruct error_message: nil,
-      error_class: nil,
-      failed_at: nil,
-      retry: false,
-      retry_count: 0,
-      processor: nil,
-      queue: nil,
-      class: nil,
-      args: nil,
-      jid: nil,
-      finished_at: nil,
-      enqueued_at: nil
+              error_class: nil,
+              failed_at: nil,
+              retry: false,
+              retry_count: 0,
+              processor: nil,
+              queue: nil,
+              class: nil,
+              args: nil,
+              jid: nil,
+              finished_at: nil,
+              enqueued_at: nil
 
     def decode(serialized) do
       Poison.decode!(serialized, as: %__MODULE__{})
@@ -64,7 +64,6 @@ defmodule ExqScheduler.Schedule do
       Poison.encode!(job)
     end
   end
-
 
   alias ExqScheduler.Schedule.Utils
   alias ExqScheduler.Storage
@@ -104,14 +103,14 @@ defmodule ExqScheduler.Schedule do
 
   def get_jobs(storage_opts, schedule, time_range, ref_time) do
     get_missed_run_dates(storage_opts, schedule, time_range.t_start, ref_time)
-    |> Enum.reverse
+    |> Enum.reverse()
     |> Enum.map(&ScheduledJob.new(schedule.job, &1))
   end
 
   def get_missed_run_dates(storage_opts, schedule, lower_bound_time, ref_time) do
     now = ref_time |> Timex.to_naive_datetime()
     schedule_last_run_time = Storage.get_schedule_last_run_time(storage_opts, schedule)
-    
+
     lower_bound_time =
       if schedule_last_run_time != nil do
         schedule_last_run_time =

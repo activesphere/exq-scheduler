@@ -7,29 +7,35 @@ defmodule ScheduleTest do
   import TestUtils
 
   test "check get_next_schedule_date for different timezone" do
-    next_date = get_next_date("0 2 * * * America/New_York") # -06:00
+    # -06:00
+    next_date = get_next_date("0 2 * * * America/New_York")
     expected_next_date = {7, 0}
     assert expected_next_date == next_date
 
-    next_date = get_next_date("0 9 * * * Asia/Kolkata") # +05:30
+    # +05:30
+    next_date = get_next_date("0 9 * * * Asia/Kolkata")
     expected_next_date = {3, 30}
     assert expected_next_date == next_date
 
-    next_date = get_next_date("0 12 * * * Asia/Katmandu") # -05:45
+    # -05:45
+    next_date = get_next_date("0 12 * * * Asia/Katmandu")
     expected_next_date = {6, 15}
     assert expected_next_date == next_date
   end
 
   test "check get_previous_schedule_date for different timezone" do
-    prev_date = get_prev_date("0 2 * * * America/New_York") # -06:00
+    # -06:00
+    prev_date = get_prev_date("0 2 * * * America/New_York")
     expected_prev_date = {7, 0}
     assert expected_prev_date == prev_date
 
-    prev_date = get_prev_date("0 9 * * * Asia/Kolkata") # +05:30
+    # +05:30
+    prev_date = get_prev_date("0 9 * * * Asia/Kolkata")
     expected_prev_date = {3, 30}
     assert expected_prev_date == prev_date
 
-    prev_date = get_prev_date("0 12 * * * Asia/Katmandu") # +05:045
+    # +05:045
+    prev_date = get_prev_date("0 12 * * * Asia/Katmandu")
     expected_prev_date = {6, 15}
     assert expected_prev_date == prev_date
   end
@@ -37,10 +43,11 @@ defmodule ScheduleTest do
   test "clock should have correct precision" do
     acceptable_err = 60
 
-    ref =  Time.now()
-    :timer.sleep(500)  # scaled: 30*60sec  (1sec <=> 1hour)
+    ref = Time.now()
+    # scaled: 30*60sec  (1sec <=> 1hour)
+    :timer.sleep(500)
     diff = Timex.diff(Time.now(), ref, :seconds)
-    assert abs(diff-1800) < acceptable_err
+    assert abs(diff - 1800) < acceptable_err
   end
 
   test "order of the jobs should be reverse (recent job first)" do
@@ -50,11 +57,17 @@ defmodule ScheduleTest do
   end
 
   test "get_missed_run_dates(): should work correct across different timezones" do
-    config = configure_env(env(), 1000*60*60, [schedule_cron: %{
-                                                  :cron => "*/20 * * * * *",
-                                                  :class => "FutureWorker",
-                                                  :include_metadata => true
-                                               }])
+    config =
+      configure_env(
+        env(),
+        1000 * 60 * 60,
+        schedule_cron: %{
+          :cron => "*/20 * * * * *",
+          :class => "FutureWorker",
+          :include_metadata => true
+        }
+      )
+
     config =
       config
       |> add_redis_name(:redix)
@@ -75,18 +88,26 @@ defmodule ScheduleTest do
 
     assert Timex.compare(newest_schedule, now, :seconds) != 1
   end
-  
+
   defp get_next_date(cron) do
     schedule = build_schedule(cron)
+
     date =
       ExqScheduler.Schedule.get_next_schedule_date(schedule.cron, schedule.tz_offset, Time.now())
+
     {date.hour(), date.minute()}
   end
 
   defp get_prev_date(cron) do
     schedule = build_schedule(cron)
+
     date =
-      ExqScheduler.Schedule.get_previous_schedule_date(schedule.cron, schedule.tz_offset, Time.now())
+      ExqScheduler.Schedule.get_previous_schedule_date(
+        schedule.cron,
+        schedule.tz_offset,
+        Time.now()
+      )
+
     {date.hour(), date.minute()}
   end
 end

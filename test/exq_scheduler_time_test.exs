@@ -14,16 +14,23 @@ defmodule ExqSchedulerTimeTest do
 
       {:ok, _} = start_supervised({ExqScheduler, config})
     end
+
     :ok
   end
 
   test "scheduler should not consider dates before its started" do
-    config = configure_env(env(), 10000000, [schedule_cron_1h: %{
-                                                    :cron => "0 * * * * *",
-                                                    :class => "TimeWorker",
-                                                    :queue => "TimeQ",
-                                                    :include_metadata => true
-                                                 }])
+    config =
+      configure_env(
+        env(),
+        10_000_000,
+        schedule_cron_1h: %{
+          :cron => "0 * * * * *",
+          :class => "TimeWorker",
+          :queue => "TimeQ",
+          :include_metadata => true
+        }
+      )
+
     start_time = Timex.to_unix(Time.now())
     start_scheduler(config)
     :timer.sleep(100)
@@ -32,21 +39,29 @@ defmodule ExqSchedulerTimeTest do
 
     is_jobs_scheduled_before_start =
       jobs
-      |> Enum.all?(
-         fn job ->
-           st = schedule_time_from_job(job)
-           iso_to_unixtime(st) >= start_time
-         end)
-    assert(is_jobs_scheduled_before_start,
-      "Start time: #{start_time}  jobs: #{inspect(jobs)}")
+      |> Enum.all?(fn job ->
+        st = schedule_time_from_job(job)
+        iso_to_unixtime(st) >= start_time
+      end)
+
+    assert(
+      is_jobs_scheduled_before_start,
+      "Start time: #{start_time}  jobs: #{inspect(jobs)}"
+    )
   end
 
   test "if last_run_time is future time, should be handled gracefully" do
-    config = configure_env(env(), 1000*60*60*2, [schedule_cron: %{
-                                                :cron => "*/20 * * * * *",
-                                                :class => "FutureWorker",
-                                                :include_metadata => true
-                                             }])
+    config =
+      configure_env(
+        env(),
+        1000 * 60 * 60 * 2,
+        schedule_cron: %{
+          :cron => "*/20 * * * * *",
+          :class => "FutureWorker",
+          :include_metadata => true
+        }
+      )
+
     config =
       config
       |> add_redis_name(:redix)
@@ -61,6 +76,6 @@ defmodule ExqSchedulerTimeTest do
     start_scheduler(config)
     :timer.sleep(2000)
 
-    assert_properties("FutureWorker", 20*60)
+    assert_properties("FutureWorker", 20 * 60)
   end
 end

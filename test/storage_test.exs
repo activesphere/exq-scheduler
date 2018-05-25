@@ -32,11 +32,14 @@ defmodule StorageTest do
     assert length(schedules) >= 1
 
     Enum.map(schedules, fn schedule ->
-      sch = ExqScheduler.Schedule.new(schedule.name,
-      schedule.description,
-      Crontab.CronExpression.Composer.compose(schedule.cron),
-      ExqScheduler.Schedule.Job.encode(schedule.job),
-      %{enabled: false})
+      sch =
+        ExqScheduler.Schedule.new(
+          schedule.name,
+          schedule.description,
+          Crontab.CronExpression.Composer.compose(schedule.cron),
+          ExqScheduler.Schedule.Job.encode(schedule.job),
+          %{enabled: false}
+        )
 
       Storage.persist_schedule(sch, storage_opts)
       assert Storage.is_schedule_enabled?(storage_opts, sch) == false
@@ -44,17 +47,20 @@ defmodule StorageTest do
   end
 
   test "Check if args getting passed to the scheduler" do
-    env_local = put_in(env()[:schedules],[schedule_cron_1m: %{
-                                                 :cron => "* * * * * *",
-                                                 :class => "SidekiqWorker",
-                                                 :args => ["cron_1"]
-                                              }])
+    env_local =
+      put_in(
+        env()[:schedules],
+        schedule_cron_1m: %{
+          :cron => "* * * * * *",
+          :class => "SidekiqWorker",
+          :args => ["cron_1"]
+        }
+      )
 
     schedules = Storage.load_schedules_config(env_local)
     assert length(schedules) >= 1
 
     schedule = schedules |> Enum.at(0)
-   assert length(schedule.job.args) >= 1
+    assert length(schedule.job.args) >= 1
   end
-
 end

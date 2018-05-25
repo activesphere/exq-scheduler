@@ -27,11 +27,12 @@ defmodule ExqScheduler.Storage.Redis do
         |> Enum.concat(commands)
         |> Enum.concat([["EXEC"]])
 
-      expected = Enum.concat([
-        ["OK"],
-        ["QUEUED"],
-        Enum.map(commands, fn _ -> "QUEUED" end)
-      ])
+      expected =
+        Enum.concat([
+          ["OK"],
+          ["QUEUED"],
+          Enum.map(commands, fn _ -> "QUEUED" end)
+        ])
 
       response = storage.module.pipeline!(storage.name, pipeline_command)
       ^expected = Enum.take(response, length(expected))

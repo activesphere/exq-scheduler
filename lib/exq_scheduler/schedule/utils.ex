@@ -92,7 +92,8 @@ defmodule ExqScheduler.Schedule.Utils do
       if tz_from_config != nil and Timex.Timezone.exists?(tz_from_config) do
         tz_from_config
       else
-        Timex.local.time_zone # by default use local timezone
+        # by default use local timezone
+        Timex.local().time_zone
       end
     else
       nil
@@ -167,14 +168,14 @@ defmodule ExqScheduler.Schedule.Utils do
     diff1 = clamp_negative_value(Timex.diff(ref_date, date1), -1)
     diff2 = clamp_negative_value(Timex.diff(ref_date, date2), -1)
 
-    if (diff1 > -1 && diff2 > -1) do
+    if diff1 > -1 && diff2 > -1 do
       if diff1 < diff2 do
         date1
       else
         date2
       end
     else
-      if (diff1 > -1) do
+      if diff1 > -1 do
         date1
       else
         date2

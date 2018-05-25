@@ -31,9 +31,7 @@ defmodule ExqScheduler.Storage do
 
   def persist_schedule(schedule, storage_opts) do
     val = Schedule.encode(schedule)
-    _ = Redis.hset(storage_opts,
-      build_schedules_key(storage_opts),
-      schedule.name, val)
+    _ = Redis.hset(storage_opts, build_schedules_key(storage_opts), schedule.name, val)
 
     schedule_state =
       %{enabled: schedule.schedule_opts.enabled}
@@ -62,7 +60,7 @@ defmodule ExqScheduler.Storage do
         prev_time
         |> Timex.add(schedule.tz_offset)
         |> Poison.encode!()
-      
+
       Redis.hset(
         storage_opts,
         build_schedule_times_key(storage_opts, :prev),
@@ -76,7 +74,7 @@ defmodule ExqScheduler.Storage do
         next_time
         |> Timex.add(schedule.tz_offset)
         |> Poison.encode!()
-      
+
       Redis.hset(
         storage_opts,
         build_schedule_times_key(storage_opts, :next),
@@ -213,6 +211,7 @@ defmodule ExqScheduler.Storage do
     ]
 
     enqueue_key = build_enqueued_jobs_key(storage_opts)
+
     Redis.cas(
       storage_opts,
       build_lock_key(job, time, enqueue_key),

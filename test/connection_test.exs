@@ -9,25 +9,34 @@ defmodule ConnectionTest do
   end
 
   setup context do
-    config = if context[:config] do
-      context[:config]
-    else
-      env()
-    end
+    config =
+      if context[:config] do
+        context[:config]
+      else
+        env()
+      end
+
     config =
       config
       |> add_redis_name(String.to_atom("scheduler_redis"))
-      |> put_in([:redis, :port], 26379) # change redis port to use toxiproxy
+      # change redis port to use toxiproxy
+      |> put_in([:redis, :port], 26379)
       |> put_in([:name], String.to_atom("scheduler"))
 
     {:ok, _} = start_supervised({ExqScheduler, config})
     :ok
   end
 
-  @tag config: configure_env(env(), 1000*60*60, [schedule_cron_10m: %{
-                                                    :cron => "*/30 * * * * *",
-                                                    :class => "DummyWorker2",
-                                                    :include_metadata => true}])
+  @tag config:
+         configure_env(
+           env(),
+           1000 * 60 * 60,
+           schedule_cron_10m: %{
+             :cron => "*/30 * * * * *",
+             :class => "DummyWorker2",
+             :include_metadata => true
+           }
+         )
   @tag :integration
   test "whether reconnects automatically" do
     down("redis")
@@ -37,38 +46,51 @@ defmodule ConnectionTest do
     up("redis")
     :timer.sleep(1000)
 
-    assert_properties("DummyWorker2", 30*60)
+    assert_properties("DummyWorker2", 30 * 60)
     jobs = get_jobs("DummyWorker2")
+
     new_jobs_added? =
       Enum.any?(jobs, fn job ->
         sch_time = schedule_time_from_job(job) |> iso_to_unixtime()
         sch_time > min_sch_time
       end)
+
     assert new_jobs_added?
   end
 
-  @tag config: configure_env(env(), 1000*60*120, [schedule_cron: %{
-                                                     :cron => "*/30 * * * * *",
-                                                     :class => "DummyWorker2",
-                                                     :include_metadata => true}])
+  @tag config:
+         configure_env(
+           env(),
+           1000 * 60 * 120,
+           schedule_cron: %{
+             :cron => "*/30 * * * * *",
+             :class => "DummyWorker2",
+             :include_metadata => true
+           }
+         )
   @tag :integration
   test "continuity during network failure" do
     :timer.sleep(2000)
-    assert_properties("DummyWorker2", 30*60)
-    
+    assert_properties("DummyWorker2", 30 * 60)
+
     down("redis")
     :timer.sleep(1000)
 
     up("redis")
     :timer.sleep(1000)
-    assert_properties("DummyWorker2", 30*60)
+    assert_properties("DummyWorker2", 30 * 60)
   end
 
-  
-  @tag config: configure_env(env(), 1000*60*60, [schedule_cron: %{
-                                                    :cron => "*/10 * * * * *",
-                                                    :class => "DummyWorker2",
-                                                    :include_metadata => true}])
+  @tag config:
+         configure_env(
+           env(),
+           1000 * 60 * 60,
+           schedule_cron: %{
+             :cron => "*/10 * * * * *",
+             :class => "DummyWorker2",
+             :include_metadata => true
+           }
+         )
   @tag :integration
   test "to check whether scheduler considers window after reconnection" do
     down("redis")
@@ -79,7 +101,7 @@ defmodule ConnectionTest do
     :timer.sleep(1000)
     jobs = get_jobs("DummyWorker2")
 
-    assert_properties("DummyWorker2", 10*60)
+    assert_properties("DummyWorker2", 10 * 60)
     first_job = List.last(jobs)
     first_sch_time = schedule_time_from_job(first_job) |> iso_to_unixtime()
 

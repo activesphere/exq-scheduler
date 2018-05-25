@@ -15,4 +15,4 @@ config :exq_scheduler, :redis,
 
 config :exq_scheduler, :schedules, []
 
-import_config "#{Mix.env}.exs"
+import_config "#{Mix.env()}.exs"

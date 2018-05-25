@@ -32,7 +32,7 @@ defmodule ExqScheduler do
     }
   end
 
-  defmodule ConfigurationError  do
+  defmodule ConfigurationError do
     defexception message: "Invalid configuration!"
   end
 
@@ -41,8 +41,10 @@ defmodule ExqScheduler do
 
     if !is_map(spec) do
       raise ExqScheduler.ConfigurationError,
-        message: "Invalid redis specification in the configuration. :spec must be a map, Please refer documentation"
+        message:
+          "Invalid redis specification in the configuration. :spec must be a map, Please refer documentation"
     end
+
     spec
   end
 

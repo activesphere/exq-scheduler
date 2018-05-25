@@ -47,9 +47,10 @@ defmodule ExqScheduler.Schedule.Parser do
   end
 
   def convert_keys(schedule) do
-    Map.new(schedule,
-      fn {k, v} -> {String.to_atom(k), v}
-    end)
+    Map.new(
+      schedule,
+      fn {k, v} -> {String.to_atom(k), v} end
+    )
   end
 
   defp normalize_time(time) do
@@ -62,6 +63,7 @@ defmodule ExqScheduler.Schedule.Parser do
 
   defp create_job(schedule) do
     validate_config(schedule)
+
     Map.drop(schedule, @non_job_keys)
     |> Poison.encode!()
   end
@@ -73,9 +75,11 @@ defmodule ExqScheduler.Schedule.Parser do
   defp validate_config(job) do
     if job[@class_key] == nil do
       cron = Map.get(job, @cron_key)
+
       raise ExqScheduler.Schedule.Parser.ConfigurationError,
         message: "Class is not configured for cron: #{inspect(cron)}. Scheduler: #{inspect(job)}"
     end
+
     :ok
   end
 end

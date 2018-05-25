@@ -14,12 +14,10 @@ config :exq_scheduler, :redis,
     start: {
       Redix,
       :start_link,
-      [[host: "127.0.0.1",
-        port: 6379,
-        database: 1],
-       [name: :redis_test,
-        backoff_max: 200,
-        backoff_initial: 200]]
+      [
+        [host: "127.0.0.1", port: 6379, database: 1],
+        [name: :redis_test, backoff_max: 200, backoff_initial: 200]
+      ]
     }
   }
 
