@@ -65,24 +65,15 @@ defmodule TestUtils do
     |> put_in([:schedules], schedules)
   end
 
-  def redis_lib() do
-    ExqScheduler.redis_lib(env())
-  end
-
-  def redis_lib(env) do
-    ExqScheduler.redis_lib(env)
+  def redis_lib(e \\ env()) do
+    ExqScheduler.redis_lib(e)
   end
 
   def flush_redis do
     "OK" = redis_lib().command!(:redix, ["FLUSHDB"])
   end
 
-  def assert_job_uniqueness do
-    jobs = get_jobs()
-    assert_job_uniqueness(jobs)
-  end
-
-  def assert_job_uniqueness(jobs) do
+  def assert_job_uniqueness(jobs \\ get_jobs()) do
     assert length(jobs) > 0
     grouped = Enum.group_by(jobs, fn job -> [job.class, List.first(job.args)["scheduled_at"]] end)
 
@@ -104,17 +95,17 @@ defmodule TestUtils do
   end
 
   def get_opts(spec) do
-    get_in(spec, [:start]) |> elem(2)
+    spec.start |> elem(2)
   end
 
   def set_opts(spec, opts) do
-    {lib, :start_link, _} = get_in(spec, [:start])
-    put_in(spec, [:start], {lib, :start_link, opts})
+    {lib, :start_link, _} = spec.start
+    put_in(spec[:start], {lib, :start_link, opts})
   end
 
   def update_opts(opts, name) do
     [redix_opts | rest_args] = opts |> Enum.reverse()
-    redix_opts = put_in(redix_opts, [:name], name)
+    redix_opts = put_in(redix_opts[:name], name)
     [redix_opts | rest_args] |> Enum.reverse()
   end
 
@@ -126,7 +117,7 @@ defmodule TestUtils do
     opts = update_opts(get_opts(spec), name)
     spec = set_opts(spec, opts)
 
-    put_in(env, [:redis, :spec], spec)
+    put_in(env[:redis][:spec], spec)
   end
 
   def pmap(collection, func) do

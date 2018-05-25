@@ -53,9 +53,7 @@ defmodule ExqScheduler.Scheduler.Server do
     storage_opts = state.storage_opts
     if Storage.storage_connected?(storage_opts) do
       Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
-      |> Enum.filter(fn schedule ->
-        Storage.get_schedule_first_run_time(storage_opts, schedule) == nil
-      end)
+      |> Enum.filter(&(!Storage.get_schedule_first_run_time(storage_opts, &1)))
       |> Storage.persist_schedule_times(storage_opts, state.start_time)
 
       Enum.map(state.schedules, &Storage.persist_schedule(&1, storage_opts))
@@ -89,7 +87,7 @@ defmodule ExqScheduler.Scheduler.Server do
   defp handle_tick(state, ref_time) do
     Storage.filter_active_jobs(state.storage_opts, state.schedules, get_range(state, ref_time), ref_time)
     |> Enum.map(fn {schedule, jobs} ->
-      Storage.enqueue_jobs(schedule, jobs, state.storage_opts)
+     Storage.enqueue_jobs(schedule, jobs, state.storage_opts)
     end)
 
     Storage.persist_schedule_times(state.schedules, state.storage_opts, ref_time)

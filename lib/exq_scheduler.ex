@@ -34,32 +34,28 @@ defmodule ExqScheduler do
     }
   end
 
-  defmodule ConfigurationError do
+  defmodule ConfigurationError  do
     defexception message: "Invalid configuration!"
   end
 
   def redix_spec(env) do
-    spec = get_in(env, [:redis, :spec])
+    spec = env[:redis][:spec]
 
-    if is_tuple(spec) do
-      {lib, opts} = spec
-      lib.child_spec(opts)
-    else
-      if is_map(spec) do
+    cond do
+      is_tuple(spec) ->
+        {lib, opts} = spec
+        lib.child_spec(opts)
+      is_map(spec) ->
         spec
-      else
-        raise ExqScheduler.ConfigurationError, message: "Invalid redis specification in the configuration. :spec must be tuple or map, Please refer documentatin"
-      end
+      true ->
+        raise ExqScheduler.ConfigurationError,
+          message: "Invalid redis specification in the configuration. :spec must be tuple or map, Please refer documentatin"
     end
   end
 
-  def redis_lib(env) do
-    redix_spec(env) |> get_in([:start]) |> elem(0)
-  end
+  def redis_lib(env), do: redix_spec(env).start |> elem(0)
 
-  def redis_name(env) do
-    redix_spec(env) |> get_in([:id])
-  end
+  def redis_name(env), do: redix_spec(env).id
 
   defp supervisor_opts(env) do
     opts = [strategy: :one_for_one]
