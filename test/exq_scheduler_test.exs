@@ -12,7 +12,7 @@ defmodule ExqSchedulerTest do
       end
       config =
         config
-        |> put_in([:redis, :name], String.to_atom("scheduler_redis_#{i}"))
+        |> add_redis_name(String.to_atom("scheduler_redis_#{i}"))
         |> put_in([:name], String.to_atom("scheduler_#{i}"))
 
       {:ok, _} = start_supervised({ExqScheduler, config})
@@ -27,28 +27,28 @@ defmodule ExqSchedulerTest do
   end
 
   @tag config: configure_env(env(), 1000*60*120, [schedule_cron_1h: %{
-                                                    "cron" => "0 * * * * *",
-                                                    "class" => "DummyWorker1",
-                                                    "include_metadata" => true}])
+                                                    :cron => "0 * * * * *",
+                                                    :class => "DummyWorker1",
+                                                    :include_metadata => true}])
   test "check continuity" do
     :timer.sleep(4000)
     assert_properties("DummyWorker1", 3600)
   end
 
   @tag config: configure_env(env(), 1000*3600, [schedule_cron_1m: %{
-                                                   "cron" => "*/20 * * * * *",
-                                                   "class" => "DummyWorker2",
-                                                   "include_metadata" => true}])
+                                                   :cron => "*/20 * * * * *",
+                                                   :class => "DummyWorker2",
+                                                   :include_metadata => true}])
   test "check for missing jobs" do
     :timer.sleep(4000)
     assert_properties("DummyWorker2", 20*60)
   end
 
   @tag config: configure_env(env(), 1000*60*45, [schedule_cron_1m: %{
-                                                         "cron" => "*/20 * * * * *",
-                                                         "class" => "QWorker",
-                                                         "queue" => "SuperQ",
-                                                         "include_metadata" => true
+                                                         :cron => "*/20 * * * * *",
+                                                         :class => "QWorker",
+                                                         :queue => "SuperQ",
+                                                         :include_metadata => true
                                                       }])
   test "Check schedules are getting added to correct queues" do
     :timer.sleep(1000)
@@ -59,10 +59,10 @@ defmodule ExqSchedulerTest do
   end
 
   @tag config: configure_env(env(), 10000, [schedule_cron_1m: %{
-                                                     "cron" => "0 0 30 1 * *",
+                                                     :cron => "0 0 30 1 * *",
                                                      #1st of jan every year
-                                                     "class" => "AheadTimeWorker",
-                                                     "include_metadata" => true
+                                                     :class => "AheadTimeWorker",
+                                                     :include_metadata => true
                                                   }])
   test "jobs should not be added ahead of time" do
     :timer.sleep(500)
@@ -80,9 +80,9 @@ defmodule ExqSchedulerTest do
   end
 
   @tag config: configure_env(env(), 1000*60*60, [schedule_cron: %{
-                                                    "cron" => "*/10 * * * * *",
-                                                    "class" => "TestWorker",
-                                                    "include_metadata" => true
+                                                    :cron => "*/10 * * * * *",
+                                                    :class => "TestWorker",
+                                                    :include_metadata => true
                                                  }])
   test "after re-enabling should not consider too old jobs" do
     class = "TestWorker"

@@ -17,7 +17,7 @@ defmodule ExqScheduler do
 
   def start_link(env) do
     children = [
-      worker(Redix, redix_args(env)),
+      redix_spec(env),
       worker(Server, [env])
     ]
 
@@ -34,10 +34,23 @@ defmodule ExqScheduler do
     }
   end
 
-  def redis_name(env) do
-    Keyword.get(env, :redis)
-    |> Keyword.get(:name, "#{__MODULE__}.Client" |> String.to_atom())
+  defmodule ConfigurationError  do
+    defexception message: "Invalid configuration!"
   end
+
+  def redix_spec(env) do
+    spec = env[:redis][:spec]
+
+    if !is_map(spec) do
+      raise ExqScheduler.ConfigurationError,
+        message: "Invalid redis specification in the configuration. :spec must be a map, Please refer documentation"
+    end
+    spec
+  end
+
+  def redis_module(env), do: redix_spec(env).start |> elem(0)
+
+  def redis_name(env), do: redix_spec(env).id
 
   defp supervisor_opts(env) do
     opts = [strategy: :one_for_one]
@@ -48,13 +61,5 @@ defmodule ExqScheduler do
     else
       opts
     end
-  end
-
-  def redix_args(env) do
-    redis_opts = Keyword.get(env, :redis)
-    [Keyword.drop(redis_opts,[:name, :backoff_initial, :backoff_max]),
-     [name: redis_name(env),
-      backoff_max: redis_opts[:backoff_max],
-      backoff_initial: redis_opts[:backoff_initial]]]
   end
 end

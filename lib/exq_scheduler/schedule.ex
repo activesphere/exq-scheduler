@@ -7,8 +7,8 @@ defmodule ExqScheduler.Schedule do
 
     def new(opts) do
       %__MODULE__{
-        enabled: Map.get(opts, "enabled", true),
-        include_metadata: Map.get(opts, "include_metadata", false)
+        enabled: Map.get(opts, :enabled, true),
+        include_metadata: Map.get(opts, :include_metadata, false)
       }
     end
   end

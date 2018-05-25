@@ -92,7 +92,7 @@ defmodule ExqScheduler.Schedule.Utils do
       if tz_from_config != nil and Timex.Timezone.exists?(tz_from_config) do
         tz_from_config
       else
-        nil
+        Timex.local.time_zone # by default use local timezone
       end
     else
       nil

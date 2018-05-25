@@ -22,7 +22,7 @@ defmodule SchedulerSerdesTest do
   end
 
   test "it makes sure the schedule has been serialized properly" do
-    storage_opts = Storage.build_opts(env([:redis, :name], redis_pid("test")))
+    storage_opts = Storage.build_opts(add_redis_name(env(),redis_pid("test")))
 
     schedules = ExqScheduler.Storage.get_schedules(storage_opts)
     assert length(schedules) != 0
