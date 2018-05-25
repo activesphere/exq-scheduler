@@ -87,8 +87,8 @@ config :exq_scheduler, :schedules,
 Scheduling each and every job at the exact time might not be possible
 every time. The node might get restarted, the process might get
 descheduled by the OS etc. To solve this exq scheduler by default
-schedule any missed jobs in the last 1 hour. This interval can be
-be configured by changing `missed_jobs_window` value.
+schedules any missed jobs in the last 1 hour. This interval can be
+configured by changing `missed_jobs_window` value.
 
 ```elixir
 config :exq_scheduler,
