@@ -20,14 +20,22 @@ defmodule ExqScheduler.Storage.Redis do
     ["OK", is_locked] = lib.pipeline!(pid, [watch, get])
 
     if is_locked do
-      lib.pipeline!(pid, [["UNWATCH", lock_key]])
+      ["OK"] = lib.pipeline!(pid, [["UNWATCH"]])
     else
       pipeline_command =
         [["MULTI"], ["SET", lock_key, true]]
         |> Enum.concat(commands)
         |> Enum.concat([["EXEC"]])
 
-      lib.pipeline!(pid, pipeline_command)
+      expected = Enum.concat([
+        ["OK"],
+        ["QUEUED"],
+        Enum.map(commands, fn _ -> "QUEUED" end)
+      ])
+
+      response = lib.pipeline!(pid, pipeline_command)
+      ^expected = Enum.take(response, length(expected))
+      response
     end
   end
 

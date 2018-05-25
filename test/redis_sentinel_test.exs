@@ -1,7 +1,6 @@
 defmodule RedisSentinelTest do
   use ExqScheduler.Case, async: false
   import TestUtils
-  alias ExqScheduler.Time
 
   def start_scheduler(config) do
     for i <- 0..4 do
