@@ -41,16 +41,11 @@ defmodule ExqScheduler do
   def redix_spec(env) do
     spec = env[:redis][:spec]
 
-    cond do
-      is_tuple(spec) ->
-        {lib, opts} = spec
-        lib.child_spec(opts)
-      is_map(spec) ->
-        spec
-      true ->
-        raise ExqScheduler.ConfigurationError,
-          message: "Invalid redis specification in the configuration. :spec must be tuple or map, Please refer documentatin"
+    if !is_map(spec) do
+      raise ExqScheduler.ConfigurationError,
+        message: "Invalid redis specification in the configuration. :spec must be a map, Please refer documentation"
     end
+    spec
   end
 
   def redis_lib(env), do: redix_spec(env).start |> elem(0)

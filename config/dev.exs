@@ -9,13 +9,18 @@ config :exq_scheduler, :server_opts,
   time_zone: "Asia/Kolkata"
 
 config :exq_scheduler, :redis,
-  spec: {
-    Redix,
-    [[host: "127.0.0.1",
-      port: 6379,
-      database: 0],
-     [backoff_max: 1000,
-      backoff_initial: 1000]]
+  spec: %{
+    id: :redis_client,
+    start: {
+      Redix,
+      :start_link,
+      [[host: "127.0.0.1",
+        port: 6379,
+        database: 0],
+       [name: :redis_client,
+        backoff_max: 1000,
+        backoff_initial: 1000]]
+    }
   }
 
 config :exq_scheduler, :schedules,
