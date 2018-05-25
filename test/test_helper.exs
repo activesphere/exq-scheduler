@@ -65,12 +65,12 @@ defmodule TestUtils do
     |> put_in([:schedules], schedules)
   end
 
-  def redis_lib(e \\ env()) do
-    ExqScheduler.redis_lib(e)
+  def redis_module(e \\ env()) do
+    ExqScheduler.redis_module(e)
   end
 
   def flush_redis do
-    "OK" = redis_lib().command!(:redix, ["FLUSHDB"])
+    "OK" = redis_module().command!(:redix, ["FLUSHDB"])
   end
 
   def assert_job_uniqueness(jobs \\ get_jobs()) do
@@ -89,8 +89,8 @@ defmodule TestUtils do
       |> ExqScheduler.redix_spec()
       |> get_opts()
 
-    lib = redis_lib(env())
-    {:ok, _} = apply(lib, :start_link, opts)
+    module = redis_module(env())
+    {:ok, _} = apply(module, :start_link, opts)
     pid
   end
 
@@ -99,8 +99,8 @@ defmodule TestUtils do
   end
 
   def set_opts(spec, opts) do
-    {lib, :start_link, _} = spec.start
-    put_in(spec[:start], {lib, :start_link, opts})
+    {module, :start_link, _} = spec.start
+    put_in(spec[:start], {module, :start_link, opts})
   end
 
   def update_opts(opts, name) do
@@ -133,7 +133,7 @@ defmodule TestUtils do
   end
 
   defp get_jobs_from_storage(queue_name) do
-    redis_lib().command!(:redix, ["LRANGE", queue_name, "0", "-1"])
+    redis_module().command!(:redix, ["LRANGE", queue_name, "0", "-1"])
     |> Enum.map(&Job.decode/1)
   end
 
@@ -166,7 +166,7 @@ defmodule TestUtils do
 
   def set_scheduler_state(schedule_name, state) do
     schedule_state = %{:enabled => state}
-    redis_lib().command!(
+    redis_module().command!(
       :redix,
       ["HSET",
        "exq:sidekiq-scheduler:states",
@@ -205,5 +205,5 @@ opts =
   |> ExqScheduler.redix_spec()
   |> TestUtils.get_opts()
 
-lib = ExqScheduler.redis_lib(test_env)
-{:ok, _} = apply(lib, :start_link, opts)
+module = ExqScheduler.redis_module(test_env)
+{:ok, _} = apply(module, :start_link, opts)

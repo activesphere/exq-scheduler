@@ -28,7 +28,7 @@ defmodule ExqScheduler.Mixfile do
     [
       {:timex, "~> 3.1"},
       {:redix, "~> 0.7.0"},
-      {:redix_sentinel, "~> 0.6.0"},
+      {:redix_sentinel, "~> 0.6.0", only: :test},
       {:poison, "~> 3.1"},
       {:crontab, "~> 1.1"},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},

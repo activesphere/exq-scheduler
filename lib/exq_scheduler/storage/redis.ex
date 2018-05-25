@@ -1,26 +1,26 @@
 defmodule ExqScheduler.Storage.Redis do
   @moduledoc false
 
-  def hkeys(lib, pid, key) do
-    lib.command!(pid, ["HKEYS", key])
+  def hkeys(storage, key) do
+    storage.module.command!(storage.name, ["HKEYS", key])
   end
 
-  def hget(lib, pid, key, field) do
-    lib.command!(pid, ["HGET", key, field]) |> decode
+  def hget(storage, key, field) do
+    storage.module.command!(storage.name, ["HGET", key, field]) |> decode
   end
 
-  def hset(lib, pid, key, field, val) do
-    lib.command!(pid, ["HSET", key, field, val])
+  def hset(storage, key, field, val) do
+    storage.module.command!(storage.name, ["HSET", key, field, val])
   end
 
-  def cas(lib, pid, lock_key, commands) do
+  def cas(storage, lock_key, commands) do
     watch = ["WATCH", lock_key]
     get = ["GET", lock_key]
 
-    ["OK", is_locked] = lib.pipeline!(pid, [watch, get])
+    ["OK", is_locked] = storage.module.pipeline!(storage.name, [watch, get])
 
     if is_locked do
-      ["OK"] = lib.pipeline!(pid, [["UNWATCH"]])
+      ["OK"] = storage.module.pipeline!(storage.name, [["UNWATCH"]])
     else
       pipeline_command =
         [["MULTI"], ["SET", lock_key, true]]
@@ -33,18 +33,18 @@ defmodule ExqScheduler.Storage.Redis do
         Enum.map(commands, fn _ -> "QUEUED" end)
       ])
 
-      response = lib.pipeline!(pid, pipeline_command)
+      response = storage.module.pipeline!(storage.name, pipeline_command)
       ^expected = Enum.take(response, length(expected))
       response
     end
   end
 
-  def queue_len(lib, pid, queue) do
-    lib.command!(pid, ["LLEN", queue])
+  def queue_len(storage, queue) do
+    storage.module.command!(storage.name, ["LLEN", queue])
   end
 
-  def connected?(lib, pid) do
-    case lib.command(pid, ["PING"]) do
+  def connected?(storage) do
+    case storage.module.command(storage.name, ["PING"]) do
       {:error, _} -> false
       {:ok, _} -> true
     end

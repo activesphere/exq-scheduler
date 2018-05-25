@@ -15,6 +15,7 @@ defmodule RedisSentinelTest do
     :ok
   end
 
+  @tag :integration
   test "RedixSentinel" do
     config = configure_env(
       env(),

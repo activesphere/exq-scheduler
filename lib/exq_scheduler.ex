@@ -48,7 +48,7 @@ defmodule ExqScheduler do
     spec
   end
 
-  def redis_lib(env), do: redix_spec(env).start |> elem(0)
+  def redis_module(env), do: redix_spec(env).start |> elem(0)
 
   def redis_name(env), do: redix_spec(env).id
 
