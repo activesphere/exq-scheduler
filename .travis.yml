@@ -29,5 +29,5 @@ before_script:
   - sleep 1
 
 script:
-  - ! mix help format > /dev/null || mix format --check-formatted
+  - "! mix help format > /dev/null || mix format --check-formatted"
   - mix test --include integration --trace
