@@ -20,10 +20,14 @@ defmodule TestUtils do
   alias ExqScheduler.Storage
   alias ExqScheduler.Time
   alias ExqScheduler.Schedule.Job
+  alias ExqScheduler.Schedule.Parser
   import ExUnit.Assertions
 
   def build_schedule(cron) do
-    {:ok, job} = %{class: "TestJob"} |> Poison.encode()
+    {:ok, job} =
+      %{class: "TestJob"}
+      |> Parser.set_defaults()
+      |> Poison.encode()
     Schedule.new("test_schedule", "test description", cron, job, %{:include_metadata => true})
   end
 

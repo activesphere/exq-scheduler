@@ -1,10 +1,13 @@
 defmodule ExqScheduler.Schedule.Parser do
   @moduledoc false
   alias ExqScheduler.Schedule.Utils
+  alias ExqScheduler.Schedule.Job
   @cron_key :cron
   @description_key :description
   @class_key :class
   @metadata_key :include_metadata
+  @default_queue "default"
+  @default_args []
   @non_job_keys [@cron_key, @description_key, @metadata_key]
 
   @doc """
@@ -65,7 +68,12 @@ defmodule ExqScheduler.Schedule.Parser do
     validate_config(schedule)
 
     Map.drop(schedule, @non_job_keys)
-    |> Poison.encode!()
+    |> set_defaults()
+    |> Job.encode()
+  end
+
+  def set_defaults(map) do
+    Map.merge(%{queue: @default_queue, args: @default_args}, map)
   end
 
   defmodule ConfigurationError do

@@ -6,7 +6,6 @@ defmodule ExqScheduler.Storage do
   @schedule_next_times_key "next_times"
   @schedule_first_runs_key "first_runs"
   @schedule_last_runs_key "last_runs"
-  @default_queue "default"
 
   defmodule Opts do
     @moduledoc false
@@ -203,7 +202,7 @@ defmodule ExqScheduler.Storage do
         job
       end
 
-    queue_name = job.queue || @default_queue
+    queue_name = job.queue
 
     commands = [
       ["SADD", queues_key(storage_opts), queue_name],

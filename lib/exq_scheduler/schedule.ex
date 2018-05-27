@@ -1,6 +1,4 @@
 defmodule ExqScheduler.Schedule do
-  @default_queue "default"
-
   defmodule ScheduleOpts do
     @moduledoc false
     defstruct enabled: nil, include_metadata: nil
@@ -51,7 +49,7 @@ defmodule ExqScheduler.Schedule do
               processor: nil,
               queue: nil,
               class: nil,
-              args: nil,
+              args: [],
               jid: nil,
               finished_at: nil,
               enqueued_at: nil
@@ -95,7 +93,7 @@ defmodule ExqScheduler.Schedule do
     |> Map.merge(%{
       :description => schedule.description,
       :tz_offset => schedule.tz_offset,
-      :queue => schedule.job.queue || @default_queue
+      :queue => schedule.job.queue
     })
     |> Map.merge(%{cron: build_encoded_cron(schedule)})
     |> Poison.encode!()
