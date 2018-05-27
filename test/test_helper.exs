@@ -28,6 +28,7 @@ defmodule TestUtils do
       %{class: "TestJob"}
       |> Parser.set_defaults()
       |> Poison.encode()
+
     Schedule.new("test_schedule", "test description", cron, job, %{:include_metadata => true})
   end
 
