@@ -96,7 +96,7 @@ config :exq_scheduler,
   time_zone: "Asia/Kolkata"
 ```
 
-* `missed_jobs_window`: Missed jobs interval in seconds. Defaults to
+* `missed_jobs_window`: Missed jobs interval in milliseconds. Defaults to
   `60 * 60 * 1000`
 
 * `time_zone`: Default time zone for all schedules. Defaults to system
