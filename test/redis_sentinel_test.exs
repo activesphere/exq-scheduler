@@ -30,7 +30,7 @@ defmodule RedisSentinelTest do
 
     config =
       put_in(
-        config[:redis][:spec],
+        config[:redis][:child_spec],
         %{
           id: :redis_test,
           start: {

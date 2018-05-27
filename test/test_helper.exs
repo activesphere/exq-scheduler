@@ -111,14 +111,13 @@ defmodule TestUtils do
   end
 
   def add_redis_name(env, name) do
-    spec =
-      ExqScheduler.redix_spec(env)
-      |> put_in([:id], name)
+    env = env |> put_in([:redis, :name], name)
+    spec = ExqScheduler.redix_spec(env)
 
     opts = update_opts(get_opts(spec), name)
     spec = set_opts(spec, opts)
 
-    put_in(env[:redis][:spec], spec)
+    put_in(env[:redis][:child_spec], spec)
   end
 
   def pmap(collection, func) do
