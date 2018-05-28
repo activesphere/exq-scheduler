@@ -3,8 +3,6 @@ defmodule ExqScheduler.Scheduler.Server do
   @storage_reconnect_timeout 500
   # milliseconds
   @failsafe_delay 10
-  # 1 hour
-  @max_timeout 1000 * 3600
 
   use GenServer
   alias ExqScheduler.Time
@@ -124,11 +122,7 @@ defmodule ExqScheduler.Scheduler.Server do
     diff = Timex.diff(schedule_time, current_time, :milliseconds)
 
     if diff > 0 do
-      if diff > @max_timeout do
-        @max_timeout + @failsafe_delay
-      else
-        diff + @failsafe_delay
-      end
+      diff + @failsafe_delay
     else
       0
     end
