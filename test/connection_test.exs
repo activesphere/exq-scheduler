@@ -107,4 +107,28 @@ defmodule ConnectionTest do
 
     assert first_sch_time < max_first_sch_time
   end
+
+  @tag config:
+         configure_env(
+           env(),
+           1000 * 60 * 120,
+           schedule_cron: %{
+             :cron => "*/10 * * * * *",
+             :class => "NogoodWorker",
+             :include_metadata => true
+           }
+         )
+         |> put_in([:key_expire_padding], 900)
+  @tag :integration
+  test "if scheduler key expires before window time" do
+    :timer.sleep(1000)
+    down("redis")
+
+    :timer.sleep(1000)
+
+    up("redis")
+    :timer.sleep(500)
+
+    assert_properties("NogoodWorker", 10 * 60)
+  end
 end

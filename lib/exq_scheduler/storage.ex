@@ -172,8 +172,8 @@ defmodule ExqScheduler.Storage do
     |> Enum.map(&{&1, Schedule.get_jobs(storage_opts, &1, time_range, ref_time)})
   end
 
-  def enqueue_jobs(schedule, jobs, storage_opts) do
-    Enum.each(jobs, &enqueue_job(schedule, &1, storage_opts))
+  def enqueue_jobs(schedule, jobs, storage_opts, key_expire_duration) do
+    Enum.each(jobs, &enqueue_job(schedule, &1, storage_opts, key_expire_duration))
   end
 
   def queue_key(queue_name, storage_opts) do
@@ -182,7 +182,7 @@ defmodule ExqScheduler.Storage do
   end
 
   # TODO: Update schedule.first_run, schedule.last_run
-  defp enqueue_job(schedule, scheduled_job, storage_opts) do
+  defp enqueue_job(schedule, scheduled_job, storage_opts, key_expire_duration) do
     {job, time} = {scheduled_job.job, scheduled_job.time}
 
     job =
@@ -214,6 +214,7 @@ defmodule ExqScheduler.Storage do
     Redis.cas(
       storage_opts,
       build_lock_key(job, time, enqueue_key),
+      key_expire_duration,
       commands
     )
   end

@@ -46,7 +46,8 @@ defmodule TestUtils do
   def build_and_enqueue(cron, offset, now, redis) do
     opts = Storage.build_opts(add_redis_name(env(), redis))
     {schedule, jobs} = build_scheduled_jobs(opts, cron, offset, now)
-    Storage.enqueue_jobs(schedule, jobs, opts)
+    # 1hour
+    Storage.enqueue_jobs(schedule, jobs, opts, Time.scale_duration(offset + 3600))
     jobs
   end
 
@@ -180,6 +181,10 @@ defmodule TestUtils do
       :redix,
       ["HSET", "exq:sidekiq-scheduler:states", schedule_name, Poison.encode!(schedule_state)]
     )
+  end
+
+  def schedule_keys() do
+    redis_module().command!(:redix, ["KEYS", "exq:enqueued_jobs:*"])
   end
 
   def down(service) do

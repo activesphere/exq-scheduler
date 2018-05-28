@@ -1,7 +1,9 @@
 defmodule ExqScheduler.Scheduler.Server do
   @moduledoc false
   @storage_reconnect_timeout 500
-  # milliseconds
+  # 1 day (unit: seconds)
+  @key_expire_padding 3600 * 24
+  # 10 milliseconds (unit: milliseconds)
   @failsafe_delay 10
 
   use GenServer
@@ -39,6 +41,7 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   def init(env) do
+    env = add_key_expire_duration(env)
     storage_opts = Storage.build_opts(env)
     schedules = Storage.load_schedules_config(env)
 
@@ -93,14 +96,22 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp handle_tick(state, ref_time) do
+    window_duration = state.server_opts.missed_jobs_threshold_duration
+
     Storage.filter_active_jobs(
       state.storage_opts,
       state.schedules,
-      get_range(state, ref_time),
+      get_range(window_duration, ref_time),
       ref_time
     )
     |> Enum.map(fn {schedule, jobs} ->
-      Storage.enqueue_jobs(schedule, jobs, state.storage_opts)
+      Storage.enqueue_jobs(
+        schedule,
+        jobs,
+        state.storage_opts,
+        # window_duration will be in milliseconds
+        Time.scale_duration(div(window_duration, 1000) + get_in(state.env, [:key_expire_padding]))
+      )
     end)
 
     Storage.persist_schedule_times(state.schedules, state.storage_opts, ref_time)
@@ -128,8 +139,16 @@ defmodule ExqScheduler.Scheduler.Server do
     end
   end
 
-  defp get_range(state, time) do
-    TimeRange.new(time, state.server_opts.missed_jobs_threshold_duration)
+  defp add_key_expire_duration(env) do
+    if !get_in(env, [:key_expire_padding]) do
+      put_in(env[:key_expire_padding], @key_expire_padding)
+    else
+      env
+    end
+  end
+
+  defp get_range(window_duration, time) do
+    TimeRange.new(time, window_duration)
   end
 
   defp build_opts(env) do

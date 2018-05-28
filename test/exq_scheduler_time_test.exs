@@ -78,4 +78,28 @@ defmodule ExqSchedulerTimeTest do
 
     assert_properties("FutureWorker", 20 * 60)
   end
+
+  test "if scheduler key expire after pre-configured time" do
+    config =
+      configure_env(
+        env(),
+        1000 * 60 * 10,
+        schedule_cron: %{
+          :cron => "*/10 * * * * *",
+          :class => "NamesakeWorker",
+          :include_metadata => true
+        }
+      )
+
+    config = config |> put_in([:key_expire_padding], 3600)
+    start_scheduler(config)
+
+    :timer.sleep(1000)
+    keys = schedule_keys()
+
+    :timer.sleep(2000)
+    new_keys = schedule_keys()
+
+    assert Enum.any?(keys, &Enum.member?(new_keys, &1)) == false
+  end
 end
