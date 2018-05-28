@@ -76,7 +76,9 @@ config :exq_scheduler, :schedules,
 * `args`: List of values that should be passed to `perform` method in
   worker. Defaults to `[]`.
 
-* `include_metadata`: If set to non nil, the schedule time (example
+* `enabled`: Schedule is disabled if set to nil or false. Defaults to `true`.
+
+* `include_metadata`: If set to non nil/false, the schedule time (example
   `%{"scheduled_at" => "2018-05-25T11:30:00"}`) will be passed as an
   extra argument to `perform` method in worker. Defaults to `nil`.
 
