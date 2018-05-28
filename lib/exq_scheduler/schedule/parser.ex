@@ -6,9 +6,8 @@ defmodule ExqScheduler.Schedule.Parser do
   @description_key :description
   @class_key :class
   @metadata_key :include_metadata
-  @default_queue "default"
-  @default_args []
-  @non_job_keys [@cron_key, @description_key, @metadata_key]
+  @state_key :enabled
+  @non_job_keys [@cron_key, @description_key, @metadata_key, @state_key]
 
   @doc """
     Parses the schedule as per the format (rufus-scheduler supported):
@@ -25,9 +24,10 @@ defmodule ExqScheduler.Schedule.Parser do
     if !has_cron do
       nil
     else
+      schedule = set_defaults(schedule)
       schedule_time = Map.fetch!(schedule, @cron_key)
       description = Map.get(schedule, @description_key, "")
-      opts = %{@metadata_key => Map.get(schedule, @metadata_key, false)}
+      opts = schedule_opts(schedule)
 
       {
         description,
@@ -54,16 +54,22 @@ defmodule ExqScheduler.Schedule.Parser do
     [Crontab.CronExpression.Composer.compose(cron_exp), timezone] |> Enum.join(" ")
   end
 
+  def schedule_opts(schedule) do
+    Map.take(schedule, [@metadata_key, @state_key])
+  end
+
   defp create_job(schedule) do
     validate_config(schedule)
 
     Map.drop(schedule, @non_job_keys)
-    |> set_defaults()
     |> Job.encode()
   end
 
   def set_defaults(map) do
-    Map.merge(%{queue: @default_queue, args: @default_args}, map)
+    Map.merge(
+      %{:queue => "default", :args => [], @metadata_key => false, @state_key => true},
+      map
+    )
   end
 
   defmodule ConfigurationError do
