@@ -13,7 +13,7 @@ defmodule ExqScheduler.Schedule.Parser do
   @doc """
     Parses the schedule as per the format (rufus-scheduler supported):
     %{
-      cron => "* * * * *" or ["* * * * *", {first_in: "5m"}]
+      cron => "* * * * *"
       class => "SidekiqWorker",
       queue => "high",
       args => "/tmp/poop"
@@ -29,23 +29,12 @@ defmodule ExqScheduler.Schedule.Parser do
       description = Map.get(schedule, @description_key, "")
       opts = %{@metadata_key => Map.get(schedule, @metadata_key, false)}
 
-      if !is_binary(schedule_time) do
-        [schedule_time, schedule_opts] = schedule_time
-
-        {
-          description,
-          normalize_time(schedule_time),
-          create_job(schedule),
-          Map.merge(opts, schedule_opts)
-        }
-      else
-        {
-          description,
-          normalize_time(schedule_time),
-          create_job(schedule),
-          opts
-        }
-      end
+      {
+        description,
+        normalize_time(schedule_time),
+        create_job(schedule),
+        opts
+      }
     end
   end
 
@@ -58,10 +47,11 @@ defmodule ExqScheduler.Schedule.Parser do
 
   defp normalize_time(time) do
     time = to_string(time)
+    cron_str = Utils.strip_timezone(time)
+    timezone = Utils.get_timezone(time)
 
-    Utils.to_cron_exp(time)
-    |> elem(0)
-    |> Crontab.CronExpression.Composer.compose()
+    {cron_exp, _} = Utils.to_cron_exp(cron_str)
+    [Crontab.CronExpression.Composer.compose(cron_exp), timezone] |> Enum.join(" ")
   end
 
   defp create_job(schedule) do

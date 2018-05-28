@@ -24,12 +24,11 @@ defmodule TestUtils do
   import ExUnit.Assertions
 
   def build_schedule(cron) do
-    {:ok, job} =
-      %{class: "TestJob"}
-      |> Parser.set_defaults()
-      |> Poison.encode()
+    {description, cron, job, _} =
+      %{cron: cron, class: "TestJob", name: "test_schedule", description: "test description"}
+      |> Parser.get_schedule()
 
-    Schedule.new("test_schedule", "test description", cron, job, %{:include_metadata => true})
+    Schedule.new("test_schedule", description, cron, job, %{:include_metadata => true})
   end
 
   def build_time_range(now, offset) do

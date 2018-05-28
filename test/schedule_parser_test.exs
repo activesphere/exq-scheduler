@@ -4,7 +4,7 @@ defmodule ScheduleParserTest do
 
   test "it correctly parses a cron-based schedule containing bitstrings" do
     schedule = %{
-      :cron => ["* * * * * *", %{"first_in" => "3m"}],
+      :cron => "* * * * * *",
       :class => "SidekiqWorker",
       :queue => "high",
       :args => ["/tmp/poop"]
@@ -13,20 +13,20 @@ defmodule ScheduleParserTest do
     assert Parser.get_schedule(schedule) ==
              {
                "",
-               "* * * * * *",
+               "* * * * * * Asia/Kolkata",
                Poison.encode!(%{
                  :class => "SidekiqWorker",
                  :queue => "high",
                  :args => ["/tmp/poop"]
                }),
-               %{"first_in" => "3m", :include_metadata => false}
+               %{:include_metadata => false}
              }
   end
 
   test "it correctly parses the description of the schedule" do
     schedule = %{
       :description => "this is a test",
-      :cron => ["* * * * * *", %{"first_in" => "3m"}],
+      :cron => "* * * * * *",
       :class => "SidekiqWorker",
       :queue => "high",
       :args => ["/tmp/poop"]
@@ -35,19 +35,19 @@ defmodule ScheduleParserTest do
     assert Parser.get_schedule(schedule) ==
              {
                "this is a test",
-               "* * * * * *",
+               "* * * * * * Asia/Kolkata",
                Poison.encode!(%{
                  :class => "SidekiqWorker",
                  :queue => "high",
                  :args => ["/tmp/poop"]
                }),
-               %{"first_in" => "3m", :include_metadata => false}
+               %{:include_metadata => false}
              }
   end
 
   test "it correctly parses a cron-based schedule containing charlists" do
     schedule = %{
-      :cron => ['* * * * * *', %{"first_in" => "3m"}],
+      :cron => '* * * * * *',
       :class => "SidekiqWorker",
       :queue => "high",
       :args => ["/tmp/poop"]
@@ -56,13 +56,13 @@ defmodule ScheduleParserTest do
     assert Parser.get_schedule(schedule) ==
              {
                "",
-               "* * * * * *",
+               "* * * * * * Asia/Kolkata",
                Poison.encode!(%{
                  :class => "SidekiqWorker",
                  :queue => "high",
                  :args => ["/tmp/poop"]
                }),
-               %{"first_in" => "3m", :include_metadata => false}
+               %{:include_metadata => false}
              }
   end
 
@@ -77,7 +77,7 @@ defmodule ScheduleParserTest do
     assert Parser.get_schedule(schedule) ==
              {
                "",
-               "1 * * * * *",
+               "1 * * * * * Asia/Kolkata",
                Poison.encode!(%{
                  :class => "SidekiqWorker",
                  :queue => "high",
