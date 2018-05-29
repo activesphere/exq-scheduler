@@ -89,13 +89,11 @@ defmodule ExqScheduler.Schedule do
   end
 
   def encode(schedule) do
-    schedule.job
-    |> Map.merge(%{
-      :description => schedule.description,
-      :tz_offset => schedule.tz_offset,
-      :queue => schedule.job.queue
-    })
+    include_keys = [:description, :queue, :class, :name, :cron, :args]
+
+    Map.merge(schedule, schedule.job)
     |> Map.merge(%{cron: build_encoded_cron(schedule)})
+    |> Map.take(include_keys)
     |> Poison.encode!()
   end
 
@@ -162,9 +160,6 @@ defmodule ExqScheduler.Schedule do
   end
 
   defp build_encoded_cron(schedule) do
-    [
-      Crontab.CronExpression.Composer.compose(schedule.cron),
-      schedule.schedule_opts
-    ]
+    Crontab.CronExpression.Composer.compose(schedule.cron)
   end
 end
