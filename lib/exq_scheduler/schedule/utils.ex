@@ -166,7 +166,7 @@ defmodule ExqScheduler.Schedule.Utils do
 
   def remove_nils(map) do
     if map do
-      Enum.filter(map, fn {k, v} -> v != nil end) |> Map.new()
+      Enum.filter(map, fn {_, v} -> v != nil end) |> Map.new()
     else
       %{}
     end
