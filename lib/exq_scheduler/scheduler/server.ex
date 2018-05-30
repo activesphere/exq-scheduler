@@ -128,20 +128,13 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defp nearest_schedule_time(state, ref_time) do
     state.schedules
-    |> Enum.map(fn schedule ->
-      Schedule.get_next_schedule_date(schedule.cron, schedule.tz_offset, ref_time)
-    end)
+    |> Enum.map(&Schedule.get_next_schedule_date(&1.cron, &1.tz_offset, ref_time))
     |> Enum.min_by(&Timex.to_unix(&1))
   end
 
   defp get_timeout(schedule_time, current_time) do
     diff = Timex.diff(schedule_time, current_time, :milliseconds)
-
-    if diff > 0 do
-      diff + @failsafe_delay
-    else
-      0
-    end
+    if diff > 0, do: diff + @failsafe_delay, else: 0
   end
 
   def update_schedules(state) do

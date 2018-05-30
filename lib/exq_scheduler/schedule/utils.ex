@@ -1,6 +1,5 @@
 defmodule ExqScheduler.Schedule.Utils do
   @moduledoc false
-  alias Timex.Duration
   alias Crontab.CronExpression, as: Cron
 
   def get_elem(arr, index, default \\ "") do
@@ -100,70 +99,6 @@ defmodule ExqScheduler.Schedule.Utils do
     end
   end
 
-  @doc """
-    Converts a time string to a Timex.Duration object.
-    Example:
-
-    Input: 1y5d15m20s
-    Output: %Timex.Duration{}
-  """
-  def to_duration(timestring) do
-    # Parse week (W) syntax if present.
-    week_part =
-      Regex.run(~r/(\d+(\.{1}\d+)*w{1})/, timestring)
-      |> get_elem(0)
-
-    num_weeks = week_part |> String.trim("w") |> str_to_float
-
-    # Remove week from timestring after parsing.
-    timestring =
-      if week_part != "" do
-        String.replace(timestring, week_part, "")
-      else
-        timestring
-      end
-
-    {date_part, time_part} = {
-      Regex.run(~r/(\d+(\.{1}\d+)*y)?(\d+(\.{1}\d+)*M)?(\d+(\.{1}\d+)*d)?/, timestring)
-      |> get_elem(0),
-      Regex.run(~r/(\d+(\.{1}\d+)*h)?(\d+(\.{1}\d+)*m)?(\d+(\.{1}\d+)*s)?$/, timestring)
-      |> get_elem(0)
-    }
-
-    if {date_part, time_part} == {"", ""} do
-      if num_weeks != 0 do
-        Duration.from_weeks(num_weeks)
-      else
-        nil
-      end
-    else
-      {:ok, duration} =
-        cond do
-          # If it's only date.
-          timestring == date_part ->
-            Duration.parse("P#{String.upcase(date_part)}")
-
-          # If it's only time.
-          timestring == time_part ->
-            Duration.parse("PT#{String.upcase(time_part)}")
-
-          # If it's both date and time.
-          true ->
-            Duration.parse("P#{String.upcase(date_part)}" <> "T#{String.upcase(time_part)}")
-        end
-
-      Duration.add(duration, Duration.from_weeks(num_weeks))
-    end
-  end
-
-  defp clamp_negative_value(duration, min_value) do
-    if duration < 0 do
-      min_value
-    else
-      duration
-    end
-  end
-
   def remove_nils(map) do
     if map do
       Enum.filter(map, fn {_, v} -> v != nil end) |> Map.new()
@@ -181,17 +116,17 @@ defmodule ExqScheduler.Schedule.Utils do
   end
 
   def get_nearer_date(ref_date, date1, date2) do
-    diff1 = clamp_negative_value(Timex.diff(ref_date, date1), -1)
-    diff2 = clamp_negative_value(Timex.diff(ref_date, date2), -1)
+    diff1 = Timex.diff(ref_date, date1)
+    diff2 = Timex.diff(ref_date, date2)
 
-    if diff1 > -1 && diff2 > -1 do
+    if diff1 >= 0 && diff2 >= 0 do
       if diff1 < diff2 do
         date1
       else
         date2
       end
     else
-      if diff1 > -1 do
+      if diff1 >= 0 do
         date1
       else
         date2
