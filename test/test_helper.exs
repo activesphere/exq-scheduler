@@ -24,8 +24,10 @@ defmodule TestUtils do
   import ExUnit.Assertions
 
   def build_schedule(cron) do
+    sch = %{cron: cron, class: "TestJob", name: "test_schedule", description: "test description"}
+
     {description, cron, job, _} =
-      %{cron: cron, class: "TestJob", name: "test_schedule", description: "test description"}
+      Map.merge(Parser.scheduler_defaults(), sch)
       |> Parser.get_schedule()
 
     Schedule.new("test_schedule", description, cron, job, %{:include_metadata => true})

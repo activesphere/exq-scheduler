@@ -19,7 +19,7 @@ defmodule ScheduleParserTest do
                  :queue => "high",
                  :args => ["/tmp/poop"]
                }),
-               %{enabled: true, include_metadata: false}
+               %{}
              }
   end
 
@@ -41,7 +41,7 @@ defmodule ScheduleParserTest do
                  :queue => "high",
                  :args => ["/tmp/poop"]
                }),
-               %{enabled: true, include_metadata: false}
+               %{}
              }
   end
 
@@ -62,7 +62,7 @@ defmodule ScheduleParserTest do
                  :queue => "high",
                  :args => ["/tmp/poop"]
                }),
-               %{enabled: true, include_metadata: false}
+               %{}
              }
   end
 
@@ -83,7 +83,7 @@ defmodule ScheduleParserTest do
                  :queue => "high",
                  :args => ["/tmp/poop"]
                }),
-               %{enabled: true, include_metadata: false}
+               %{}
              }
   end
 

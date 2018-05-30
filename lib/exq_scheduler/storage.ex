@@ -27,6 +27,7 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Storage.Redis
   alias ExqScheduler.Storage
   alias ExqScheduler.Schedule.Job
+  alias ExqScheduler.Schedule.Utils
 
   def persist_schedule(schedule, storage_opts) do
     val = Schedule.encode(schedule)
@@ -110,10 +111,30 @@ defmodule ExqScheduler.Storage do
       []
     else
       Enum.map(schedule_conf_list, fn {name, schedule_conf} ->
-        {description, cron, job, opts} = ExqScheduler.Schedule.Parser.get_schedule(schedule_conf)
-        Schedule.new(name, description, cron, job, opts)
+        map_to_schedule(name, schedule_conf)
       end)
     end
+  end
+
+  def schedule_from_storage(name, storage_opts) do
+    storage_sch =
+      Redis.hget(storage_opts, build_schedules_key(storage_opts), name)
+      |> Parser.convert_keys()
+      |> Utils.remove_nils()
+
+    storage_sch_state =
+      Redis.hget(storage_opts, build_schedule_states_key(storage_opts), name)
+      |> Parser.convert_keys()
+      |> Utils.remove_nils()
+
+    Parser.scheduler_defaults()
+    |> Map.merge(storage_sch)
+    |> Map.merge(storage_sch_state)
+  end
+
+  def map_to_schedule(name, schedule) do
+    {description, cron, job, opts} = Parser.get_schedule(schedule)
+    Schedule.new(name, description, cron, job, opts)
   end
 
   def get_schedule_last_run_time(storage_opts, schedule) do
@@ -153,18 +174,9 @@ defmodule ExqScheduler.Storage do
     Redis.connected?(storage_opts)
   end
 
-  def get_schedules(storage_opts) do
+  def get_schedule_names(storage_opts) do
     schedules_key = build_schedules_key(storage_opts)
-    keys = Redis.hkeys(storage_opts, schedules_key)
-
-    Enum.map(keys, fn name ->
-      {description, cron, job, opts} =
-        Redis.hget(storage_opts, schedules_key, name)
-        |> Parser.convert_keys()
-        |> Parser.get_schedule()
-
-      Schedule.new(name, description, cron, job, opts)
-    end)
+    Redis.hkeys(storage_opts, schedules_key)
   end
 
   def filter_active_jobs(storage_opts, schedules, time_range, ref_time) do

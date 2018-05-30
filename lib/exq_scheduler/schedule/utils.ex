@@ -164,6 +164,14 @@ defmodule ExqScheduler.Schedule.Utils do
     end
   end
 
+  def remove_nils(map) do
+    if map do
+      Enum.filter(map, fn {k, v} -> v != nil end) |> Map.new()
+    else
+      %{}
+    end
+  end
+
   def get_nearer_date(ref_date, date1, date2) do
     diff1 = clamp_negative_value(Timex.diff(ref_date, date1), -1)
     diff2 = clamp_negative_value(Timex.diff(ref_date, date2), -1)

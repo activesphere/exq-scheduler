@@ -43,10 +43,10 @@ defmodule ExqScheduler.Scheduler.Server do
   def init(env) do
     env = add_key_expire_duration(env)
     storage_opts = Storage.build_opts(env)
-    schedules = Storage.load_schedules_config(env)
 
     state = %State{
-      schedules: schedules,
+      # will be updated when redis is connected
+      schedules: nil,
       storage_opts: storage_opts,
       server_opts: build_opts(env),
       env: env,
@@ -60,17 +60,22 @@ defmodule ExqScheduler.Scheduler.Server do
   def handle_info(:first, state) do
     storage_opts = state.storage_opts
 
-    if Storage.storage_connected?(storage_opts) do
-      Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
-      |> Enum.filter(&(!Storage.get_schedule_first_run_time(storage_opts, &1)))
-      |> Storage.persist_schedule_times(storage_opts, state.start_time)
+    state =
+      if Storage.storage_connected?(storage_opts) do
+        state = update_schedules(state)
 
-      Enum.map(state.schedules, &Storage.persist_schedule(&1, storage_opts))
+        Enum.map(state.schedules, &Storage.persist_schedule(&1, storage_opts))
 
-      next_tick(self(), 0)
-    else
-      Process.send_after(self(), :first, @storage_reconnect_timeout)
-    end
+        Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
+        |> Enum.filter(&(!Storage.get_schedule_first_run_time(storage_opts, &1)))
+        |> Storage.persist_schedule_times(storage_opts, state.start_time)
+
+        next_tick(self(), 0)
+        state
+      else
+        Process.send_after(self(), :first, @storage_reconnect_timeout)
+        state
+      end
 
     {:noreply, state}
   end
@@ -137,6 +142,27 @@ defmodule ExqScheduler.Scheduler.Server do
     else
       0
     end
+  end
+
+  def update_schedules(state) do
+    schedules =
+      Enum.map(
+        Keyword.get(state.env, :schedules),
+        fn config_sch ->
+          # convert: { name, %{_configs_} } --> %{_config_,  name: _name_}
+          {name, config_sch} = config_sch
+          config_sch = Map.put(config_sch, :name, name)
+
+          # Merge the config in order:   defaults -> storage -> config
+          schedule =
+            Storage.schedule_from_storage(config_sch.name, state.storage_opts)
+            |> Map.merge(config_sch)
+
+          Storage.map_to_schedule(name, schedule)
+        end
+      )
+
+    Map.put(state, :schedules, schedules)
   end
 
   defp add_key_expire_duration(env) do

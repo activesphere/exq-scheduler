@@ -24,7 +24,6 @@ defmodule ExqScheduler.Schedule.Parser do
     if !has_cron do
       nil
     else
-      schedule = set_defaults(schedule)
       schedule_time = Map.fetch!(schedule, @cron_key)
       description = Map.get(schedule, @description_key, "")
       opts = schedule_opts(schedule)
@@ -39,10 +38,12 @@ defmodule ExqScheduler.Schedule.Parser do
   end
 
   def convert_keys(schedule) do
-    Map.new(
-      schedule,
-      fn {k, v} -> {String.to_atom(k), v} end
-    )
+    if schedule do
+      Map.new(
+        schedule,
+        fn {k, v} -> {String.to_atom(k), v} end
+      )
+    end
   end
 
   defp normalize_time(time) do
@@ -65,11 +66,8 @@ defmodule ExqScheduler.Schedule.Parser do
     |> Job.encode()
   end
 
-  def set_defaults(map) do
-    Map.merge(
-      %{:queue => "default", :args => [], @metadata_key => false, @state_key => true},
-      map
-    )
+  def scheduler_defaults() do
+    %{:queue => "default", :args => [], @metadata_key => false, @state_key => true}
   end
 
   defmodule ConfigurationError do
