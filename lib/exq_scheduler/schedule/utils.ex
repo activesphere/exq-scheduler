@@ -173,11 +173,11 @@ defmodule ExqScheduler.Schedule.Utils do
   end
 
   def encode_to_epoc(time) do
-    DateTime.to_unix(Timex.to_datetime(time), :microsecond)/1.0e6
+    DateTime.to_unix(Timex.to_datetime(time), :microsecond) / 1.0e6
   end
 
   def decode_epoc(time) do
-    Timex.from_unix(time*1.0e6, :microsecond)
+    Timex.from_unix(time * 1.0e6, :microsecond)
   end
 
   def get_nearer_date(ref_date, date1, date2) do
