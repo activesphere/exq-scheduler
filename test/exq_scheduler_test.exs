@@ -117,16 +117,17 @@ defmodule ExqSchedulerTest do
   test "after re-enabling should not consider too old jobs" do
     class = "TestWorker"
     sch_name = "schedule_cron"
+    namespace = get_in(env(), [:storage_opts, :namespace])
 
     :timer.sleep(750)
 
     assert_properties(class, 10 * 60)
 
-    set_scheduler_state(sch_name, false)
+    set_scheduler_state(namespace, sch_name, false)
     old_last_sch = List.first(get_jobs(class)) |> job_unixtime()
     :timer.sleep(750)
 
-    set_scheduler_state(sch_name, true)
+    set_scheduler_state(namespace, sch_name, true)
     :timer.sleep(750)
 
     jobs = get_jobs(class)

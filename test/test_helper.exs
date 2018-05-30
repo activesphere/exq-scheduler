@@ -176,12 +176,12 @@ defmodule TestUtils do
     assert_continuity(jobs, interval)
   end
 
-  def set_scheduler_state(schedule_name, state) do
+  def set_scheduler_state(namespace, schedule_name, state) do
     schedule_state = %{:enabled => state}
 
     redis_module().command!(
       :redix,
-      ["HSET", "exq:sidekiq-scheduler:states", schedule_name, Poison.encode!(schedule_state)]
+      ["HSET", "#{namespace}:states", schedule_name, Poison.encode!(schedule_state)]
     )
   end
 
