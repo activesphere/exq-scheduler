@@ -199,7 +199,7 @@ defmodule ExqScheduler.Storage do
 
     job =
       if schedule.schedule_opts.include_metadata do
-        metadata = %{scheduled_at: time}
+        metadata = %{scheduled_at: Utils.encode_to_epoc(time)}
         args = job.args
 
         args =

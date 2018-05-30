@@ -123,7 +123,7 @@ defmodule ExqSchedulerTest do
     assert_properties(class, 10 * 60)
 
     set_scheduler_state(sch_name, false)
-    old_last_sch = List.first(get_jobs(class)) |> schedule_unix_time()
+    old_last_sch = List.first(get_jobs(class)) |> job_unixtime()
     :timer.sleep(750)
 
     set_scheduler_state(sch_name, true)
@@ -132,7 +132,7 @@ defmodule ExqSchedulerTest do
     jobs = get_jobs(class)
 
     new_schs =
-      Enum.map(jobs, &schedule_unix_time(&1))
+      Enum.map(jobs, &job_unixtime(&1))
       |> Enum.filter(fn time -> time > old_last_sch end)
 
     # Should have a missing job between 'disabled' and 'enabled' states
@@ -142,10 +142,5 @@ defmodule ExqSchedulerTest do
     new_jobs = Enum.take(jobs, length(new_schs))
     assert_job_uniqueness(new_jobs)
     assert_continuity(new_jobs, 10 * 60)
-  end
-
-  defp schedule_unix_time(job) do
-    schedule_time_from_job(job)
-    |> iso_to_unixtime()
   end
 end

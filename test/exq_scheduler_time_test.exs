@@ -48,8 +48,7 @@ defmodule ExqSchedulerTimeTest do
     is_jobs_scheduled_before_start =
       jobs
       |> Enum.all?(fn job ->
-        st = schedule_time_from_job(job)
-        iso_to_unixtime(st) >= start_time
+        schedule_time_from_job(job) >= start_time
       end)
 
     assert(

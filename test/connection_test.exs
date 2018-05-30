@@ -51,7 +51,7 @@ defmodule ConnectionTest do
 
     new_jobs_added? =
       Enum.any?(jobs, fn job ->
-        sch_time = schedule_time_from_job(job) |> iso_to_unixtime()
+        sch_time = job_unixtime(job)
         sch_time > min_sch_time
       end)
 
@@ -103,7 +103,7 @@ defmodule ConnectionTest do
 
     assert_properties("DummyWorker2", 10 * 60)
     first_job = List.last(jobs)
-    first_sch_time = schedule_time_from_job(first_job) |> iso_to_unixtime()
+    first_sch_time = job_unixtime(first_job)
 
     assert first_sch_time < max_first_sch_time
   end

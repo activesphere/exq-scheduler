@@ -172,6 +172,14 @@ defmodule ExqScheduler.Schedule.Utils do
     end
   end
 
+  def encode_to_epoc(time) do
+    DateTime.to_unix(Timex.to_datetime(time), :microsecond)/1.0e6
+  end
+
+  def decode_epoc(time) do
+    Timex.from_unix(time*1.0e6, :microsecond)
+  end
+
   def get_nearer_date(ref_date, date1, date2) do
     diff1 = clamp_negative_value(Timex.diff(ref_date, date1), -1)
     diff2 = clamp_negative_value(Timex.diff(ref_date, date2), -1)

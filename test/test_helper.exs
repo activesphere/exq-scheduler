@@ -145,13 +145,13 @@ defmodule TestUtils do
     |> Enum.map(&Job.decode/1)
   end
 
-  def iso_to_unixtime(date) do
-    Timex.parse!(date, "{ISO:Extended:Z}")
-    |> Timex.to_unix()
-  end
-
   def schedule_time_from_job(job) do
     List.last(job.args)["scheduled_at"]
+  end
+
+  def job_unixtime(job) do
+    schedule_time_from_job(job)
+    |> trunc()
   end
 
   def assert_continuity(jobs, diff) do
@@ -164,7 +164,7 @@ defmodule TestUtils do
       t2 = schedule_time_from_job(job2)
 
       assert(
-        diff == iso_to_unixtime(t1) - iso_to_unixtime(t2),
+        diff == t1 - t2,
         "Failed. job1: #{inspect(job1)} job2: #{inspect(job2)} "
       )
     end)
