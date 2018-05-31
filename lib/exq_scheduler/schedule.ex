@@ -16,9 +16,9 @@ defmodule ExqScheduler.Schedule do
     @enforce_keys [:t_start, :t_end]
     defstruct @enforce_keys
 
-    def new(time, missed_jobs_threshold_duration) do
+    def new(time, missed_jobs_window) do
       %__MODULE__{
-        t_start: Timex.shift(time, milliseconds: -missed_jobs_threshold_duration),
+        t_start: Timex.shift(time, milliseconds: -missed_jobs_window),
         t_end: time
       }
     end

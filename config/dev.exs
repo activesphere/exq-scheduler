@@ -3,7 +3,7 @@ use Mix.Config
 config :exq_scheduler, :storage_opts, exq_namespace: "exq"
 
 config :exq_scheduler, :server_opts,
-  missed_jobs_threshold_duration: 100_000,
+  missed_jobs_window: 100_000,
   time_zone: "Asia/Kolkata"
 
 config :exq_scheduler, :redis,

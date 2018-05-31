@@ -21,13 +21,13 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defmodule Opts do
     @moduledoc false
-    defstruct missed_jobs_threshold_duration: nil
+    defstruct missed_jobs_window: nil
 
     def new(opts) do
-      missed_jobs_threshold_duration = opts[:missed_jobs_threshold_duration]
+      missed_jobs_window = opts[:missed_jobs_window]
 
       %__MODULE__{
-        missed_jobs_threshold_duration: missed_jobs_threshold_duration
+        missed_jobs_window: missed_jobs_window
       }
     end
   end
@@ -101,7 +101,7 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp handle_tick(state, ref_time) do
-    window_duration = state.server_opts.missed_jobs_threshold_duration
+    window_duration = state.server_opts.missed_jobs_window
 
     Storage.filter_active_jobs(
       state.storage_opts,

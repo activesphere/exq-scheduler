@@ -68,7 +68,7 @@ defmodule TestUtils do
 
   def configure_env(env, threshold_duration, schedules) do
     env
-    |> put_in([:server_opts, :missed_jobs_threshold_duration], threshold_duration)
+    |> put_in([:server_opts, :missed_jobs_window], threshold_duration)
     |> put_in([:schedules], schedules)
   end
 
