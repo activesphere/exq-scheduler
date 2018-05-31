@@ -76,7 +76,10 @@ config :exq_scheduler, :schedules,
 * `args`: List of values that should be passed to `perform` method in
   worker. Defaults to `[]`.
 
-* `enabled`: Schedule is enabled if set to true. Defaults to `true`.
+* `enabled`: Schedule is enabled if set to true. Defaults to
+  `true`. Note: if this config value is set, on restart it will
+  override the any previous value set via Sidekiq web UI. Don't use
+  this option if you want to enable/disable via Sidekiq web UI.
 
 * `include_metadata`: If set to true, the schedule time in unix time format (example
   `{"scheduled_at"=>1527750039.080837}`) will be passed as an
