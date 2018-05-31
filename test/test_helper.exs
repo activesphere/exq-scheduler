@@ -20,11 +20,17 @@ defmodule TestUtils do
   alias ExqScheduler.Storage
   alias ExqScheduler.Time
   alias ExqScheduler.Schedule.Job
+  alias ExqScheduler.Schedule.Parser
   import ExUnit.Assertions
 
   def build_schedule(cron) do
-    {:ok, job} = %{class: "TestJob"} |> Poison.encode()
-    Schedule.new("test_schedule", "test description", cron, job, %{:include_metadata => true})
+    sch = %{cron: cron, class: "TestJob", name: "test_schedule", description: "test description"}
+
+    {description, cron, job, _} =
+      Map.merge(Parser.scheduler_defaults(), sch)
+      |> Parser.get_schedule()
+
+    Schedule.new("test_schedule", description, cron, job, %{:include_metadata => true})
   end
 
   def build_time_range(now, offset) do
@@ -42,7 +48,8 @@ defmodule TestUtils do
   def build_and_enqueue(cron, offset, now, redis) do
     opts = Storage.build_opts(add_redis_name(env(), redis))
     {schedule, jobs} = build_scheduled_jobs(opts, cron, offset, now)
-    Storage.enqueue_jobs(schedule, jobs, opts)
+    # 1hour
+    Storage.enqueue_jobs(schedule, jobs, opts, Time.scale_duration(offset + 3600))
     jobs
   end
 
@@ -61,7 +68,7 @@ defmodule TestUtils do
 
   def configure_env(env, threshold_duration, schedules) do
     env
-    |> put_in([:server_opts, :missed_jobs_threshold_duration], threshold_duration)
+    |> put_in([:missed_jobs_window], threshold_duration)
     |> put_in([:schedules], schedules)
   end
 
@@ -111,14 +118,13 @@ defmodule TestUtils do
   end
 
   def add_redis_name(env, name) do
-    spec =
-      ExqScheduler.redix_spec(env)
-      |> put_in([:id], name)
+    env = env |> put_in([:redis, :name], name)
+    spec = ExqScheduler.redix_spec(env)
 
     opts = update_opts(get_opts(spec), name)
     spec = set_opts(spec, opts)
 
-    put_in(env[:redis][:spec], spec)
+    put_in(env[:redis][:child_spec], spec)
   end
 
   def pmap(collection, func) do
@@ -139,13 +145,13 @@ defmodule TestUtils do
     |> Enum.map(&Job.decode/1)
   end
 
-  def iso_to_unixtime(date) do
-    Timex.parse!(date, "{ISO:Extended:Z}")
-    |> Timex.to_unix()
-  end
-
   def schedule_time_from_job(job) do
     List.last(job.args)["scheduled_at"]
+  end
+
+  def job_unixtime(job) do
+    schedule_time_from_job(job)
+    |> trunc()
   end
 
   def assert_continuity(jobs, diff) do
@@ -158,7 +164,7 @@ defmodule TestUtils do
       t2 = schedule_time_from_job(job2)
 
       assert(
-        diff == iso_to_unixtime(t1) - iso_to_unixtime(t2),
+        diff == t1 - t2,
         "Failed. job1: #{inspect(job1)} job2: #{inspect(job2)} "
       )
     end)
@@ -170,13 +176,24 @@ defmodule TestUtils do
     assert_continuity(jobs, interval)
   end
 
-  def set_scheduler_state(schedule_name, state) do
+  def set_scheduler_state(env, schedule_name, state) do
     schedule_state = %{:enabled => state}
+    exq_namespace = get_in(env, [:storage, :exq_namespace])
 
     redis_module().command!(
       :redix,
-      ["HSET", "exq:sidekiq-scheduler:states", schedule_name, Poison.encode!(schedule_state)]
+      [
+        "HSET",
+        "#{exq_namespace}:sidekiq-scheduler:states",
+        schedule_name,
+        Poison.encode!(schedule_state)
+      ]
     )
+  end
+
+  def schedule_keys(env) do
+    exq_namespace = get_in(env, [:storage, :exq_namespace])
+    redis_module().command!(:redix, ["KEYS", "#{exq_namespace}:enqueued_jobs:*"])
   end
 
   def down(service) do

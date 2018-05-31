@@ -1,10 +1,10 @@
 defmodule ExqScheduler.Scheduler.Server do
   @moduledoc false
   @storage_reconnect_timeout 500
-  # milliseconds
+  # 1 day (unit: seconds)
+  @key_expire_padding 3600 * 24
+  # 10 milliseconds (unit: milliseconds)
   @failsafe_delay 10
-  # 1 hour
-  @max_timeout 1000 * 3600
 
   use GenServer
   alias ExqScheduler.Time
@@ -21,13 +21,13 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defmodule Opts do
     @moduledoc false
-    defstruct missed_jobs_threshold_duration: nil
+    defstruct missed_jobs_window: nil
 
     def new(opts) do
-      missed_jobs_threshold_duration = opts[:missed_jobs_threshold_duration]
+      missed_jobs_window = opts[:missed_jobs_window]
 
       %__MODULE__{
-        missed_jobs_threshold_duration: missed_jobs_threshold_duration
+        missed_jobs_window: missed_jobs_window
       }
     end
   end
@@ -41,11 +41,12 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   def init(env) do
+    env = add_key_expire_duration(env)
     storage_opts = Storage.build_opts(env)
-    schedules = Storage.load_schedules_config(env)
 
     state = %State{
-      schedules: schedules,
+      # will be updated when redis is connected
+      schedules: nil,
       storage_opts: storage_opts,
       server_opts: build_opts(env),
       env: env,
@@ -59,17 +60,22 @@ defmodule ExqScheduler.Scheduler.Server do
   def handle_info(:first, state) do
     storage_opts = state.storage_opts
 
-    if Storage.storage_connected?(storage_opts) do
-      Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
-      |> Enum.filter(&(!Storage.get_schedule_first_run_time(storage_opts, &1)))
-      |> Storage.persist_schedule_times(storage_opts, state.start_time)
+    state =
+      if Storage.storage_connected?(storage_opts) do
+        state = update_schedules(state)
 
-      Enum.map(state.schedules, &Storage.persist_schedule(&1, storage_opts))
+        Enum.map(state.schedules, &Storage.persist_schedule(&1, storage_opts))
 
-      next_tick(self(), 0)
-    else
-      Process.send_after(self(), :first, @storage_reconnect_timeout)
-    end
+        Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
+        |> Enum.filter(&(!Storage.get_schedule_first_run_time(storage_opts, &1)))
+        |> Storage.persist_schedule_times(storage_opts, state.start_time)
+
+        next_tick(self(), 0)
+        state
+      else
+        Process.send_after(self(), :first, @storage_reconnect_timeout)
+        state
+      end
 
     {:noreply, state}
   end
@@ -95,14 +101,22 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp handle_tick(state, ref_time) do
+    window_duration = state.server_opts.missed_jobs_window
+
     Storage.filter_active_jobs(
       state.storage_opts,
       state.schedules,
-      get_range(state, ref_time),
+      get_range(window_duration, ref_time),
       ref_time
     )
     |> Enum.map(fn {schedule, jobs} ->
-      Storage.enqueue_jobs(schedule, jobs, state.storage_opts)
+      Storage.enqueue_jobs(
+        schedule,
+        jobs,
+        state.storage_opts,
+        # window_duration will be in milliseconds
+        Time.scale_duration(div(window_duration, 1000) + get_in(state.env, [:key_expire_padding]))
+      )
     end)
 
     Storage.persist_schedule_times(state.schedules, state.storage_opts, ref_time)
@@ -114,32 +128,49 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defp nearest_schedule_time(state, ref_time) do
     state.schedules
-    |> Enum.map(fn schedule ->
-      Schedule.get_next_schedule_date(schedule.cron, schedule.tz_offset, ref_time)
-    end)
+    |> Enum.map(&Schedule.get_next_schedule_date(&1.cron, &1.tz_offset, ref_time))
     |> Enum.min_by(&Timex.to_unix(&1))
   end
 
   defp get_timeout(schedule_time, current_time) do
     diff = Timex.diff(schedule_time, current_time, :milliseconds)
+    if diff > 0, do: diff + @failsafe_delay, else: 0
+  end
 
-    if diff > 0 do
-      if diff > @max_timeout do
-        @max_timeout + @failsafe_delay
-      else
-        diff + @failsafe_delay
-      end
+  def update_schedules(state) do
+    schedules =
+      Enum.map(
+        Keyword.get(state.env, :schedules),
+        fn config_sch ->
+          # convert: { name, %{_configs_} } --> %{_config_,  name: _name_}
+          {name, config_sch} = config_sch
+          config_sch = Map.put(config_sch, :name, name)
+
+          # Merge the config in order:   defaults -> storage -> config
+          schedule =
+            Storage.schedule_from_storage(config_sch.name, state.storage_opts)
+            |> Map.merge(config_sch)
+
+          Storage.map_to_schedule(name, schedule)
+        end
+      )
+
+    Map.put(state, :schedules, schedules)
+  end
+
+  defp add_key_expire_duration(env) do
+    if !get_in(env, [:key_expire_padding]) do
+      put_in(env[:key_expire_padding], @key_expire_padding)
     else
-      0
+      env
     end
   end
 
-  defp get_range(state, time) do
-    TimeRange.new(time, state.server_opts.missed_jobs_threshold_duration)
+  defp get_range(window_duration, time) do
+    TimeRange.new(time, window_duration)
   end
 
   defp build_opts(env) do
-    Keyword.get(env, :server_opts)
-    |> Opts.new()
+    Opts.new(env)
   end
 end

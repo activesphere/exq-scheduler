@@ -1,24 +1,19 @@
 use Mix.Config
 
-config :exq_scheduler, :storage_opts,
-  namespace: "exq:sidekiq-scheduler",
-  exq_namespace: "exq"
-
-config :exq_scheduler, :server_opts,
-  missed_jobs_threshold_duration: 60 * 60 * 1000,
+config :exq_scheduler,
+  missed_jobs_window: 60 * 60 * 1000,
   time_zone: "Asia/Kolkata"
 
+config :exq_scheduler, :storage, exq_namespace: "exq"
+
 config :exq_scheduler, :redis,
-  spec: %{
-    id: :redis_test,
-    start: {
-      Redix,
-      :start_link,
-      [
-        [host: "127.0.0.1", port: 6379, database: 1],
-        [name: :redis_test, backoff_max: 200, backoff_initial: 200]
-      ]
-    }
+  name: ExqScheduler.Redis.Client,
+  child_spec: {
+    Redix,
+    [
+      [host: "127.0.0.1", port: 6379, database: 1],
+      [name: ExqScheduler.Redis.Client, backoff_max: 200, backoff_initial: 200]
+    ]
   }
 
 config :exq_scheduler, :schedules,

@@ -6,7 +6,6 @@ defmodule ExqScheduler.Storage do
   @schedule_next_times_key "next_times"
   @schedule_first_runs_key "first_runs"
   @schedule_last_runs_key "last_runs"
-  @default_queue "default"
 
   defmodule Opts do
     @moduledoc false
@@ -15,7 +14,7 @@ defmodule ExqScheduler.Storage do
 
     def new(opts) do
       %__MODULE__{
-        namespace: opts[:namespace],
+        namespace: "#{opts[:exq_namespace]}:sidekiq-scheduler",
         exq_namespace: opts[:exq_namespace],
         name: opts[:name],
         module: opts[:module]
@@ -28,6 +27,7 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Storage.Redis
   alias ExqScheduler.Storage
   alias ExqScheduler.Schedule.Job
+  alias ExqScheduler.Schedule.Utils
 
   def persist_schedule(schedule, storage_opts) do
     val = Schedule.encode(schedule)
@@ -46,7 +46,7 @@ defmodule ExqScheduler.Storage do
   end
 
   def build_opts(env) do
-    Keyword.get(env, :storage_opts)
+    Keyword.get(env, :storage)
     |> Keyword.put(:name, ExqScheduler.redis_name(env))
     |> Keyword.put(:module, ExqScheduler.redis_module(env))
     |> Storage.Opts.new()
@@ -111,10 +111,30 @@ defmodule ExqScheduler.Storage do
       []
     else
       Enum.map(schedule_conf_list, fn {name, schedule_conf} ->
-        {description, cron, job, opts} = ExqScheduler.Schedule.Parser.get_schedule(schedule_conf)
-        Schedule.new(name, description, cron, job, opts)
+        map_to_schedule(name, schedule_conf)
       end)
     end
+  end
+
+  def schedule_from_storage(name, storage_opts) do
+    storage_sch =
+      Redis.hget(storage_opts, build_schedules_key(storage_opts), name)
+      |> Parser.convert_keys()
+      |> Utils.remove_nils()
+
+    storage_sch_state =
+      Redis.hget(storage_opts, build_schedule_states_key(storage_opts), name)
+      |> Parser.convert_keys()
+      |> Utils.remove_nils()
+
+    Parser.scheduler_defaults()
+    |> Map.merge(storage_sch)
+    |> Map.merge(storage_sch_state)
+  end
+
+  def map_to_schedule(name, schedule) do
+    {description, cron, job, opts} = Parser.get_schedule(schedule)
+    Schedule.new(name, description, cron, job, opts)
   end
 
   def get_schedule_last_run_time(storage_opts, schedule) do
@@ -154,18 +174,9 @@ defmodule ExqScheduler.Storage do
     Redis.connected?(storage_opts)
   end
 
-  def get_schedules(storage_opts) do
+  def get_schedule_names(storage_opts) do
     schedules_key = build_schedules_key(storage_opts)
-    keys = Redis.hkeys(storage_opts, schedules_key)
-
-    Enum.map(keys, fn name ->
-      {description, cron, job, opts} =
-        Redis.hget(storage_opts, schedules_key, name)
-        |> Parser.convert_keys()
-        |> Parser.get_schedule()
-
-      Schedule.new(name, description, cron, job, opts)
-    end)
+    Redis.hkeys(storage_opts, schedules_key)
   end
 
   def filter_active_jobs(storage_opts, schedules, time_range, ref_time) do
@@ -173,8 +184,8 @@ defmodule ExqScheduler.Storage do
     |> Enum.map(&{&1, Schedule.get_jobs(storage_opts, &1, time_range, ref_time)})
   end
 
-  def enqueue_jobs(schedule, jobs, storage_opts) do
-    Enum.each(jobs, &enqueue_job(schedule, &1, storage_opts))
+  def enqueue_jobs(schedule, jobs, storage_opts, key_expire_duration) do
+    Enum.each(jobs, &enqueue_job(schedule, &1, storage_opts, key_expire_duration))
   end
 
   def queue_key(queue_name, storage_opts) do
@@ -183,12 +194,12 @@ defmodule ExqScheduler.Storage do
   end
 
   # TODO: Update schedule.first_run, schedule.last_run
-  defp enqueue_job(schedule, scheduled_job, storage_opts) do
+  defp enqueue_job(schedule, scheduled_job, storage_opts, key_expire_duration) do
     {job, time} = {scheduled_job.job, scheduled_job.time}
 
     job =
       if schedule.schedule_opts.include_metadata do
-        metadata = %{scheduled_at: time}
+        metadata = %{scheduled_at: Utils.encode_to_epoc(time)}
         args = job.args
 
         args =
@@ -203,7 +214,7 @@ defmodule ExqScheduler.Storage do
         job
       end
 
-    queue_name = job.queue || @default_queue
+    queue_name = job.queue
 
     commands = [
       ["SADD", queues_key(storage_opts), queue_name],
@@ -215,6 +226,7 @@ defmodule ExqScheduler.Storage do
     Redis.cas(
       storage_opts,
       build_lock_key(job, time, enqueue_key),
+      key_expire_duration,
       commands
     )
   end

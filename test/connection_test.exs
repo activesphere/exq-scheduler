@@ -51,7 +51,7 @@ defmodule ConnectionTest do
 
     new_jobs_added? =
       Enum.any?(jobs, fn job ->
-        sch_time = schedule_time_from_job(job) |> iso_to_unixtime()
+        sch_time = job_unixtime(job)
         sch_time > min_sch_time
       end)
 
@@ -103,8 +103,32 @@ defmodule ConnectionTest do
 
     assert_properties("DummyWorker2", 10 * 60)
     first_job = List.last(jobs)
-    first_sch_time = schedule_time_from_job(first_job) |> iso_to_unixtime()
+    first_sch_time = job_unixtime(first_job)
 
     assert first_sch_time < max_first_sch_time
+  end
+
+  @tag config:
+         configure_env(
+           env(),
+           1000 * 60 * 120,
+           schedule_cron: %{
+             :cron => "*/10 * * * * *",
+             :class => "NogoodWorker",
+             :include_metadata => true
+           }
+         )
+         |> put_in([:key_expire_padding], 900)
+  @tag :integration
+  test "if scheduler key expires before window time" do
+    :timer.sleep(1000)
+    down("redis")
+
+    :timer.sleep(1000)
+
+    up("redis")
+    :timer.sleep(500)
+
+    assert_properties("NogoodWorker", 10 * 60)
   end
 end

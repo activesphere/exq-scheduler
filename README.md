@@ -25,10 +25,10 @@ By default Exq Scheduler will read the configuration from application environmen
 ### Storage
 
 Exq Scheduler uses redis to store internal state of the scheduler.
+It uses `"#{exq_namespace}:sidekiq-scheduler"` for storing scheduler internal metadata.
 
 ```elixir
 config :exq_scheduler, :storage,
-  namespace: "exq_scheduler", # redis namespace for data stored by scheduler
   exq_namespace: "exq" # exq redis namespace
 ```
 ### Redis Client
@@ -76,8 +76,10 @@ config :exq_scheduler, :schedules,
 * `args`: List of values that should be passed to `perform` method in
   worker. Defaults to `[]`.
 
-* `include_metadata`: If set to non nil, the schedule time (example
-  `%{"scheduled_at" => "2018-05-25T11:30:00"}`) will be passed as an
+* `enabled`: Schedule is disabled if set to nil or false. Defaults to `true`.
+
+* `include_metadata`: If set to non nil/false, the schedule time in unix time format (example
+  `{"scheduled_at"=>1527750039.080837}`) will be passed as an
   extra argument to `perform` method in worker. Defaults to `nil`.
 
 * `description`: a text that will be shown in sidekiq web
@@ -96,7 +98,7 @@ config :exq_scheduler,
   time_zone: "Asia/Kolkata"
 ```
 
-* `missed_jobs_window`: Missed jobs interval in seconds. Defaults to
+* `missed_jobs_window`: Missed jobs interval in milliseconds. Defaults to
   `60 * 60 * 1000`
 
 * `time_zone`: Default time zone for all schedules. Defaults to system
@@ -108,3 +110,21 @@ Exq Scheduler is compatible with
 [sidekiq-scheduler](https://github.com/moove-it/sidekiq-scheduler#sidekiq-web-integration)
 web UI. Make sure the `exq_namespace` value and the namespace in
 sidekiq are same.
+
+## Example
+Sample Mix project along with sidekiq web UI is created
+inside `demo` directory to demonstrate the configuration.
+Sidekiq web interface requires Ruby to be installed.
+
+To install dependencies
+```
+> cd demo
+> mix deps.get
+> cd sidekiq-ui
+> bundle install
+```
+To start it
+```
+> cd demo
+> ./start_demo.sh
+```

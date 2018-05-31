@@ -1,6 +1,4 @@
 defmodule ExqScheduler.Schedule do
-  @default_queue "default"
-
   defmodule ScheduleOpts do
     @moduledoc false
     defstruct enabled: nil, include_metadata: nil
@@ -18,9 +16,9 @@ defmodule ExqScheduler.Schedule do
     @enforce_keys [:t_start, :t_end]
     defstruct @enforce_keys
 
-    def new(time, missed_jobs_threshold_duration) do
+    def new(time, missed_jobs_window) do
       %__MODULE__{
-        t_start: Timex.shift(time, milliseconds: -missed_jobs_threshold_duration),
+        t_start: Timex.shift(time, milliseconds: -missed_jobs_window),
         t_end: time
       }
     end
@@ -51,7 +49,7 @@ defmodule ExqScheduler.Schedule do
               processor: nil,
               queue: nil,
               class: nil,
-              args: nil,
+              args: [],
               jid: nil,
               finished_at: nil,
               enqueued_at: nil
@@ -91,13 +89,21 @@ defmodule ExqScheduler.Schedule do
   end
 
   def encode(schedule) do
-    schedule.job
-    |> Map.merge(%{
-      :description => schedule.description,
-      :tz_offset => schedule.tz_offset,
-      :queue => schedule.job.queue || @default_queue
-    })
-    |> Map.merge(%{cron: build_encoded_cron(schedule)})
+    include_keys = [
+      :description,
+      :queue,
+      :class,
+      :name,
+      :cron,
+      :args,
+      :include_metadata,
+      :enabled
+    ]
+
+    Map.merge(schedule, schedule.job)
+    |> Map.merge(schedule.schedule_opts)
+    |> Map.put(:cron, build_encoded_cron(schedule))
+    |> Map.take(include_keys)
     |> Poison.encode!()
   end
 
@@ -163,10 +169,7 @@ defmodule ExqScheduler.Schedule do
     Enum.map(dates, fn date -> Timex.subtract(date, tz_offset) end)
   end
 
-  defp build_encoded_cron(schedule) do
-    [
-      Crontab.CronExpression.Composer.compose(schedule.cron),
-      schedule.schedule_opts
-    ]
+  def build_encoded_cron(schedule) do
+    Crontab.CronExpression.Composer.compose(schedule.cron)
   end
 end

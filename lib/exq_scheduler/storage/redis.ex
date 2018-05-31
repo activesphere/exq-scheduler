@@ -13,7 +13,7 @@ defmodule ExqScheduler.Storage.Redis do
     storage.module.command!(storage.name, ["HSET", key, field, val])
   end
 
-  def cas(storage, lock_key, commands) do
+  def cas(storage, lock_key, ttl, commands) do
     watch = ["WATCH", lock_key]
     get = ["GET", lock_key]
 
@@ -23,7 +23,7 @@ defmodule ExqScheduler.Storage.Redis do
       ["OK"] = storage.module.pipeline!(storage.name, [["UNWATCH"]])
     else
       pipeline_command =
-        [["MULTI"], ["SET", lock_key, true]]
+        [["MULTI"], ["SETEX", lock_key, ttl, true]]
         |> Enum.concat(commands)
         |> Enum.concat([["EXEC"]])
 

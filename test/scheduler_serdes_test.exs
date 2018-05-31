@@ -24,7 +24,14 @@ defmodule SchedulerSerdesTest do
   test "it makes sure the schedule has been serialized properly" do
     storage_opts = Storage.build_opts(add_redis_name(env(), redis_pid("test")))
 
-    schedules = ExqScheduler.Storage.get_schedules(storage_opts)
+    sch_names = Storage.get_schedule_names(storage_opts)
+
+    schedules =
+      Enum.map(
+        sch_names,
+        &Storage.map_to_schedule(&1, Storage.schedule_from_storage(&1, storage_opts))
+      )
+
     assert length(schedules) != 0
 
     schedule = Enum.at(schedules, 0)

@@ -1,16 +1,18 @@
 defmodule ExqScheduler.Schedule.Parser do
   @moduledoc false
   alias ExqScheduler.Schedule.Utils
+  alias ExqScheduler.Schedule.Job
   @cron_key :cron
   @description_key :description
   @class_key :class
   @metadata_key :include_metadata
-  @non_job_keys [@cron_key, @description_key, @metadata_key]
+  @state_key :enabled
+  @non_job_keys [@cron_key, @description_key, @metadata_key, @state_key]
 
   @doc """
     Parses the schedule as per the format (rufus-scheduler supported):
     %{
-      cron => "* * * * *" or ["* * * * *", {first_in: "5m"}]
+      cron => "* * * * *"
       class => "SidekiqWorker",
       queue => "high",
       args => "/tmp/poop"
@@ -24,48 +26,48 @@ defmodule ExqScheduler.Schedule.Parser do
     else
       schedule_time = Map.fetch!(schedule, @cron_key)
       description = Map.get(schedule, @description_key, "")
-      opts = %{@metadata_key => Map.get(schedule, @metadata_key, false)}
+      opts = schedule_opts(schedule)
 
-      if !is_binary(schedule_time) do
-        [schedule_time, schedule_opts] = schedule_time
-
-        {
-          description,
-          normalize_time(schedule_time),
-          create_job(schedule),
-          Map.merge(opts, schedule_opts)
-        }
-      else
-        {
-          description,
-          normalize_time(schedule_time),
-          create_job(schedule),
-          opts
-        }
-      end
+      {
+        description,
+        normalize_time(schedule_time),
+        create_job(schedule),
+        opts
+      }
     end
   end
 
   def convert_keys(schedule) do
-    Map.new(
-      schedule,
-      fn {k, v} -> {String.to_atom(k), v} end
-    )
+    if schedule do
+      Map.new(
+        schedule,
+        fn {k, v} -> {String.to_atom(k), v} end
+      )
+    end
   end
 
   defp normalize_time(time) do
     time = to_string(time)
+    cron_str = Utils.strip_timezone(time)
+    timezone = Utils.get_timezone(time)
 
-    Utils.to_cron_exp(time)
-    |> elem(0)
-    |> Crontab.CronExpression.Composer.compose()
+    {cron_exp, _} = Utils.to_cron_exp(cron_str)
+    [Crontab.CronExpression.Composer.compose(cron_exp), timezone] |> Enum.join(" ")
+  end
+
+  def schedule_opts(schedule) do
+    Map.take(schedule, [@metadata_key, @state_key])
   end
 
   defp create_job(schedule) do
     validate_config(schedule)
 
     Map.drop(schedule, @non_job_keys)
-    |> Poison.encode!()
+    |> Job.encode()
+  end
+
+  def scheduler_defaults() do
+    %{:queue => "default", :args => [], @metadata_key => false, @state_key => true}
   end
 
   defmodule ConfigurationError do
