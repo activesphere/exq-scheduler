@@ -176,17 +176,19 @@ defmodule TestUtils do
     assert_continuity(jobs, interval)
   end
 
-  def set_scheduler_state(namespace, schedule_name, state) do
+  def set_scheduler_state(env, schedule_name, state) do
     schedule_state = %{:enabled => state}
+    exq_namespace = get_in(env, [:storage_opts, :exq_namespace])
 
     redis_module().command!(
       :redix,
-      ["HSET", "#{namespace}:states", schedule_name, Poison.encode!(schedule_state)]
+      ["HSET", "#{exq_namespace}:sidekiq-scheduler:states", schedule_name, Poison.encode!(schedule_state)]
     )
   end
 
-  def schedule_keys() do
-    redis_module().command!(:redix, ["KEYS", "exq:enqueued_jobs:*"])
+  def schedule_keys(env) do
+    exq_namespace = get_in(env, [:storage_opts, :exq_namespace])
+    redis_module().command!(:redix, ["KEYS", "#{exq_namespace}:enqueued_jobs:*"])
   end
 
   def down(service) do

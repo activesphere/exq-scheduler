@@ -14,7 +14,7 @@ defmodule ExqScheduler.Storage do
 
     def new(opts) do
       %__MODULE__{
-        namespace: opts[:namespace],
+        namespace: "#{opts[:exq_namespace]}:sidekiq-scheduler",
         exq_namespace: opts[:exq_namespace],
         name: opts[:name],
         module: opts[:module]

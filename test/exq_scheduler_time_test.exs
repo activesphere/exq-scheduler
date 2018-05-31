@@ -102,10 +102,10 @@ defmodule ExqSchedulerTimeTest do
     start_scheduler(config)
 
     :timer.sleep(1000)
-    keys = schedule_keys()
+    keys = schedule_keys(config)
 
     :timer.sleep(2000)
-    new_keys = schedule_keys()
+    new_keys = schedule_keys(config)
 
     assert Enum.any?(keys, &Enum.member?(new_keys, &1)) == false
   end
