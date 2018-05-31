@@ -68,7 +68,7 @@ defmodule TestUtils do
 
   def configure_env(env, threshold_duration, schedules) do
     env
-    |> put_in([:server_opts, :missed_jobs_window], threshold_duration)
+    |> put_in([:missed_jobs_window], threshold_duration)
     |> put_in([:schedules], schedules)
   end
 
@@ -178,7 +178,7 @@ defmodule TestUtils do
 
   def set_scheduler_state(env, schedule_name, state) do
     schedule_state = %{:enabled => state}
-    exq_namespace = get_in(env, [:storage_opts, :exq_namespace])
+    exq_namespace = get_in(env, [:storage, :exq_namespace])
 
     redis_module().command!(
       :redix,
@@ -192,7 +192,7 @@ defmodule TestUtils do
   end
 
   def schedule_keys(env) do
-    exq_namespace = get_in(env, [:storage_opts, :exq_namespace])
+    exq_namespace = get_in(env, [:storage, :exq_namespace])
     redis_module().command!(:redix, ["KEYS", "#{exq_namespace}:enqueued_jobs:*"])
   end
 

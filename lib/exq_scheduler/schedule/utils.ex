@@ -83,7 +83,7 @@ defmodule ExqScheduler.Schedule.Utils do
   end
 
   def get_timezone_config() do
-    server_opts = Application.get_env(:exq_scheduler, :server_opts)
+    server_opts = Application.get_all_env(:exq_scheduler)
 
     if server_opts != nil do
       tz_from_config = server_opts[:time_zone]

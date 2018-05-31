@@ -1,10 +1,10 @@
 use Mix.Config
 
-config :exq_scheduler, :storage_opts, exq_namespace: "exq"
-
-config :exq_scheduler, :server_opts,
+config :exq_scheduler,
   missed_jobs_window: 100_000,
   time_zone: "Asia/Kolkata"
+
+config :exq_scheduler, :storage, exq_namespace: "exq"
 
 config :exq_scheduler, :redis,
   name: ExqScheduler.Redis.Client,

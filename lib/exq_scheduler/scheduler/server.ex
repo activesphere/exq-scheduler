@@ -171,7 +171,6 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   defp build_opts(env) do
-    Keyword.get(env, :server_opts)
-    |> Opts.new()
+    Opts.new(env)
   end
 end
