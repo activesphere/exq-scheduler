@@ -113,7 +113,7 @@ sidekiq are same.
 
 ## Example
 Sample Mix project along with sidekiq web UI is created
-inside demo directory to demonstrate the configuration.
+inside `demo` directory to demonstrate the configuration.
 Sidekiq web interface requires Ruby to be installed.
 
 To install dependencies
@@ -125,5 +125,6 @@ To install dependencies
 ```
 To start it
 ```
+> cd demo
 > ./start_demo.sh
 ```
