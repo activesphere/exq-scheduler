@@ -182,7 +182,12 @@ defmodule TestUtils do
 
     redis_module().command!(
       :redix,
-      ["HSET", "#{exq_namespace}:sidekiq-scheduler:states", schedule_name, Poison.encode!(schedule_state)]
+      [
+        "HSET",
+        "#{exq_namespace}:sidekiq-scheduler:states",
+        schedule_name,
+        Poison.encode!(schedule_state)
+      ]
     )
   end
 
