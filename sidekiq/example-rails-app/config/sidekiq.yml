@@ -1,7 +1,0 @@
-:schedule:
-  mins_1:
-    class: HardWorker
-    cron: '* * * * *'
-  mins_2:
-   class: HardWorker
-   cron: '*/2 * * * *'
