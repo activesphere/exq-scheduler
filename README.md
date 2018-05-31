@@ -112,18 +112,23 @@ web UI. Make sure the `exq_namespace` value and the namespace in
 sidekiq are same.
 
 ## Example
-Sample Mix project along with sidekiq web UI is created
-inside `demo` directory to demonstrate the configuration.
-Sidekiq web interface requires Ruby to be installed.
+
+A Sample Mix project along with sidekiq web UI is avaialbe at
+[demo](https://github.com/activesphere/exq-scheduler/tree/master/demo)
+directory to demonstrate the configuration.  Sidekiq web interface
+requires Ruby to be installed.
 
 To install dependencies
+
 ```
 > cd demo
 > mix deps.get
 > cd sidekiq-ui
 > bundle install
 ```
+
 To start it
+
 ```
 > cd demo
 > ./start_demo.sh
