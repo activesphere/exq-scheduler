@@ -8,6 +8,8 @@ defmodule ExqScheduler.Mixfile do
       elixir: "~> 1.5",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
+      description: "Cron like job scheduler for Exq",
+      package: package(),
       dialyzer: [
         plt_add_deps: :transitive,
         flags: [:unmatched_returns, :race_conditions, :error_handling, :underspecs]
@@ -35,5 +37,13 @@ defmodule ExqScheduler.Mixfile do
       {:ex_doc, "~> 0.15.0", only: :dev},
       {:toxiproxy, "~> 0.3", only: :test}
     ]
+  end
+
+  defp package do
+    %{
+      licenses: ["MIT"],
+      links: %{"Github" => "https://github.com/activesphere/exq-scheduler"},
+      maintainers: ["ananthakumaran@gmail.com", "akashh246@gmail.com"]
+    }
   end
 end

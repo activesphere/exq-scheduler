@@ -1,4 +1,4 @@
-# Exq Scheduler [![Build Status](https://travis-ci.org/activesphere/exq-scheduler.svg?branch=master)](https://travis-ci.org/activesphere/exq-scheduler)
+# Exq Scheduler [![Build Status](https://travis-ci.org/activesphere/exq-scheduler.svg?branch=master)](https://travis-ci.org/activesphere/exq-scheduler) [![Hex.pm](https://img.shields.io/hexpm/v/exq_scheduler.svg)](https://hex.pm/packages/exq_scheduler)
 
 Exq Scheduler is a [cron](https://en.wikipedia.org/wiki/Cron) like job scheduler for
 [Exq](https://github.com/akira/exq), it's also compatible with Sidekiq
