@@ -5,6 +5,8 @@ defmodule ExqScheduler.Scheduler.Server do
   @key_expire_padding 3600 * 24
   # 10 milliseconds (unit: milliseconds)
   @failsafe_delay 10
+  # 1 hour
+  @max_timeout 1000 * 3600
 
   use GenServer
   alias ExqScheduler.Time
@@ -134,7 +136,17 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defp get_timeout(schedule_time, current_time) do
     diff = Timex.diff(schedule_time, current_time, :milliseconds)
-    if diff > 0, do: diff + @failsafe_delay, else: 0
+
+    cond do
+      diff > @max_timeout ->
+        @max_timeout + @failsafe_delay
+
+      diff > 0 ->
+        diff + @failsafe_delay
+
+      true ->
+        0
+    end
   end
 
   def update_schedules(state) do
