@@ -162,7 +162,7 @@ defmodule ExqScheduler.Storage do
       )
 
     if schedule_state != nil do
-      Map.fetch!(schedule_state, "enabled")
+      Map.fetch!(schedule_state, "enabled") == true
     else
       # By default the schedule will always be enabled, so we return true
       # if the entry does not exist.
@@ -198,7 +198,7 @@ defmodule ExqScheduler.Storage do
     {job, time} = {scheduled_job.job, scheduled_job.time}
 
     job =
-      if schedule.schedule_opts.include_metadata do
+      if schedule.schedule_opts.include_metadata == true do
         metadata = %{scheduled_at: Utils.encode_to_epoc(time)}
         args = job.args
 
