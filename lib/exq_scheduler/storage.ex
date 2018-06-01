@@ -215,22 +215,23 @@ defmodule ExqScheduler.Storage do
         job
       end
 
-    job =
-      Map.put(job, :jid, UUID.uuid4)
-      |> Map.put(:enqueued_at, Timex.to_unix(Time.now))
-
     queue_name = job.queue
+
+    enqueue_key = build_enqueued_jobs_key(storage_opts)
+    lock = build_lock_key(job, time, enqueue_key)
+
+    job =
+      Map.put(job, :jid, UUID.uuid4())
+      |> Map.put(:enqueued_at, Timex.to_unix(Time.now()))
 
     commands = [
       ["SADD", queues_key(storage_opts), queue_name],
       ["LPUSH", queue_key(queue_name, storage_opts), Job.encode(job)]
     ]
 
-    enqueue_key = build_enqueued_jobs_key(storage_opts)
-
     Redis.cas(
       storage_opts,
-      build_lock_key(job, time, enqueue_key),
+      lock,
       key_expire_duration,
       commands
     )

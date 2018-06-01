@@ -33,7 +33,7 @@ defmodule ExqScheduler.Mixfile do
       {:redix_sentinel, "~> 0.6.0", only: :test},
       {:poison, "~> 3.1"},
       {:crontab, "~> 1.1"},
-      {:uuid, ">= 1.1.0" },
+      {:uuid, ">= 1.1.0"},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:ex_doc, "~> 0.15.0", only: :dev},
       {:toxiproxy, "~> 0.3", only: :test}
