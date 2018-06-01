@@ -44,7 +44,7 @@ defmodule ExqScheduler.Schedule do
     defstruct error_message: nil,
               error_class: nil,
               failed_at: nil,
-              retry: false,
+              retry: true,
               retry_count: 0,
               processor: nil,
               queue: nil,
@@ -97,7 +97,8 @@ defmodule ExqScheduler.Schedule do
       :cron,
       :args,
       :include_metadata,
-      :enabled
+      :enabled,
+      :retry
     ]
 
     Map.merge(schedule, schedule.job)

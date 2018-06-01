@@ -76,6 +76,8 @@ config :exq_scheduler, :schedules,
 * `args`: List of values that should be passed to `perform` method in
   worker. Defaults to `[]`.
 
+* `retry`: Number of times Exq should retry the job if it fails. If set to true, Exq will use `max_retires` instead. defaults to `true`.
+
 * `enabled`: Schedule is enabled if set to true. Defaults to
   `true`. Note: if this config value is set, on restart it will
   override the any previous value set via Sidekiq web UI. Don't use

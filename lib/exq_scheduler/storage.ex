@@ -28,6 +28,7 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Storage
   alias ExqScheduler.Schedule.Job
   alias ExqScheduler.Schedule.Utils
+  alias ExqScheduler.Time
 
   def persist_schedule(schedule, storage_opts) do
     val = Schedule.encode(schedule)
@@ -213,6 +214,10 @@ defmodule ExqScheduler.Storage do
       else
         job
       end
+
+    job =
+      Map.put(job, :jid, UUID.uuid4)
+      |> Map.put(:enqueued_at, Timex.to_unix(Time.now))
 
     queue_name = job.queue
 
