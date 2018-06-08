@@ -181,7 +181,7 @@ defmodule ExqScheduler.Storage do
     Redis.hkeys(storage_opts, schedules_key)
   end
 
-  def filter_active_jobs(storage_opts, schedules, time_range, ref_time) do
+  def filter_active_schedules(storage_opts, schedules, time_range, ref_time) do
     Enum.filter(schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
     |> Enum.map(&{&1, Schedule.get_jobs(storage_opts, &1, time_range, ref_time)})
   end
