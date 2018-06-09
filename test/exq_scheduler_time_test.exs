@@ -76,7 +76,7 @@ defmodule ExqSchedulerTimeTest do
 
     storage_opts = Storage.build_opts(config)
     schedules = Storage.load_schedules_config(config)
-    start_time = Timex.add(Time.now(), Duration.from_hours(1))
+    start_time = Timex.add(Time.now(), Duration.from_hours(10))
 
     Storage.persist_schedule_times(schedules, storage_opts, start_time)
 

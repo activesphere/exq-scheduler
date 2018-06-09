@@ -29,6 +29,7 @@ defmodule ExqScheduler.Storage do
   alias ExqScheduler.Schedule.Job
   alias ExqScheduler.Schedule.Utils
   alias ExqScheduler.Time
+  require Logger
 
   def persist_schedule(schedule, storage_opts) do
     val = Schedule.encode(schedule)
@@ -180,7 +181,7 @@ defmodule ExqScheduler.Storage do
     Redis.hkeys(storage_opts, schedules_key)
   end
 
-  def filter_active_jobs(storage_opts, schedules, time_range, ref_time) do
+  def filter_active_schedules(storage_opts, schedules, time_range, ref_time) do
     Enum.filter(schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
     |> Enum.map(&{&1, Schedule.get_jobs(storage_opts, &1, time_range, ref_time)})
   end
@@ -229,12 +230,26 @@ defmodule ExqScheduler.Storage do
       ["LPUSH", queue_key(queue_name, storage_opts), Job.encode(job)]
     ]
 
-    Redis.cas(
-      storage_opts,
-      lock,
-      key_expire_duration,
-      commands
-    )
+    response =
+      Redis.cas(
+        storage_opts,
+        lock,
+        key_expire_duration,
+        commands
+      )
+
+    # Log only if job is enqueued
+    if length(response) > 1 do
+      Logger.info(
+        "Enqueued a job  #{log_str(job, :class)} #{log_str(job, :queue)} #{
+          log_str(job, :enqueued_at)
+        } #{log_str(job, :args)}"
+      )
+    end
+  end
+
+  defp log_str(map, key) do
+    "#{key}: #{inspect(Map.get(map, key))}"
   end
 
   defp build_lock_key(job, time, enqueue_key) do

@@ -105,7 +105,7 @@ defmodule ExqScheduler.Scheduler.Server do
   defp handle_tick(state, ref_time) do
     window_duration = state.server_opts.missed_jobs_window
 
-    Storage.filter_active_jobs(
+    Storage.filter_active_schedules(
       state.storage_opts,
       state.schedules,
       get_range(window_duration, ref_time),

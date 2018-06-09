@@ -1,5 +1,7 @@
 use Mix.Config
 
+config :logger, level: :warn
+
 config :exq_scheduler,
   missed_jobs_window: 60 * 60 * 1000,
   time_zone: "Asia/Kolkata"
