@@ -32,6 +32,10 @@ defmodule ExqScheduler do
     }
   end
 
+  def stop(supervisor) do
+    Supervisor.stop(supervisor)
+  end
+
   defmodule ConfigurationError do
     defexception message: "Invalid configuration!"
   end
