@@ -154,6 +154,12 @@ defmodule TestUtils do
     |> trunc()
   end
 
+  def last_scheduled_time(class_name) do
+    get_jobs(class_name)
+    |> Enum.map(&job_unixtime/1)
+    |> Enum.max()
+  end
+
   def assert_continuity(jobs, diff) do
     assert length(jobs) > 0, "Jobs list is empty"
 
