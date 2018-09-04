@@ -43,7 +43,7 @@ and config should be the same.
 ```elixir
 config :exq_scheduler, :redis,
   name: ExqScheduler.Redis.Client,
-  child_spec: {Redix, ["redis://localhost:6379", name: ExqScheduler.Redis.Client]}
+  child_spec: {Redix, ["redis://localhost:6379", [name: ExqScheduler.Redis.Client]]}
 ```
 
 ### Schedules
