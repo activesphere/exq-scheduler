@@ -109,7 +109,7 @@ config :exq_scheduler,
 * `time_zone`: Default time zone for all schedules. Defaults to system
   time zone.
 
-* `empty_schedules_timeout`: Duration between next active schedules check when all schedules are disabled. Defaults to `60 * 1000` (1 minute)
+* `max_timeout`: Maximum duration between next schedules check. Defaults to `5 * 60 * 1000` (5 minute)
 
 ## Web
 

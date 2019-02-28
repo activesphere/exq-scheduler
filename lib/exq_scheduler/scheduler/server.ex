@@ -1,12 +1,9 @@
 defmodule ExqScheduler.Scheduler.Server do
   @moduledoc false
+  @default_config [key_expire_padding: 3600 * 24, max_timeout: 1000 * 3000]
   @storage_reconnect_timeout 500
-  # 1 day (unit: seconds)
-  @key_expire_padding 3600 * 24
   # 10 milliseconds (unit: milliseconds)
   @failsafe_delay 10
-  # 1 hour
-  @max_timeout 1000 * 3600
 
   use GenServer
   alias ExqScheduler.Time
@@ -43,7 +40,7 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   def init(env) do
-    env = add_key_expire_duration(env)
+    env = Keyword.merge(@default_config, env)
     storage_opts = Storage.build_opts(env)
 
     state = %State{
@@ -98,9 +95,9 @@ defmodule ExqScheduler.Scheduler.Server do
         sch_time = nearest_schedule_time(active_schedules, now)
 
         # Use *immediate* current time, not previous time to find the timeout
-        get_timeout(sch_time, Time.now())
+        get_timeout(state.env[:max_timeout], sch_time, Time.now())
       else
-        state.env[:empty_schedules_timeout] || 60_000
+        state.env[:max_timeout]
       end
       |> Time.scale_duration()
     else
@@ -137,12 +134,12 @@ defmodule ExqScheduler.Scheduler.Server do
     |> Enum.min_by(&Timex.to_unix(&1))
   end
 
-  defp get_timeout(schedule_time, current_time) do
+  defp get_timeout(max_timeout, schedule_time, current_time) do
     diff = Timex.diff(schedule_time, current_time, :milliseconds)
 
     cond do
-      diff > @max_timeout ->
-        @max_timeout + @failsafe_delay
+      diff > max_timeout ->
+        max_timeout + @failsafe_delay
 
       diff > 0 ->
         diff + @failsafe_delay
