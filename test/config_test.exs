@@ -37,4 +37,12 @@ defmodule ConfigTest do
     assert worker2_last_scheduled == last_scheduled_time("Worker2")
     :ok = ExqScheduler.stop(pid)
   end
+
+  test "if no schedules configured" do
+    name = ExqScheduler.Sup
+    env = Keyword.merge(env(), schedules: [], name: name)
+
+    {:ok, _} = start_supervised({ExqScheduler, env})
+    assert Supervisor.which_children(name) == []
+  end
 end

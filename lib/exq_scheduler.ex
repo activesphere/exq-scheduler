@@ -4,6 +4,7 @@ defmodule ExqScheduler do
   use Application
   import Supervisor.Spec
   alias ExqScheduler.Scheduler.Server
+  require Logger
 
   def start(_type, _args) do
     env = Application.get_all_env(:exq_scheduler)
@@ -16,10 +17,16 @@ defmodule ExqScheduler do
   end
 
   def start_link(env) do
-    children = [
-      redix_spec(env),
-      worker(Server, [env])
-    ]
+    children =
+      if Enum.empty?(env[:schedules]) do
+        Logger.info("No schedules found in the application config, not starting :exq_scheduler")
+        []
+      else
+        [
+          redix_spec(env),
+          worker(Server, [env])
+        ]
+      end
 
     Supervisor.start_link(children, supervisor_opts(env))
   end
