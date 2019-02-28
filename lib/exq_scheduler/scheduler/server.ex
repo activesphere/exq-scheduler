@@ -83,41 +83,44 @@ defmodule ExqScheduler.Scheduler.Server do
   end
 
   def handle_info(:tick, state) do
-    timeout =
-      if Storage.storage_connected?(state.storage_opts) do
-        now = Time.now()
-        handle_tick(state, now)
-
-        sch_time = nearest_schedule_time(state, now)
-
-        # Use *immediate* current time, not previous time to find the timeout
-        timeout = get_timeout(sch_time, Time.now())
-        Time.scale_duration(timeout)
-      else
-        # sleep for a while and retry
-        @storage_reconnect_timeout
-      end
-
+    timeout = handle_tick(state)
     next_tick(self(), timeout)
     {:noreply, state}
   end
 
-  defp handle_tick(state, ref_time) do
-    window_duration = state.server_opts.missed_jobs_window
+  defp handle_tick(state) do
+    if Storage.storage_connected?(state.storage_opts) do
+      active_schedules = Storage.active_schedules(state.storage_opts, state.schedules)
 
-    Storage.filter_active_schedules(
-      state.storage_opts,
-      state.schedules,
-      get_range(window_duration, ref_time),
-      ref_time
-    )
-    |> Enum.map(fn {schedule, jobs} ->
+      if !Enum.empty?(active_schedules) do
+        now = Time.now()
+        enqueue_schedules(%State{state | schedules: active_schedules}, now)
+        sch_time = nearest_schedule_time(active_schedules, now)
+
+        # Use *immediate* current time, not previous time to find the timeout
+        get_timeout(sch_time, Time.now())
+      else
+        state.env[:empty_schedules_timeout] || 60_000
+      end
+      |> Time.scale_duration()
+    else
+      @storage_reconnect_timeout
+    end
+  end
+
+  defp enqueue_schedules(state, ref_time) do
+    window_duration = state.server_opts.missed_jobs_window
+    time_range = get_range(window_duration, ref_time)
+
+    Enum.each(state.schedules, fn schedule ->
+      jobs = Schedule.get_jobs(state.storage_opts, schedule, time_range, ref_time)
+      key_expire_duration = div(window_duration, 1000) + state.env[:key_expire_padding]
+
       Storage.enqueue_jobs(
         schedule,
         jobs,
         state.storage_opts,
-        # window_duration will be in milliseconds
-        Time.scale_duration(div(window_duration, 1000) + get_in(state.env, [:key_expire_padding]))
+        Time.scale_duration(key_expire_duration)
       )
     end)
 
@@ -128,8 +131,8 @@ defmodule ExqScheduler.Scheduler.Server do
     Process.send_after(server, :tick, timeout)
   end
 
-  defp nearest_schedule_time(state, ref_time) do
-    state.schedules
+  defp nearest_schedule_time(schedules, ref_time) do
+    schedules
     |> Enum.map(&Schedule.get_next_schedule_date(&1.cron, &1.tz_offset, ref_time))
     |> Enum.min_by(&Timex.to_unix(&1))
   end
@@ -153,14 +156,10 @@ defmodule ExqScheduler.Scheduler.Server do
     schedules =
       Enum.map(
         Keyword.get(state.env, :schedules),
-        fn config_sch ->
-          # convert: { name, %{_configs_} } --> %{_config_,  name: _name_}
-          {name, config_sch} = config_sch
-          config_sch = Map.put(config_sch, :name, name)
-
+        fn {name, config_sch} ->
           # Merge the config in order:   defaults -> storage -> config
           schedule =
-            Storage.schedule_from_storage(config_sch.name, state.storage_opts)
+            Storage.schedule_from_storage(name, state.storage_opts)
             |> Map.merge(config_sch)
 
           Storage.map_to_schedule(name, schedule)

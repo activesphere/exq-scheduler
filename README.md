@@ -109,6 +109,8 @@ config :exq_scheduler,
 * `time_zone`: Default time zone for all schedules. Defaults to system
   time zone.
 
+* `empty_schedules_timeout`: Duration between next active schedules check when all schedules are disabled. Defaults to `60 * 1000` (1 minute)
+
 ## Web
 
 Exq Scheduler is compatible with
