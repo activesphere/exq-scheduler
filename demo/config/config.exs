@@ -10,7 +10,6 @@ config :exq,
 
 config :exq_scheduler,
   missed_jobs_window: 100_000
-  max_timeout: 60_000
 
 config :exq_scheduler, :storage,
   exq_namespace: "exq"
