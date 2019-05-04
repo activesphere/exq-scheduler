@@ -133,7 +133,7 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defp nearest_schedule_time(state, ref_time) do
     state.schedules
-    |> Enum.map(&Schedule.get_next_schedule_date(&1.cron, &1.tz_offset, ref_time))
+    |> Enum.map(&Schedule.get_next_schedule_date(&1.cron, &1.timezone, ref_time))
     |> Enum.min_by(&Timex.to_unix(&1))
   end
 

@@ -28,30 +28,12 @@ defmodule ExqScheduler.Schedule.Utils do
 
   def to_cron_exp(cron_str) do
     timezone = get_timezone(cron_str)
-    cron_str = strip_timezone(cron_str)
-    cron_exp = Cron.Parser.parse!(cron_str)
 
-    if timezone == nil do
-      {cron_exp, nil}
-    else
-      cron_tz = Timex.Timezone.get(timezone)
-      d_utc = Timex.Duration.from_seconds(cron_tz.offset_utc)
+    cron_exp =
+      strip_timezone(cron_str)
+      |> Cron.Parser.parse!()
 
-      offset_duration =
-        cond do
-          cron_tz.offset_utc > 0 ->
-            d_utc
-
-          cron_tz.offset_utc < 0 ->
-            Timex.Duration.from_hours(24)
-            |> Timex.Duration.add(d_utc)
-
-          true ->
-            Timex.Duration.zero()
-        end
-
-      {cron_exp, offset_duration}
-    end
+    {cron_exp, timezone}
   end
 
   def strip_timezone(cron_str) do
@@ -67,36 +49,21 @@ defmodule ExqScheduler.Schedule.Utils do
 
   def get_timezone(cron_str) do
     last_part = String.split(cron_str, " ") |> List.last()
-    is_valid_tz = Timex.Timezone.exists?(last_part)
-    tz_from_config = get_timezone_config()
 
     cond do
-      is_valid_tz ->
+      last_part && Timex.Timezone.exists?(last_part) ->
         last_part
 
-      tz_from_config != nil ->
-        tz_from_config
+      config_timezone() && Timex.Timezone.exists?(config_timezone()) ->
+        config_timezone()
 
       true ->
-        nil
+        Timex.local().time_zone
     end
   end
 
-  def get_timezone_config() do
-    server_opts = Application.get_all_env(:exq_scheduler)
-
-    if server_opts != nil do
-      tz_from_config = server_opts[:time_zone]
-
-      if tz_from_config != nil and Timex.Timezone.exists?(tz_from_config) do
-        tz_from_config
-      else
-        # by default use local timezone
-        Timex.local().time_zone
-      end
-    else
-      nil
-    end
+  def config_timezone() do
+    Application.get_env(:exq_scheduler, :time_zone)
   end
 
   def remove_nils(map) do

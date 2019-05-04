@@ -89,11 +89,17 @@ defmodule ScheduleTest do
     assert Timex.compare(newest_schedule, now, :seconds) != 1
   end
 
+  @sample_date Timex.parse!("2018-12-01T00:00:00Z", "{ISO:Extended:Z}")
+
   defp get_next_date(cron) do
     schedule = build_schedule(cron)
 
     date =
-      ExqScheduler.Schedule.get_next_schedule_date(schedule.cron, schedule.tz_offset, Time.now())
+      ExqScheduler.Schedule.get_next_schedule_date(
+        schedule.cron,
+        schedule.timezone,
+        @sample_date
+      )
 
     {date.hour(), date.minute()}
   end
@@ -104,8 +110,8 @@ defmodule ScheduleTest do
     date =
       ExqScheduler.Schedule.get_previous_schedule_date(
         schedule.cron,
-        schedule.tz_offset,
-        Time.now()
+        schedule.timezone,
+        @sample_date
       )
 
     {date.hour(), date.minute()}

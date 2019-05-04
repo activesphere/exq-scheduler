@@ -56,11 +56,11 @@ defmodule ExqScheduler.Storage do
 
   def persist_schedule_times(schedules, storage_opts, ref_time) do
     Enum.each(schedules, fn schedule ->
-      prev_time = Schedule.get_previous_schedule_date(schedule.cron, schedule.tz_offset, ref_time)
+      prev_time = Schedule.get_previous_schedule_date(schedule.cron, schedule.timezone, ref_time)
 
       prev_time =
         prev_time
-        |> Timex.add(schedule.tz_offset)
+        |> Schedule.to_utc(schedule.timezone)
         |> Poison.encode!()
 
       Redis.hset(
@@ -70,11 +70,11 @@ defmodule ExqScheduler.Storage do
         prev_time
       )
 
-      next_time = Schedule.get_next_schedule_date(schedule.cron, schedule.tz_offset, ref_time)
+      next_time = Schedule.get_next_schedule_date(schedule.cron, schedule.timezone, ref_time)
 
       next_time =
         next_time
-        |> Timex.add(schedule.tz_offset)
+        |> Schedule.to_utc(schedule.timezone)
         |> Poison.encode!()
 
       Redis.hset(

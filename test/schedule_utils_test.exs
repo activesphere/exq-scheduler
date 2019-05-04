@@ -17,15 +17,15 @@ defmodule ScheduleUtilsTest do
     assert Utils.get_timezone("* * * * * *") == "Asia/Kolkata"
   end
 
-  test "get_timezone_config(): It fetches the time_zone from config" do
-    assert Utils.get_timezone_config() == "Asia/Kolkata"
+  test "config_timezone(): It fetches the time_zone from config" do
+    assert Utils.config_timezone() == "Asia/Kolkata"
   end
 
   test "to_cron_exp(): It normalizes cron expression with timezone support" do
     assert Utils.to_cron_exp("* * * * * Asia/Kolkata") ==
              {
                Crontab.CronExpression.Parser.parse!("* * * * *"),
-               Timex.Duration.from_clock({5, 30, 0, 0})
+               Timex.Timezone.get("Asia/Kolkata").full_name
              }
   end
 

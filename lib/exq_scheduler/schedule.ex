@@ -68,21 +68,16 @@ defmodule ExqScheduler.Schedule do
   alias Crontab.Scheduler
 
   @enforce_keys [:name, :cron, :job]
-  defstruct name: nil,
-            description: nil,
-            cron: nil,
-            tz_offset: nil,
-            job: nil,
-            schedule_opts: nil
+  defstruct [:name, :description, :cron, :timezone, :job, :schedule_opts]
 
   def new(name, description, cron_str, job, schedule_opts) when is_binary(job) do
-    {cron_exp, tz_offset} = Utils.to_cron_exp(cron_str)
+    {cron_exp, timezone} = Utils.to_cron_exp(cron_str)
 
     %__MODULE__{
       name: name,
       description: description,
       cron: cron_exp,
-      tz_offset: tz_offset,
+      timezone: timezone,
       job: Job.decode(job),
       schedule_opts: ScheduleOpts.new(schedule_opts)
     }
@@ -115,7 +110,6 @@ defmodule ExqScheduler.Schedule do
   end
 
   def get_missed_run_dates(storage_opts, schedule, lower_bound_time, ref_time) do
-    now = ref_time |> Timex.to_naive_datetime()
     schedule_last_run_time = Storage.get_schedule_last_run_time(storage_opts, schedule)
 
     lower_bound_time =
@@ -124,50 +118,52 @@ defmodule ExqScheduler.Schedule do
           schedule_last_run_time
           |> Timex.parse!("{ISO:Extended:Z}")
 
-        Utils.get_nearer_date(now, lower_bound_time, schedule_last_run_time)
+        Utils.get_nearer_date(ref_time, lower_bound_time, schedule_last_run_time)
       else
         lower_bound_time
       end
-      |> add_tz(schedule.tz_offset)
+      |> to_localtime(schedule.timezone)
 
-    now = add_tz(now, schedule.tz_offset)
-    enum = Scheduler.get_previous_run_dates(schedule.cron, now)
+    enum =
+      Scheduler.get_previous_run_dates(schedule.cron, to_localtime(ref_time, schedule.timezone))
 
     collect_till = &(Timex.compare(&1, lower_bound_time) != -1)
-    get_dates(enum, schedule.tz_offset, collect_till)
+    get_dates(enum, collect_till, schedule.timezone)
   end
 
-  def get_previous_schedule_date(cron, tz_offset, ref_time) do
-    now = add_tz(ref_time, tz_offset)
-
-    Scheduler.get_previous_run_date!(cron, now)
-    |> Timex.subtract(tz_offset)
+  def get_previous_schedule_date(cron, timezone, ref_time) do
+    Scheduler.get_previous_run_date!(cron, to_localtime(ref_time, timezone))
+    |> to_utc(timezone)
   end
 
-  def get_next_schedule_date(cron, tz_offset, ref_time) do
-    now = add_tz(ref_time, tz_offset)
-
-    Scheduler.get_next_run_date!(cron, now)
-    |> Timex.subtract(tz_offset)
+  def get_next_schedule_date(cron, timezone, ref_time) do
+    Scheduler.get_next_run_date!(cron, to_localtime(ref_time, timezone))
+    |> to_utc(timezone)
   end
 
-  defp add_tz(time, tz_offset) do
-    if tz_offset != nil do
-      time |> Timex.add(tz_offset) |> Timex.to_naive_datetime()
-    else
-      time |> Timex.to_naive_datetime()
+  def to_localtime(time, timezone) do
+    case Timex.Timezone.convert(time, timezone) do
+      %Timex.AmbiguousDateTime{before: time} -> time
+      %DateTime{} = time -> time
     end
+    |> DateTime.to_naive()
   end
 
-  defp get_dates(enum, tz_offset, collect_till) do
-    dates =
-      if collect_till do
-        Stream.take_while(enum, collect_till) |> Enum.to_list()
-      else
-        Stream.take(enum, 1) |> Enum.to_list()
-      end
+  def to_utc(naive_time, timezone) do
+    case Timex.Timezone.resolve(timezone, Timex.to_erl(naive_time), :wall) do
+      %DateTime{} = datetime -> datetime
+      %Timex.AmbiguousDateTime{before: datetime} -> datetime
+    end
+    |> Timex.Timezone.convert("Etc/UTC")
+  end
 
-    Enum.map(dates, fn date -> Timex.subtract(date, tz_offset) end)
+  defp get_dates(enum, collect_till, timezone) do
+    if collect_till do
+      Stream.take_while(enum, collect_till)
+    else
+      Stream.take(enum, 1)
+    end
+    |> Enum.map(fn time -> to_utc(time, timezone) end)
   end
 
   def build_encoded_cron(schedule) do
