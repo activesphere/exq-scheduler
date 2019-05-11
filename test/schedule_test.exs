@@ -1,56 +1,157 @@
 defmodule ScheduleTest do
   use ExqScheduler.Case, async: false
-  alias ExqScheduler.Time
-  alias Timex.Duration
-  alias ExqScheduler.Schedule
-  alias ExqScheduler.Storage
-  alias ExqScheduler.Schedule.Utils
-  alias ExqScheduler.Schedule.Job
+  alias ExqScheduler.{Schedule, Storage, Time}
   alias Crontab.CronExpression, as: Cron
+  alias Timex.{AmbiguousDateTime, Duration}
   import TestUtils
 
   @config add_redis_name(env(), :redix)
   @storage_opts Storage.build_opts(@config)
-
+  @timezone "Europe/Copenhagen"
   @schedule %Schedule{
     name: "schedule",
     cron: Cron.Parser.parse!("*/5 * * * * *"),
-    timezone: "Europe/Copenhagen",
+    timezone: @timezone,
     job: "some job"
   }
 
-  test "check get_next_schedule_date for different timezone" do
-    # -06:00
-    next_date = get_next_date("0 2 * * * America/New_York")
-    expected_next_date = {7, 0}
-    assert expected_next_date == next_date
+  describe "get_next_schedule_date/3" do
+    test "for different timezone" do
+      # -06:00
+      next_date = get_next_date("0 2 * * * America/New_York")
+      expected_next_date = {7, 0}
+      assert expected_next_date == next_date
 
-    # +05:30
-    next_date = get_next_date("0 9 * * * Asia/Kolkata")
-    expected_next_date = {3, 30}
-    assert expected_next_date == next_date
+      # +05:30
+      next_date = get_next_date("0 9 * * * Asia/Kolkata")
+      expected_next_date = {3, 30}
+      assert expected_next_date == next_date
 
-    # -05:45
-    next_date = get_next_date("0 12 * * * Asia/Katmandu")
-    expected_next_date = {6, 15}
-    assert expected_next_date == next_date
+      # -05:45
+      next_date = get_next_date("0 12 * * * Asia/Katmandu")
+      expected_next_date = {6, 15}
+      assert expected_next_date == next_date
+    end
   end
 
-  test "check get_previous_schedule_date for different timezone" do
-    # -06:00
-    prev_date = get_prev_date("0 2 * * * America/New_York")
-    expected_prev_date = {7, 0}
-    assert expected_prev_date == prev_date
+  describe "get_next_schedule_date/3 for forward DST switch" do
+    test "when current time is before switch" do
+      ref_time = utc(~N[2019-03-31 01:55:01], "Europe/Copenhagen")
+      next_date = Schedule.get_next_schedule_date(@schedule.cron, @schedule.timezone, ref_time)
+      assert next_date == utc(~N[2019-03-31 03:00:00], "Europe/Copenhagen")
+    end
+  end
 
-    # +05:30
-    prev_date = get_prev_date("0 9 * * * Asia/Kolkata")
-    expected_prev_date = {3, 30}
-    assert expected_prev_date == prev_date
+  describe "get_next_schedule_date/3 for backward DST switch" do
+    test "when current time is before switch" do
+      ref_time = utc(~N[2019-10-27 01:55:01], "Europe/Copenhagen")
+      next_date = Schedule.get_next_schedule_date(@schedule.cron, @schedule.timezone, ref_time)
+      %_{before: time} = Timex.to_datetime(~N[2019-10-27 02:00:00], "Europe/Copenhagen")
+      assert next_date == utc(time)
+    end
 
-    # +05:045
-    prev_date = get_prev_date("0 12 * * * Asia/Katmandu")
-    expected_prev_date = {6, 15}
-    assert expected_prev_date == prev_date
+    test "when current time is in the first occurrence of repeated hour" do
+      ref_time = first(~N[2019-10-27 02:30:01], "Europe/Copenhagen") |> utc
+      next_date = Schedule.get_next_schedule_date(@schedule.cron, @schedule.timezone, ref_time)
+      %_{before: time} = Timex.to_datetime(~N[2019-10-27 02:35:00], "Europe/Copenhagen")
+      assert next_date == utc(time)
+    end
+
+    test "when current time is at the end of the first occurrence repeated hour" do
+      ref_time = first(~N[2019-10-27 02:55:01], "Europe/Copenhagen") |> utc
+      next_date = Schedule.get_next_schedule_date(@schedule.cron, @schedule.timezone, ref_time)
+      assert next_date == utc(~N[2019-10-27 03:00:00], "Europe/Copenhagen")
+    end
+
+    test "when current time is in second occurrence repeated hour" do
+      ref_time = second(~N[2019-10-27 02:30:01], "Europe/Copenhagen") |> utc
+      next_date = Schedule.get_next_schedule_date(@schedule.cron, @schedule.timezone, ref_time)
+      %_{after: time} = Timex.to_datetime(~N[2019-10-27 02:35:00], "Europe/Copenhagen")
+      assert next_date == utc(time)
+    end
+
+    test "when current time is at the end of the second occurrence repeated hour" do
+      ref_time = second(~N[2019-10-27 02:55:01], "Europe/Copenhagen") |> utc
+      next_date = Schedule.get_next_schedule_date(@schedule.cron, @schedule.timezone, ref_time)
+      assert next_date == utc(~N[2019-10-27 03:00:00], "Europe/Copenhagen")
+    end
+  end
+
+  describe "get_previous_schedule_date/3" do
+    test "check get_previous_schedule_date for different timezone" do
+      # -06:00
+      prev_date = get_prev_date("0 2 * * * America/New_York")
+      expected_prev_date = {7, 0}
+      assert expected_prev_date == prev_date
+
+      # +05:30
+      prev_date = get_prev_date("0 9 * * * Asia/Kolkata")
+      expected_prev_date = {3, 30}
+      assert expected_prev_date == prev_date
+
+      # +05:045
+      prev_date = get_prev_date("0 12 * * * Asia/Katmandu")
+      expected_prev_date = {6, 15}
+      assert expected_prev_date == prev_date
+    end
+  end
+
+  describe "get_previous_schedule_date/3 for forward DST switch" do
+    test "when current time is before switch" do
+      ref_time = utc(~N[2019-03-31 03:00:01], "Europe/Copenhagen")
+      cron = Cron.Parser.parse!("40 * * * * *")
+      prev_date = Schedule.get_previous_schedule_date(cron, @schedule.timezone, ref_time)
+      assert prev_date == utc(~N[2019-03-31 03:00:00], "Europe/Copenhagen")
+
+      cron = Cron.Parser.parse!("30 * * * * *")
+      prev_date = Schedule.get_previous_schedule_date(cron, @schedule.timezone, ref_time)
+      assert prev_date == utc(~N[2019-03-31 03:00:00], "Europe/Copenhagen")
+    end
+  end
+
+  describe "get_previous_schedule_date/3 for backward DST switch" do
+    test "when current time is after switch" do
+      ref_time = utc(~N[2019-10-27 03:00:01], "Europe/Copenhagen")
+      cron = Cron.Parser.parse!("40 * * * * *")
+      prev_date = Schedule.get_previous_schedule_date(cron, @schedule.timezone, ref_time)
+
+      %_{after: time} = Timex.to_datetime(~N[2019-10-27 02:40:00], "Europe/Copenhagen")
+      assert prev_date == utc(time)
+    end
+
+    test "when current time is at the beginning of first occurrence of repeated hour" do
+      ref_time = first(~N[2019-10-27 02:00:01], "Europe/Copenhagen") |> utc
+      cron = Cron.Parser.parse!("40 * * * * *")
+      prev_date = Schedule.get_previous_schedule_date(cron, @schedule.timezone, ref_time)
+      assert prev_date == utc(~N[2019-10-27 01:40:00], "Europe/Copenhagen")
+    end
+
+    test "when current time is in the first occurrence of repeated hour" do
+      ref_time = first(~N[2019-10-27 02:34:59], "Europe/Copenhagen") |> utc
+
+      prev_date =
+        Schedule.get_previous_schedule_date(@schedule.cron, @schedule.timezone, ref_time)
+
+      %_{before: time} = Timex.to_datetime(~N[2019-10-27 02:30:00], "Europe/Copenhagen")
+      assert prev_date == utc(time)
+    end
+
+    test "when current time is at the beginning of second occurrence of repeated hour" do
+      ref_time = second(~N[2019-10-27 02:00:01], "Europe/Copenhagen") |> utc
+      cron = Cron.Parser.parse!("40 * * * * *")
+      prev_date = Schedule.get_previous_schedule_date(cron, @schedule.timezone, ref_time)
+      assert prev_date == utc(~N[2019-10-27 01:40:00], "Europe/Copenhagen")
+    end
+
+    test "when current time is in the second occurrence of repeated hour" do
+      ref_time = second(~N[2019-10-27 02:34:59], "Europe/Copenhagen") |> utc
+
+      prev_date =
+        Schedule.get_previous_schedule_date(@schedule.cron, @schedule.timezone, ref_time)
+
+      %_{after: time} = Timex.to_datetime(~N[2019-10-27 02:30:00], "Europe/Copenhagen")
+      assert prev_date == utc(time)
+    end
   end
 
   test "clock should have correct precision" do
@@ -69,128 +170,197 @@ defmodule ScheduleTest do
     assert_properties("TestJob", 60)
   end
 
-  describe "to_localtime/2" do
+  describe "utc_to_localtime/2" do
     test "if it returns naive time" do
-      time = Timex.to_datetime(~N[2019-01-03 00:00:00], "Asia/Kolkata")
-      assert Schedule.to_localtime(time, "Asia/Kolkata") == ~N[2019-01-03 00:00:00]
+      time = utc(~N[2019-01-03 00:00:00])
+      assert Schedule.utc_to_localtime(time, "Asia/Kolkata") == ~N[2019-01-03 05:30:00]
     end
 
-    test "if it works with different timezones" do
-      time = Timex.to_datetime(~N[2019-01-03 00:00:00], "Etc/UTC")
-      assert Schedule.to_localtime(time, "Asia/Kolkata") == ~N[2019-01-03 05:30:00]
-    end
-
-    test "if it works with daylight saving adjusted to be forward" do
-      # Time advances from 2:00 AM to 3:00 AM.
-      time =
-        Timex.to_datetime(~N[2019-03-31 01:45:00], "Europe/Copenhagen")
-        |> utc()
-
-      assert Schedule.to_localtime(time, "Europe/Copenhagen") == ~N[2019-03-31 01:45:00]
+    test "for DST forward switch" do
+      time = utc(~N[2019-03-31 01:45:00], "Europe/Copenhagen")
+      assert Schedule.utc_to_localtime(time, "Europe/Copenhagen") == ~N[2019-03-31 01:45:00]
 
       time = Timex.add(time, Duration.from_minutes(30))
-      assert Schedule.to_localtime(time, "Europe/Copenhagen") == ~N[2019-03-31 03:15:00]
+      assert Schedule.utc_to_localtime(time, "Europe/Copenhagen") == ~N[2019-03-31 03:15:00]
     end
 
-    test "if it works with daylight saving adjusted to be backward" do
-      # Time comes backward from 3:00 AM to 2:00 AM.
-      # ie 2:00 - 3:00 maps to 2 times
-      time =
-        Timex.to_datetime(~N[2019-10-27 01:45:00], "Europe/Copenhagen")
-        |> utc()
-
-      assert Schedule.to_localtime(time, "Europe/Copenhagen") == ~N[2019-10-27 01:45:00]
+    test "for DST backward switch" do
+      time = utc(~N[2019-10-27 01:45:00], "Europe/Copenhagen")
+      assert Schedule.utc_to_localtime(time, "Europe/Copenhagen") == ~N[2019-10-27 01:45:00]
 
       time = Timex.add(time, Duration.from_hours(2))
-      assert Schedule.to_localtime(time, "Europe/Copenhagen") == ~N[2019-10-27 02:45:00]
+      assert Schedule.utc_to_localtime(time, "Europe/Copenhagen") == ~N[2019-10-27 02:45:00]
     end
   end
 
-  describe "to_utc/2" do
+  describe "local_to_utc/2" do
     test "if it returns utc time" do
       time = ~N[2019-01-03 10:00:00]
-      assert Schedule.to_utc(time, "Etc/UTC") == utc(~N[2019-01-03 10:00:00])
+      assert Schedule.local_to_utc(time, "Etc/UTC") == utc(~N[2019-01-03 10:00:00])
     end
 
     test "if it works with different timezones" do
       time = ~N[2019-01-03 10:00:00]
-      assert Schedule.to_utc(time, "Asia/Kolkata") == utc(~N[2019-01-03 04:30:00])
+      assert Schedule.local_to_utc(time, "Asia/Kolkata") == utc(~N[2019-01-03 04:30:00])
     end
 
-    test "if it works with daylight saving adjusted to be forward" do
-      # Time advances from 2:00 AM to 3:00 AM.
+    test "for DST forward switch" do
       time = ~N[2019-03-31 01:59:00]
-      assert Schedule.to_utc(time, "Europe/Copenhagen") == utc(~N[2019-03-31 00:59:00])
+      assert Schedule.local_to_utc(time, "Europe/Copenhagen") == utc(~N[2019-03-31 00:59:00])
 
       time = Timex.add(time, Duration.from_hours(1))
-      assert Schedule.to_utc(time, "Europe/Copenhagen") == utc(~N[2019-03-31 01:00:00])
+      assert Schedule.local_to_utc(time, "Europe/Copenhagen") == utc(~N[2019-03-31 01:00:00])
     end
 
-    test "if it works with daylight saving adjusted to be backward" do
-      # Time comes backward from 3:00 AM to 2:00 AM.
-      # ie 2:00 - 3:00 maps to 2 times
+    test "for DST backward switch" do
       time = ~N[2019-10-27 02:00:00]
-      assert Schedule.to_utc(time, "Europe/Copenhagen") == utc(~N[2019-10-27 00:00:00])
+
+      %_{before: before_time, after: after_time} =
+        Schedule.local_to_utc(time, "Europe/Copenhagen")
+
+      assert before_time == utc(~N[2019-10-27 00:00:00])
+      assert after_time == utc(~N[2019-10-27 01:00:00])
 
       time = ~N[2019-10-27 03:00:00]
-      assert Schedule.to_utc(time, "Europe/Copenhagen") == utc(~N[2019-10-27 02:00:00])
+      assert Schedule.local_to_utc(time, "Europe/Copenhagen") == utc(~N[2019-10-27 02:00:00])
     end
   end
 
   describe "get_jobs/4" do
     test "if it works with daylight saving adjusted to be forward" do
-      time = Timex.to_datetime(~N[2019-03-31 03:00:01], "Europe/Copenhagen") |> utc()
+      time = utc(~N[2019-03-31 03:00:00], "Europe/Copenhagen")
+      # 1 min
       time_range = Schedule.TimeRange.new(time, 60 * 1000)
+      sch = schedule(%{cron: Cron.Parser.parse!("*/20 * * * * *")})
 
-      jobs = Schedule.get_jobs(@storage_opts, @schedule, time_range, time)
+      jobs = Schedule.get_jobs(@storage_opts, sch, time_range, time)
 
-      # 12 jobs from 02:XX AM and 1 from 03:00 AM
-      assert length(jobs) == 13
+      # 3 jobs from 02:XX AM and 1 from 03:00 AM
+      assert_jobs(jobs, "some job", [
+        ~N[2019-03-31 02:00:00Z],
+        ~N[2019-03-31 02:20:00Z],
+        ~N[2019-03-31 02:40:00Z],
+        ~N[2019-03-31 03:00:00Z]
+      ])
 
-      expected_time =
-        Timex.to_datetime(~N[2019-03-31 03:00:00], "Europe/Copenhagen")
-        |> utc()
+      # 30 min
+      time_range = Schedule.TimeRange.new(time, 30 * 60 * 1000)
+      sch = schedule(%{cron: Cron.Parser.parse!("40 * * * * *")})
+      jobs = Schedule.get_jobs(@storage_opts, sch, time_range, time)
 
-      jobs
-      |> Enum.each(fn job ->
-        assert job.job == "some job"
-        assert job.time == expected_time
-      end)
-    end
-
-    test "if it works with daylight saving adjusted to be backward" do
-      time = Timex.to_datetime(~N[2019-10-27 03:00:01], "Europe/Copenhagen") |> utc()
-      time_range = Schedule.TimeRange.new(time, 121 * 60 * 1000)
-
-      jobs = Schedule.get_jobs(@storage_opts, @schedule, time_range, time)
-
-      # 12 jobs from 02:XX AM and 1 from 03:00 AM
-      assert length(jobs) == 13
-      assert Enum.all?(jobs, &(&1.job == "some job"))
-
-      job_times = Enum.map(jobs, & &1.time)
-
-      expected_times = [
-        utc(~N[2019-10-27 00:00:00Z]),
-        utc(~N[2019-10-27 00:05:00Z]),
-        utc(~N[2019-10-27 00:10:00Z]),
-        utc(~N[2019-10-27 00:15:00Z]),
-        utc(~N[2019-10-27 00:20:00Z]),
-        utc(~N[2019-10-27 00:25:00Z]),
-        utc(~N[2019-10-27 00:30:00Z]),
-        utc(~N[2019-10-27 00:35:00Z]),
-        utc(~N[2019-10-27 00:40:00Z]),
-        utc(~N[2019-10-27 00:45:00Z]),
-        utc(~N[2019-10-27 00:50:00Z]),
-        utc(~N[2019-10-27 00:55:00Z]),
-        utc(~N[2019-10-27 02:00:00Z])
-      ]
-
-      assert job_times == expected_times
+      assert_jobs(jobs, "some job", [
+        ~N[2019-03-31 01:40:00Z],
+        ~N[2019-03-31 02:40:00Z]
+      ])
     end
   end
 
-  test "get_missed_run_dates(): should work correct across different timezones" do
+  describe "get_jobs/4 for backward DST switch" do
+    test "when current time is after switch" do
+      time = utc(~N[2019-10-27 03:00:00], "Europe/Copenhagen")
+      time_range = Schedule.TimeRange.new(time, 40 * 60 * 1000)
+      sch = schedule(%{cron: Cron.Parser.parse!("*/20 * * * * *")})
+
+      jobs = Schedule.get_jobs(@storage_opts, sch, time_range, time)
+
+      assert_jobs(jobs, "some job", [
+        ~N[2019-10-27 02:20:00Z],
+        ~N[2019-10-27 02:40:00Z],
+        ~N[2019-10-27 03:00:00Z]
+      ])
+    end
+
+    test "when current time is at the beginning of first occurrence" do
+      time = first(~N[2019-10-27 02:00:01], "Europe/Copenhagen") |> utc()
+      time_range = Schedule.TimeRange.new(time, 40 * 60 * 1000)
+      sch = schedule(%{cron: Cron.Parser.parse!("*/20 * * * * *")})
+
+      jobs = Schedule.get_jobs(@storage_opts, sch, time_range, time)
+
+      expected = [
+        ~N[2019-10-27 01:40:00],
+        ~N[2019-10-27 02:00:00]
+      ]
+
+      assert_jobs(jobs, "some job", expected)
+    end
+
+    test "when current time is in the first occurrence of repeated hour" do
+      time = first(~N[2019-10-27 02:30:01], "Europe/Copenhagen") |> utc()
+
+      time_range = Schedule.TimeRange.new(time, 15 * 60 * 1000)
+      sch = schedule(%{cron: Cron.Parser.parse!("*/5 * * * * *")})
+
+      jobs = Schedule.get_jobs(@storage_opts, sch, time_range, time)
+
+      expected = [
+        ~N[2019-10-27 02:20:00],
+        ~N[2019-10-27 02:25:00],
+        ~N[2019-10-27 02:30:00]
+      ]
+
+      assert_jobs(jobs, "some job", expected)
+    end
+
+    test "when current time is at the beginning of second occurrence of repeated hour" do
+      time = second(~N[2019-10-27 02:00:01], "Europe/Copenhagen") |> utc()
+
+      # local_lower_bound_time = ~N[2019-10-27 02:00:01]
+      time_range = Schedule.TimeRange.new(time, 60 * 60 * 1000)
+
+      jobs = Schedule.get_jobs(@storage_opts, @schedule, time_range, time)
+
+      # last hour is first occurrence of repeated time ( 02:00 ~ 02:59)
+      # hence, job filter criteria will be: job_time >= 02:01 && job_time <= 02:01.
+      # ie. zero jobs
+      assert_jobs(jobs, "some job", [])
+
+      time_range = Schedule.TimeRange.new(time, 70 * 60 * 1000)
+      jobs = Schedule.get_jobs(@storage_opts, @schedule, time_range, time)
+
+      expected = [
+        ~N[2019-10-27 01:55:00],
+        ~N[2019-10-27 02:00:00]
+      ]
+
+      assert_jobs(jobs, "some job", expected)
+    end
+
+    test "when current time is in the second occurrence of repeated hour" do
+      time = second(~N[2019-10-27 02:30:01], "Europe/Copenhagen") |> utc()
+
+      time_range = Schedule.TimeRange.new(time, 15 * 60 * 1000)
+      sch = schedule(%{cron: Cron.Parser.parse!("*/5 * * * * *")})
+
+      jobs = Schedule.get_jobs(@storage_opts, sch, time_range, time)
+
+      expected = [
+        ~N[2019-10-27 02:20:00],
+        ~N[2019-10-27 02:25:00],
+        ~N[2019-10-27 02:30:00]
+      ]
+
+      assert_jobs(jobs, "some job", expected)
+    end
+
+    test "after DST switch and time_range covers complete DST switch" do
+      time = utc(~N[2019-10-27 03:00:01], "Europe/Copenhagen")
+
+      time_range = Schedule.TimeRange.new(time, 180 * 60 * 1000)
+      sch = schedule(%{cron: Cron.Parser.parse!("50 * * * * *")})
+
+      jobs = Schedule.get_jobs(@storage_opts, sch, time_range, time)
+
+      expected = [
+        ~N[2019-10-27 01:50:00],
+        ~N[2019-10-27 02:50:00]
+      ]
+
+      assert_jobs(jobs, "some job", expected)
+    end
+  end
+
+  test "get_missed_run_dates()" do
     time = Time.now()
     time_range = Schedule.TimeRange.new(time, 60 * 60 * 1000)
 
@@ -198,38 +368,30 @@ defmodule ScheduleTest do
       Schedule.get_missed_run_dates(@storage_opts, @schedule, time_range.t_start, time)
       |> hd
 
-    assert Timex.compare(recent_schedule, time, :seconds) != 1
+    now = Schedule.utc_to_localtime(time, @timezone)
+    assert Timex.compare(recent_schedule, now, :seconds) != 1
   end
 
   @sample_date Timex.parse!("2018-12-01T00:00:00Z", "{ISO:Extended:Z}")
 
-  defp get_next_date(cron) do
+  defp get_next_date(cron, ref_time \\ @sample_date) do
     schedule = build_schedule(cron)
-
-    date =
-      ExqScheduler.Schedule.get_next_schedule_date(
-        schedule.cron,
-        schedule.timezone,
-        @sample_date
-      )
-
+    date = Schedule.get_next_schedule_date(schedule.cron, schedule.timezone, ref_time)
     {date.hour(), date.minute()}
   end
 
-  defp get_prev_date(cron) do
+  defp get_prev_date(cron, ref_time \\ @sample_date) do
     schedule = build_schedule(cron)
-
-    date =
-      ExqScheduler.Schedule.get_previous_schedule_date(
-        schedule.cron,
-        schedule.timezone,
-        @sample_date
-      )
-
+    date = Schedule.get_previous_schedule_date(schedule.cron, schedule.timezone, ref_time)
     {date.hour(), date.minute()}
   end
 
-  defp utc(time) do
-    Timex.to_datetime(time, "Etc/UTC")
+  defp schedule(map) do
+    Map.merge(@schedule, map)
+  end
+
+  defp assert_jobs(jobs, expected_job, expected_jobs_time) do
+    assert Enum.all?(jobs, &(&1.job == expected_job))
+    assert Enum.map(jobs, & &1.time) == expected_jobs_time
   end
 end

@@ -97,7 +97,7 @@ defmodule ExqSchedulerTest do
     if length(jobs) > 0 do
       latest_job_time =
         List.first(jobs)
-        |> schedule_time_from_job()
+        |> scheduled_at()
         |> Timex.parse!("{ISO:Extended:Z}")
 
       assert latest_job_time.year() < now.year()
@@ -139,8 +139,7 @@ defmodule ExqSchedulerTest do
     assert List.last(new_schs) - old_last_sch > 10 * 60
 
     # Check properties for newly added jobs
-    new_jobs = Enum.take(jobs, length(new_schs))
-    assert_job_uniqueness(new_jobs)
-    assert_continuity(new_jobs, 10 * 60)
+    Enum.take(jobs, length(new_schs))
+    |> assert_jobs_properties(10 * 60)
   end
 end
