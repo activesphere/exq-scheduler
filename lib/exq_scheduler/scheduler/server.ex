@@ -58,7 +58,7 @@ defmodule ExqScheduler.Scheduler.Server do
       start_time: Time.now()
     }
 
-    Process.send_after(self(), :first, @storage_reconnect_timeout)
+    Process.send_after(self(), :first, 0)
     {:ok, state}
   end
 
