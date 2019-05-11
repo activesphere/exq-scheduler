@@ -1,7 +1,7 @@
 use Mix.Config
 
 config :exq_scheduler,
-  missed_jobs_window: 100_000,
+  missed_jobs_window: 3 * 60 * 60 * 1000,
   time_zone: "Asia/Kolkata"
 
 config :exq_scheduler, :storage, exq_namespace: "exq"

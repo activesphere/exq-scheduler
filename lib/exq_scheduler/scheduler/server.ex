@@ -25,8 +25,8 @@ defmodule ExqScheduler.Scheduler.Server do
     @moduledoc false
     defstruct missed_jobs_window: nil
 
-    # 1 hour
-    @default_missed_jobs_window 60 * 60 * 1000
+    # 3 hour
+    @default_missed_jobs_window 3 * 60 * 60 * 1000
 
     def new(opts) do
       missed_jobs_window = opts[:missed_jobs_window] || @default_missed_jobs_window

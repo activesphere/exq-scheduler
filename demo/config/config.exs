@@ -9,10 +9,9 @@ config :exq,
   queues: ["default"]
 
 config :exq_scheduler,
-  missed_jobs_window: 100_000
+  missed_jobs_window: 3 * 60 * 60 * 1000
 
-config :exq_scheduler, :storage,
-  exq_namespace: "exq"
+config :exq_scheduler, :storage, exq_namespace: "exq"
 
 config :exq_scheduler, :redis,
   name: ExqScheduler.Redis.Client,
