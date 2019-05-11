@@ -22,13 +22,10 @@ defmodule ExqScheduler.Storage do
     end
   end
 
-  alias ExqScheduler.Schedule
   alias ExqScheduler.Schedule.Parser
   alias ExqScheduler.Storage.Redis
-  alias ExqScheduler.Storage
-  alias ExqScheduler.Schedule.Job
-  alias ExqScheduler.Schedule.Utils
-  alias ExqScheduler.Time
+  alias ExqScheduler.{Storage, Schedule, Time}
+  alias ExqScheduler.Schedule.{Job, ScheduledJob, Utils}
   require Logger
 
   def persist_schedule(schedule, storage_opts) do
@@ -56,11 +53,8 @@ defmodule ExqScheduler.Storage do
 
   def persist_schedule_times(schedules, storage_opts, ref_time) do
     Enum.each(schedules, fn schedule ->
-      prev_time = Schedule.get_previous_schedule_date(schedule.cron, schedule.timezone, ref_time)
-
       prev_time =
-        prev_time
-        |> Schedule.to_utc(schedule.timezone)
+        Schedule.get_previous_schedule_date(schedule.cron, schedule.timezone, ref_time)
         |> Poison.encode!()
 
       Redis.hset(
@@ -70,11 +64,8 @@ defmodule ExqScheduler.Storage do
         prev_time
       )
 
-      next_time = Schedule.get_next_schedule_date(schedule.cron, schedule.timezone, ref_time)
-
       next_time =
-        next_time
-        |> Schedule.to_utc(schedule.timezone)
+        Schedule.get_next_schedule_date(schedule.cron, schedule.timezone, ref_time)
         |> Poison.encode!()
 
       Redis.hset(
@@ -197,11 +188,20 @@ defmodule ExqScheduler.Storage do
 
   # TODO: Update schedule.first_run, schedule.last_run
   defp enqueue_job(schedule, scheduled_job, storage_opts, key_expire_duration) do
-    {job, time} = {scheduled_job.job, scheduled_job.time}
+    %ScheduledJob{job: job, time: localtime} = scheduled_job
+
+    schedule_unix_time =
+      Schedule.local_to_utc(localtime, schedule.timezone)
+      |> case do
+        %Timex.AmbiguousDateTime{before: time} -> time
+        time -> time
+      end
+      |> Utils.encode_to_epoc()
 
     job =
       if schedule.schedule_opts.include_metadata == true do
-        metadata = %{scheduled_at: Utils.encode_to_epoc(time)}
+        metadata = %{scheduled_at: schedule_unix_time}
+
         args = job.args
 
         args =
@@ -219,7 +219,8 @@ defmodule ExqScheduler.Storage do
     queue_name = job.queue
 
     enqueue_key = build_enqueued_jobs_key(storage_opts)
-    lock = build_lock_key(job, time, enqueue_key)
+
+    lock = build_lock_key(job, localtime, enqueue_key)
 
     job =
       Map.put(job, :jid, UUID.uuid4())
