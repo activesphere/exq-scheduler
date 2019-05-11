@@ -20,7 +20,7 @@ defmodule ConnectionTest do
       config
       |> add_redis_name(String.to_atom("scheduler_redis"))
       # change redis port to use toxiproxy
-      |> put_in([:redis, :port], 26379)
+      |> add_redis_port(26379)
       |> put_in([:name], String.to_atom("scheduler"))
 
     {:ok, _} = start_supervised({ExqScheduler, config})
