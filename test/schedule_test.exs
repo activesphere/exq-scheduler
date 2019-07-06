@@ -2,7 +2,7 @@ defmodule ScheduleTest do
   use ExqScheduler.Case, async: false
   alias ExqScheduler.{Schedule, Storage, Time}
   alias Crontab.CronExpression, as: Cron
-  alias Timex.{AmbiguousDateTime, Duration}
+  alias Timex.Duration
   import TestUtils
 
   @config add_redis_name(env(), :redix)

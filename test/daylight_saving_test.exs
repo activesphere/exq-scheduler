@@ -1,7 +1,6 @@
 defmodule DaylightSavingTest do
   use ExqScheduler.Case, async: false
   alias ExqScheduler.Time
-  alias ExqScheduler.Schedule
   import TestUtils
 
   import Timex.Duration,
