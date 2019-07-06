@@ -45,7 +45,14 @@ defmodule DaylightSavingTest do
         dedup_jobs(jobs, to_unix(~N[2019-03-31 03:00:00], @timezone))
 
       assert length(skiped_hour_jobs) == 12
-      assert_jobs_properties(valid_hour_jobs, to_seconds(from_minutes(5)))
+
+      Enum.filter(valid_hour_jobs, fn job ->
+        Timex.after?(
+          scheduled_at_local(job, @timezone),
+          ~N[2019-03-31 02:00:00]
+        )
+      end)
+      |> assert_jobs_properties(to_seconds(from_minutes(5)), @timezone)
     end
   end
 
@@ -98,7 +105,7 @@ defmodule DaylightSavingTest do
                  enqueued_at > Timex.to_unix(first(~N[2019-10-27 02:59:59], @timezone))
       end)
 
-      assert_jobs_properties(jobs, to_seconds(from_minutes(5)))
+      assert_jobs_properties(jobs, to_seconds(from_minutes(5)), @timezone)
     end
 
     @tag start_time: utc(~N[2019-10-27 01:30:00], @timezone),
@@ -124,7 +131,7 @@ defmodule DaylightSavingTest do
                  enqueued_at > Timex.to_unix(second(~N[2019-10-27 02:59:59], @timezone))
       end)
 
-      assert_jobs_properties(jobs, to_seconds(from_minutes(5)))
+      assert_jobs_properties(jobs, to_seconds(from_minutes(5)), @timezone)
     end
   end
 
@@ -133,19 +140,22 @@ defmodule DaylightSavingTest do
   end
 
   defp dedup_jobs(jobs, time) do
-    Enum.reduce(
-      jobs,
-      {[], []},
-      fn job, {acc, duplicate} ->
-        prev_time = if !Enum.empty?(acc), do: scheduled_at(hd(acc)), else: nil
+    {normal, duplicate} =
+      Enum.reduce(
+        jobs,
+        {[], []},
+        fn job, {acc, duplicate} ->
+          prev_time = if !Enum.empty?(acc), do: scheduled_at(hd(acc)), else: nil
 
-        if scheduled_at(job) == time && prev_time == time do
-          {acc, [job | duplicate]}
-        else
-          {[job | acc], duplicate}
+          if scheduled_at(job) == time && prev_time == time do
+            {acc, [job | duplicate]}
+          else
+            {[job | acc], duplicate}
+          end
         end
-      end
-    )
+      )
+
+    {Enum.reverse(normal), Enum.reverse(duplicate)}
   end
 
   def to_unix(time, zone) do

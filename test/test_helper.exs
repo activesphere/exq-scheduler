@@ -209,7 +209,7 @@ defmodule TestUtils do
       t2 = scheduled_at_local(job2, timezone)
 
       assert(
-        Timex.diff(t1, t2, :seconds),
+        Timex.diff(t1, t2, :seconds) == diff,
         "Failed. job1: #{inspect(job1.args)} job2: #{inspect(job2.args)} "
       )
     end)
