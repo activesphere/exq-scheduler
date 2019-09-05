@@ -109,8 +109,8 @@ defmodule DaylightSavingTest do
     end
 
     @tag start_time: utc(~N[2019-10-27 01:30:00], @timezone),
-         missed_jobs_window: to_milliseconds(from_hours(3), truncate: true)
-    test "when both occurrence repetition is missed" do
+         missed_jobs_window: to_milliseconds(from_hours(4), truncate: true)
+    test "when both occurrence of repetition is missed" do
       :timer.sleep(100)
 
       down("redis")

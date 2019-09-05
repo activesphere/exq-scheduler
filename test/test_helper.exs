@@ -210,7 +210,7 @@ defmodule TestUtils do
 
       assert(
         Timex.diff(t1, t2, :seconds) == diff,
-        "Failed. job1: #{inspect(job1.args)} job2: #{inspect(job2.args)} "
+        "Failed. t1: #{inspect(t1)} t2: #{inspect(t2)} "
       )
     end)
   end
