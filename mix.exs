@@ -28,6 +28,7 @@ defmodule ExqScheduler.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:tzdata, "~> 0.5.20"},
       {:timex, "~> 3.1"},
       {:redix, "~> 0.7"},
       {:redix_sentinel, "~> 0.6.0", only: :test},

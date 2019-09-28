@@ -1,16 +1,36 @@
-ExUnit.start(exclude: [:integration])
-
 defmodule ExqScheduler.Time do
-  @base DateTime.to_unix(Timex.now(), :microsecond)
-  @scale 60 * 60
+  def init(base, scale) do
+    __MODULE__ = :ets.new(__MODULE__, [:public, :named_table])
+    :ok = reset(base, scale)
+  end
 
   def now do
-    elapsed = DateTime.to_unix(Timex.now(), :microsecond) - @base
-    Timex.from_unix(@base + elapsed * @scale, :microsecond)
+    elapsed = Timex.diff(Timex.now(), set_at(), :microseconds)
+    Timex.shift(base(), microseconds: elapsed * scale())
   end
 
   def scale_duration(duration) do
-    div(duration, @scale)
+    div(duration, scale())
+  end
+
+  def reset(base, scale) do
+    insert(:base, base)
+    insert(:scale, scale)
+    insert(:set_at, Timex.now())
+    :ok
+  end
+
+  defp base(), do: get(:base)
+  defp scale(), do: get(:scale)
+  defp set_at(), do: get(:set_at)
+
+  defp insert(key, value) do
+    true = :ets.insert(__MODULE__, {key, value})
+  end
+
+  defp get(key) do
+    [{^key, value}] = :ets.lookup(__MODULE__, key)
+    value
   end
 end
 
@@ -82,10 +102,13 @@ defmodule TestUtils do
 
   def assert_job_uniqueness(jobs \\ get_jobs()) do
     assert length(jobs) > 0
-    grouped = Enum.group_by(jobs, fn job -> [job.class, List.first(job.args)["scheduled_at"]] end)
+    grouped = Enum.group_by(jobs, fn job -> [job.class, scheduled_at(job)] end)
 
-    Enum.each(grouped, fn {key, val} ->
-      assert(length(val) == 1, "Duplicate job scheduled for #{inspect(key)} #{inspect(val)}")
+    Enum.each(grouped, fn {[class, time], jobs} ->
+      assert(
+        length(jobs) == 1,
+        "Duplicate jobs scheduled for #{class} at #{time} \n jobs: #{inspect(jobs)}"
+      )
     end)
   end
 
@@ -127,6 +150,16 @@ defmodule TestUtils do
     put_in(env[:redis][:child_spec], spec)
   end
 
+  def add_redis_port(env, port) do
+    spec = ExqScheduler.redix_spec(env)
+
+    [opts | rest] = get_opts(spec)
+    opts = Keyword.replace(opts, :port, port)
+    spec = set_opts(spec, [opts | rest])
+
+    put_in(env[:redis][:child_spec], spec)
+  end
+
   def pmap(collection, func) do
     collection
     |> Enum.map(&Task.async(fn -> func.(&1) end))
@@ -145,13 +178,19 @@ defmodule TestUtils do
     |> Enum.map(&Job.decode/1)
   end
 
-  def schedule_time_from_job(job) do
+  def scheduled_at(job) do
     List.last(job.args)["scheduled_at"]
   end
 
   def job_unixtime(job) do
-    schedule_time_from_job(job)
-    |> trunc()
+    trunc(scheduled_at(job))
+  end
+
+  def scheduled_at_local(job, timezone) do
+    scheduled_at(job)
+    |> trunc
+    |> Timex.from_unix()
+    |> Schedule.utc_to_localtime(timezone)
   end
 
   def last_scheduled_time(class_name) do
@@ -160,18 +199,18 @@ defmodule TestUtils do
     |> Enum.max()
   end
 
-  def assert_continuity(jobs, diff) do
+  def assert_continuity(jobs, diff, timezone) do
     assert length(jobs) > 0, "Jobs list is empty"
 
     jobs
     |> Enum.chunk_every(2, 1, :discard)
     |> Enum.map(fn [job1, job2] ->
-      t1 = schedule_time_from_job(job1)
-      t2 = schedule_time_from_job(job2)
+      t1 = scheduled_at_local(job1, timezone)
+      t2 = scheduled_at_local(job2, timezone)
 
       assert(
-        diff == t1 - t2,
-        "Failed. job1: #{inspect(job1)} job2: #{inspect(job2)} "
+        Timex.diff(t1, t2, :seconds) == diff,
+        "Failed. t1: #{inspect(t1)} t2: #{inspect(t2)} "
       )
     end)
   end
@@ -179,7 +218,12 @@ defmodule TestUtils do
   def assert_properties(class, interval, queue_name \\ "default") do
     jobs = get_jobs(class, queue_name)
     assert_job_uniqueness(jobs)
-    assert_continuity(jobs, interval)
+    assert_continuity(jobs, interval, Timex.local().time_zone)
+  end
+
+  def assert_jobs_properties(jobs, interval, timezone \\ Timex.local().time_zone) do
+    assert_job_uniqueness(jobs)
+    assert_continuity(jobs, interval, timezone)
   end
 
   def set_scheduler_state(env, schedule_name, state) do
@@ -209,6 +253,25 @@ defmodule TestUtils do
   def up(service) do
     {:ok, _} = Toxiproxy.update(%{name: service, enabled: true})
   end
+
+  def utc(time, zone) do
+    Timex.to_datetime(time, zone)
+    |> utc
+  end
+
+  def utc(time) do
+    Timex.to_datetime(time, "Etc/UTC")
+  end
+
+  def first(time, zone) do
+    %Timex.AmbiguousDateTime{before: before_time} = Timex.to_datetime(time, zone)
+    before_time
+  end
+
+  def second(time, zone) do
+    %Timex.AmbiguousDateTime{after: after_time} = Timex.to_datetime(time, zone)
+    after_time
+  end
 end
 
 defmodule ExqScheduler.Case do
@@ -226,6 +289,7 @@ defmodule ExqScheduler.Case do
 end
 
 test_env = Application.get_all_env(:exq_scheduler)
+ExqScheduler.Time.init(Timex.now(), 60 * 60)
 
 opts =
   TestUtils.add_redis_name(test_env, :redix)
@@ -234,3 +298,6 @@ opts =
 
 module = ExqScheduler.redis_module(test_env)
 {:ok, _} = apply(module, :start_link, opts)
+
+TestUtils.flush_redis()
+ExUnit.start(capture_log: true, exclude: [:integration])

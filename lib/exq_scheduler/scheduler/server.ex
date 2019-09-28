@@ -25,8 +25,8 @@ defmodule ExqScheduler.Scheduler.Server do
     @moduledoc false
     defstruct missed_jobs_window: nil
 
-    # 1 hour
-    @default_missed_jobs_window 60 * 60 * 1000
+    # 3 hour
+    @default_missed_jobs_window 3 * 60 * 60 * 1000
 
     def new(opts) do
       missed_jobs_window = opts[:missed_jobs_window] || @default_missed_jobs_window
@@ -58,7 +58,7 @@ defmodule ExqScheduler.Scheduler.Server do
       start_time: Time.now()
     }
 
-    Process.send_after(self(), :first, @storage_reconnect_timeout)
+    Process.send_after(self(), :first, 0)
     {:ok, state}
   end
 
@@ -133,7 +133,7 @@ defmodule ExqScheduler.Scheduler.Server do
 
   defp nearest_schedule_time(state, ref_time) do
     state.schedules
-    |> Enum.map(&Schedule.get_next_schedule_date(&1.cron, &1.tz_offset, ref_time))
+    |> Enum.map(&Schedule.get_next_schedule_date(&1.cron, &1.timezone, ref_time))
     |> Enum.min_by(&Timex.to_unix(&1))
   end
 

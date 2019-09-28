@@ -48,7 +48,7 @@ defmodule ExqSchedulerTimeTest do
     is_jobs_scheduled_before_start =
       jobs
       |> Enum.all?(fn job ->
-        schedule_time_from_job(job) >= start_time
+        scheduled_at(job) >= start_time
       end)
 
     assert(
