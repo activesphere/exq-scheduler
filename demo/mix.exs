@@ -21,8 +21,9 @@ defmodule Demo.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:exq, "~> 0.11.0"},
-      {:exq_scheduler, path: "../" }
+      {:exq, "~> 0.13.3"},
+      {:jason, "~> 1.1"},
+      {:exq_scheduler, path: "../"}
     ]
   end
 end
