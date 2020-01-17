@@ -29,7 +29,7 @@ defmodule ExqScheduler.Mixfile do
   defp deps do
     [
       {:tzdata, "~> 0.5.20"},
-      {:timex, "~> 3.1"},
+      {:timex, ">= 3.1.0 and < 3.4.0"},
       {:redix, "~> 0.7"},
       {:redix_sentinel, "~> 0.6.0", only: :test},
       {:poison, "~> 3.1"},
