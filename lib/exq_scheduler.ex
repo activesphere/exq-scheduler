@@ -61,6 +61,10 @@ defmodule ExqScheduler do
       is_map(spec) ->
         spec
 
+      is_list(spec) ->
+        {module, args} = hd(spec)
+        module.child_spec(args)
+
       true ->
         raise ExqScheduler.ConfigurationError,
           message:
