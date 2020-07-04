@@ -5,7 +5,7 @@ GEM
     connection_pool (2.2.2)
     et-orbi (1.0.8)
       tzinfo
-    rack (2.0.5)
+    rack (2.2.3)
     rack-protection (2.0.1)
       rack
     redis (4.0.1)
