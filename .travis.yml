@@ -5,13 +5,17 @@ language: elixir
 env:
   TOXIPROXY_VERSION="2.1.3"
 
-elixir:
-  - 1.5
-  - 1.6
-
-otp_release:
-  - 19.3
-  - 20.3
+jobs:
+  - elixir: 1.5
+    otp_release: 19.3
+  - elixir: 1.6
+    otp_release: 20.3
+  - elixir: 1.9.4
+    otp_release: 20.3.8
+  - elixir: 1.10.4
+    otp_release: 21.3.8
+  - elixir: 1.10.4
+    otp_release: 23.0.3
 
 services:
   - redis-server
@@ -27,6 +31,7 @@ before_script:
   - sleep 4
   - toxiproxy-cli create redis -l localhost:26379 -u localhost:6379
   - sleep 1
+  - mix compile --warnings-as-errors
 
 script:
   - "! mix help format > /dev/null || mix format --check-formatted"
