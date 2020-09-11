@@ -189,7 +189,7 @@ defmodule TestUtils do
   def scheduled_at_local(job, timezone) do
     scheduled_at(job)
     |> trunc
-    |> Timex.from_unix()
+    |> Timex.from_unix(:second)
     |> Schedule.utc_to_localtime(timezone)
   end
 

@@ -369,7 +369,7 @@ defmodule ScheduleTest do
       |> hd
 
     now = Schedule.utc_to_localtime(time, @timezone)
-    assert Timex.compare(recent_schedule, now, :seconds) != 1
+    assert Timex.compare(recent_schedule, now, :second) != 1
   end
 
   @sample_date Timex.parse!("2018-12-01T00:00:00Z", "{ISO:Extended:Z}")
