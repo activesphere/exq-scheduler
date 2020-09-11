@@ -154,7 +154,7 @@ defmodule TestUtils do
     spec = ExqScheduler.redix_spec(env)
 
     [opts | rest] = get_opts(spec)
-    opts = Keyword.replace(opts, :port, port)
+    opts = Keyword.put(opts, :port, port)
     spec = set_opts(spec, [opts | rest])
 
     put_in(env[:redis][:child_spec], spec)
