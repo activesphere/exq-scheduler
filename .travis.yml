@@ -31,8 +31,8 @@ before_script:
   - sleep 4
   - toxiproxy-cli create redis -l localhost:26379 -u localhost:6379
   - sleep 1
-  - mix compile --warnings-as-errors
 
 script:
+  - mix compile --warnings-as-errors
   - "! mix help format > /dev/null || mix format --check-formatted"
   - mix test --include integration --trace
