@@ -5,18 +5,18 @@ defmodule SchedulerSerdesTest do
   require Logger
 
   setup context do
-    sidekiq_path = System.cwd() |> Path.join("./sidekiq")
+    sidekiq_path = Path.join(__DIR__, "../sidekiq") |> Path.expand()
 
     sidekiq_task =
       Task.async(fn ->
-        System.cmd("#{sidekiq_path}/setup_sidekiq", [], cd: sidekiq_path)
+        {_, 0} = System.cmd(Path.join(sidekiq_path, "setup_sidekiq"), [], cd: sidekiq_path)
       end)
 
     Logger.info("Wait for 5 seconds for Sidekiq to initialize.")
     :timer.sleep(5000)
 
     on_exit(context, fn ->
-      System.cmd("#{sidekiq_path}/stop_sidekiq", [], cd: sidekiq_path)
+      System.cmd(Path.join(sidekiq_path, "stop_sidekiq"), [], cd: sidekiq_path)
       assert_down(sidekiq_task.pid)
     end)
   end

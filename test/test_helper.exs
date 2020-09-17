@@ -154,7 +154,7 @@ defmodule TestUtils do
     spec = ExqScheduler.redix_spec(env)
 
     [opts | rest] = get_opts(spec)
-    opts = Keyword.replace(opts, :port, port)
+    opts = Keyword.put(opts, :port, port)
     spec = set_opts(spec, [opts | rest])
 
     put_in(env[:redis][:child_spec], spec)
@@ -189,7 +189,7 @@ defmodule TestUtils do
   def scheduled_at_local(job, timezone) do
     scheduled_at(job)
     |> trunc
-    |> Timex.from_unix()
+    |> Timex.from_unix(:second)
     |> Schedule.utc_to_localtime(timezone)
   end
 
