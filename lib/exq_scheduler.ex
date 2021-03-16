@@ -12,7 +12,7 @@ defmodule ExqScheduler do
     if Keyword.get(env, :start_on_application, true) do
       start_link(env)
     else
-      Supervisor.start_link([], supervisor_opts(env))
+      Supervisor.start_link(env, supervisor_opts(env))
     end
   end
 
