@@ -1,8 +1,7 @@
 defmodule ExqScheduler do
   @moduledoc false
-
   use Application
-  import Supervisor.Spec
+
   alias ExqScheduler.Scheduler.Server
   require Logger
 
@@ -24,7 +23,7 @@ defmodule ExqScheduler do
       else
         [
           redix_spec(env),
-          worker(Server, [env])
+          {Server, env}
         ]
       end
 
