@@ -20,7 +20,6 @@ defmodule ExqScheduler.Mixfile do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      applications: [:logger, :timex, :redix, :crontab, :elixir_uuid],
       mod: {ExqScheduler, []}
     ]
   end
