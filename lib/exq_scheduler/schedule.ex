@@ -41,6 +41,8 @@ defmodule ExqScheduler.Schedule do
     @moduledoc """
     Serializable Job format used by Exq
     """
+    alias ExqScheduler.Serializer
+
     defstruct error_message: nil,
               error_class: nil,
               failed_at: nil,
@@ -55,15 +57,20 @@ defmodule ExqScheduler.Schedule do
               enqueued_at: nil
 
     def decode(serialized) do
-      Poison.decode!(serialized, as: %__MODULE__{})
+      struct(__MODULE__, Serializer.decode!(serialized))
+    end
+
+    def encode(%{__struct__: _} = job) do
+      Serializer.encode!(Map.from_struct(job))
     end
 
     def encode(job) do
-      Poison.encode!(job)
+      Serializer.encode!(job)
     end
   end
 
   alias ExqScheduler.Schedule.Utils
+  alias ExqScheduler.Serializer
   alias ExqScheduler.Storage
   alias Crontab.Scheduler
   alias Timex.{AmbiguousDateTime, Timezone}
@@ -101,7 +108,7 @@ defmodule ExqScheduler.Schedule do
     |> Map.merge(schedule.schedule_opts)
     |> Map.put(:cron, build_encoded_cron(schedule))
     |> Map.take(include_keys)
-    |> Poison.encode!()
+    |> Serializer.encode!()
   end
 
   def get_jobs(storage_opts, schedule, time_range, ref_time) do

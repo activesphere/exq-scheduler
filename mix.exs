@@ -13,7 +13,8 @@ defmodule ExqScheduler.Mixfile do
       dialyzer: [
         plt_add_deps: :transitive,
         flags: [:unmatched_returns, :race_conditions, :error_handling, :underspecs]
-      ]
+      ],
+      xref: [exclude: [Jason]]
     ]
   end
 
@@ -31,7 +32,7 @@ defmodule ExqScheduler.Mixfile do
       {:timex, ">= 3.1.0 and < 3.4.0"},
       {:redix, "~> 0.7"},
       {:redix_sentinel, "~> 0.6.0", only: :test},
-      {:poison, "~> 3.1"},
+      {:poison, "~> 3.1", optional: true},
       {:crontab, "~> 1.1"},
       {:elixir_uuid, "~> 1.2"},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
