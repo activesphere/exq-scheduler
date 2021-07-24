@@ -1,4 +1,7 @@
-# Exq Scheduler [![Build Status](https://travis-ci.org/activesphere/exq-scheduler.svg?branch=master)](https://travis-ci.org/activesphere/exq-scheduler) [![Hex.pm](https://img.shields.io/hexpm/v/exq_scheduler.svg)](https://hex.pm/packages/exq_scheduler)
+# Exq Scheduler
+
+[![CI](https://github.com/activesphere/exq-scheduler/actions/workflows/ci.yml/badge.svg)](https://github.com/activesphere/exq-scheduler/actions/workflows/ci.yml)
+[![Hex.pm](https://img.shields.io/hexpm/v/exq_scheduler.svg)](https://hex.pm/packages/exq_scheduler)
 
 Exq Scheduler is a [cron](https://en.wikipedia.org/wiki/Cron) like job scheduler for
 [Exq](https://github.com/akira/exq), it's also compatible with Sidekiq
@@ -142,15 +145,13 @@ To start it
 
 ## Running tests
 
-1. Install and start [toxiproxy](https://github.com/shopify/toxiproxy)
-1. Install and start redis
 1. Install sidekiq (requires ruby 2.5.1 and bundler 1.16.1)
 
         $ (cd sidekiq && gem install bundler:1.16.1 && bundle install)
 
-1. Set up a toxiproxy proxy
+1. Setup services
 
-        $ toxiproxy-cli create redis -l localhost:26379 -u localhost:6379
+        $ docker-compose up
 
 1. Install dependencies
 
