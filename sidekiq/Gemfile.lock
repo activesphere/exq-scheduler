@@ -1,18 +1,22 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    concurrent-ruby (1.0.5)
-    connection_pool (2.2.1)
-    et-orbi (1.0.8)
+    concurrent-ruby (1.1.9)
+    connection_pool (2.2.5)
+    et-orbi (1.2.4)
       tzinfo
+    fugit (1.5.0)
+      et-orbi (~> 1.1, >= 1.1.8)
+      raabro (~> 1.4)
+    raabro (1.4.0)
     rack (2.2.3)
-    rack-protection (2.0.0)
+    rack-protection (2.1.0)
       rack
-    redis (4.0.1)
+    redis (4.3.1)
     redis-namespace (1.6.0)
       redis (>= 3.0.4)
-    rufus-scheduler (3.4.2)
-      et-orbi (~> 1.0)
+    rufus-scheduler (3.8.0)
+      fugit (~> 1.1, >= 1.1.6)
     sidekiq (5.0.5)
       concurrent-ruby (~> 1.0)
       connection_pool (~> 2.2, >= 2.2.0)
@@ -23,10 +27,9 @@ GEM
       rufus-scheduler (~> 3.2)
       sidekiq (>= 3)
       tilt (>= 1.4.0)
-    thread_safe (0.3.6)
-    tilt (2.0.8)
-    tzinfo (1.2.4)
-      thread_safe (~> 0.1)
+    tilt (2.0.10)
+    tzinfo (2.0.4)
+      concurrent-ruby (~> 1.0)
 
 PLATFORMS
   ruby
@@ -37,4 +40,4 @@ DEPENDENCIES
   sidekiq-scheduler (= 2.1.10)
 
 BUNDLED WITH
-   1.16.1
+   1.17.2

@@ -142,15 +142,13 @@ To start it
 
 ## Running tests
 
-1. Install and start [toxiproxy](https://github.com/shopify/toxiproxy)
-1. Install and start redis
 1. Install sidekiq (requires ruby 2.5.1 and bundler 1.16.1)
 
         $ (cd sidekiq && gem install bundler:1.16.1 && bundle install)
 
-1. Set up a toxiproxy proxy
+1. Setup services
 
-        $ toxiproxy-cli create redis -l localhost:26379 -u localhost:6379
+        $ docker-compose up
 
 1. Install dependencies
 

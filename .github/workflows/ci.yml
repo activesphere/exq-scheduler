@@ -1,0 +1,35 @@
+on:
+  - push
+  - pull_request
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    name: OTP ${{matrix.otp}} / Elixir ${{matrix.elixir}}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - elixir: 1.6
+            otp: 20.3
+          - elixir: 1.8.2
+            otp: 21.3
+          - elixir: 1.9.4
+            otp: 22.2
+          - elixir: 1.10.4
+            otp: 23.0
+    steps:
+      - uses: actions/checkout@v2
+      - run: docker-compose up -d
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: 2.6
+          bundler-cache: true
+      - uses: erlef/setup-beam@v1
+        with:
+          otp-version: ${{matrix.otp}}
+          elixir-version: ${{matrix.elixir}}
+      - run: cd sidekiq && bundle install
+      - run: mix deps.get
+      - run: mix format --check-formatted
+      - run: mix compile --force --warnings-as-errors
+      - run: mix test --include integration --trace

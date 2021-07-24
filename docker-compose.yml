@@ -1,0 +1,28 @@
+version: '3'
+services:
+  redis:
+    container_name: redis
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+  redis-sentinel:
+    image: 'bitnami/redis-sentinel:latest'
+    environment:
+      - REDIS_MASTER_HOST=redis
+      - REDIS_SENTINEL_PORT_NUMBER=6555
+      - REDIS_MASTER_SET=exq
+      - REDIS_SENTINEL_QUORUM=1
+    ports:
+      - '6555:6555'
+  toxiproxy:
+    build:
+      context: ./docker/toxiproxy
+    environment:
+      PROXIES: "redis:26379:redis:6379"
+    depends_on:
+      - redis
+    ports:
+      - "26379:26379"
+      - "8474:8474"
+
+

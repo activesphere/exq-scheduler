@@ -93,8 +93,10 @@ defmodule ConnectionTest do
          )
   @tag :integration
   test "to check whether scheduler considers window after reconnection" do
+    :timer.sleep(200)
     down("redis")
-    :timer.sleep(500)
+    init_sch_time = Timex.to_unix(Time.now())
+    :timer.sleep(1000)
 
     max_first_sch_time = Timex.to_unix(Time.now())
     up("redis")
@@ -102,6 +104,7 @@ defmodule ConnectionTest do
     jobs = get_jobs("DummyWorker2")
 
     assert_properties("DummyWorker2", 10 * 60)
+    jobs = Enum.filter(jobs, fn job -> init_sch_time < job_unixtime(job) end)
     first_job = List.last(jobs)
     first_sch_time = job_unixtime(first_job)
 
