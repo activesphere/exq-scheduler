@@ -93,7 +93,7 @@ defmodule ConnectionTest do
          )
   @tag :integration
   test "to check whether scheduler considers window after reconnection" do
-    :timer.sleep(200)
+    :timer.sleep(500)
     down("redis")
     init_sch_time = Timex.to_unix(Time.now())
     :timer.sleep(1000)
