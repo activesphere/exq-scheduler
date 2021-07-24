@@ -84,7 +84,7 @@ defmodule ConnectionTest do
   @tag config:
          configure_env(
            env(),
-           1000 * 60 * 60,
+           1000 * 60 * 120,
            schedule_cron: %{
              :cron => "*/10 * * * * *",
              :class => "DummyWorker2",
