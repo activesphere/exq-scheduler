@@ -244,7 +244,9 @@ defmodule ExqScheduler.Storage do
     # Log only if job is enqueued
     if length(response) > 1 do
       Logger.info(
-        "Enqueued a job  #{log_str(job, :class)} #{log_str(job, :queue)} #{log_str(job, :enqueued_at)} #{log_str(job, :args)}"
+        "Enqueued a job  #{log_str(job, :class)} #{log_str(job, :queue)} #{
+          log_str(job, :enqueued_at)
+        } #{log_str(job, :args)}"
       )
     end
   end
