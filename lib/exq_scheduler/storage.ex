@@ -7,6 +7,8 @@ defmodule ExqScheduler.Storage do
   @schedule_first_runs_key "first_runs"
   @schedule_last_runs_key "last_runs"
 
+  alias ExqScheduler.Serializer
+
   defmodule Opts do
     @moduledoc false
     @enforce_keys [:namespace, :exq_namespace, :name, :module]
@@ -34,7 +36,7 @@ defmodule ExqScheduler.Storage do
 
     schedule_state =
       %{enabled: schedule.schedule_opts.enabled}
-      |> Poison.encode!()
+      |> Serializer.encode!()
 
     Redis.hset(
       storage_opts,
@@ -55,7 +57,7 @@ defmodule ExqScheduler.Storage do
     Enum.each(schedules, fn schedule ->
       prev_time =
         Schedule.get_previous_schedule_date(schedule.cron, schedule.timezone, ref_time)
-        |> Poison.encode!()
+        |> Serializer.encode!()
 
       Redis.hset(
         storage_opts,
@@ -66,7 +68,7 @@ defmodule ExqScheduler.Storage do
 
       next_time =
         Schedule.get_next_schedule_date(schedule.cron, schedule.timezone, ref_time)
-        |> Poison.encode!()
+        |> Serializer.encode!()
 
       Redis.hset(
         storage_opts,
@@ -75,7 +77,7 @@ defmodule ExqScheduler.Storage do
         next_time
       )
 
-      now = ref_time |> Timex.to_naive_datetime() |> Poison.encode!()
+      now = ref_time |> Timex.to_naive_datetime() |> Serializer.encode!()
 
       schedule_first_run = get_schedule_first_run_time(storage_opts, schedule)
 

@@ -1,6 +1,7 @@
 defmodule ScheduleParserTest do
   use ExUnit.Case, async: false
   alias ExqScheduler.Schedule.Parser
+  alias ExqScheduler.Serializer
 
   test "it correctly parses a cron-based schedule containing bitstrings" do
     schedule = %{
@@ -14,7 +15,7 @@ defmodule ScheduleParserTest do
              {
                "",
                "* * * * * * Asia/Kolkata",
-               Poison.encode!(%{
+               Serializer.encode!(%{
                  :class => "SidekiqWorker",
                  :queue => "high",
                  :args => ["/tmp/poop"]
@@ -36,7 +37,7 @@ defmodule ScheduleParserTest do
              {
                "this is a test",
                "* * * * * * Asia/Kolkata",
-               Poison.encode!(%{
+               Serializer.encode!(%{
                  :class => "SidekiqWorker",
                  :queue => "high",
                  :args => ["/tmp/poop"]
@@ -57,7 +58,7 @@ defmodule ScheduleParserTest do
              {
                "",
                "* * * * * * Asia/Kolkata",
-               Poison.encode!(%{
+               Serializer.encode!(%{
                  :class => "SidekiqWorker",
                  :queue => "high",
                  :args => ["/tmp/poop"]
@@ -78,7 +79,7 @@ defmodule ScheduleParserTest do
              {
                "",
                "1 * * * * * Asia/Kolkata",
-               Poison.encode!(%{
+               Serializer.encode!(%{
                  :class => "SidekiqWorker",
                  :queue => "high",
                  :args => ["/tmp/poop"]

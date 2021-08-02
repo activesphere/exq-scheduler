@@ -1,6 +1,8 @@
 defmodule ExqScheduler.Storage.Redis do
   @moduledoc false
 
+  alias ExqScheduler.Serializer
+
   def hkeys(storage, key) do
     storage.module.command!(storage.name, ["HKEYS", key])
   end
@@ -53,7 +55,7 @@ defmodule ExqScheduler.Storage.Redis do
 
   defp decode(result) do
     if result != nil do
-      result |> Poison.decode!()
+      result |> Serializer.decode!()
     end
   end
 end
