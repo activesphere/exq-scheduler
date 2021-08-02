@@ -45,6 +45,8 @@ defmodule ExqSchedulerTimeTest do
 
     jobs = get_jobs("TimeWorker", "TimeQ")
 
+    assert length(jobs) > 0
+
     is_jobs_scheduled_before_start =
       jobs
       |> Enum.all?(fn job ->

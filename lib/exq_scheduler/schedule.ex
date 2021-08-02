@@ -133,6 +133,7 @@ defmodule ExqScheduler.Schedule do
         schedule_last_run_time =
           schedule_last_run_time
           |> Timex.parse!("{ISO:Extended:Z}")
+          |> Timex.to_datetime("Etc/UTC")
 
         Utils.get_nearer_date(ref_time, lower_bound_time, schedule_last_run_time)
       else
@@ -155,20 +156,41 @@ defmodule ExqScheduler.Schedule do
   end
 
   def utc_to_localtime(time, timezone) do
-    Timezone.convert(time, timezone)
+    time
+    |> Timex.Timezone.convert(timezone)
     |> DateTime.to_naive()
   end
 
   def local_to_utc(naive_time, timezone) do
-    case Timezone.resolve(timezone, Timex.to_erl(naive_time), :wall) do
-      %DateTime{} = time ->
-        Timezone.convert(time, "Etc/UTC")
+    case Timex.to_datetime(naive_time, timezone) do
+      {:error, {:could_not_resolve_timezone, _, seconds, :wall}} ->
+        # This occurs when the naive time we are trying to convert is not a valid
+        # wall clock time in the target timezone. To address this, we have to manually
+        # resolve the timezone period using the UTC clock, which should produce exactly
+        # one result period
+        tzinfo = Timezone.resolve(timezone, seconds, :utc)
 
-      %AmbiguousDateTime{} = time ->
+        case Timezone.convert(naive_time, tzinfo) do
+          %AmbiguousDateTime{before: a, after: b} ->
+            %AmbiguousDateTime{
+              before: Timezone.convert(a, "Etc/UTC"),
+              after: Timezone.convert(b, "Etc/UTC")
+            }
+            |> maybe_coalesce()
+
+          datetime ->
+            datetime
+        end
+
+      %AmbiguousDateTime{before: a, after: b} ->
         %AmbiguousDateTime{
-          before: Timezone.convert(time.before, "Etc/UTC"),
-          after: Timezone.convert(time.after, "Etc/UTC")
+          before: Timezone.convert(a, "Etc/UTC"),
+          after: Timezone.convert(b, "Etc/UTC")
         }
+        |> maybe_coalesce()
+
+      datetime ->
+        Timezone.convert(datetime, "Etc/UTC")
     end
   end
 
@@ -183,7 +205,7 @@ defmodule ExqScheduler.Schedule do
     end
   end
 
-  defp nearer_greater_time(time, timezone, ref_time) do
+  def nearer_greater_time(time, timezone, ref_time) do
     local_to_utc(time, timezone)
     |> case do
       %AmbiguousDateTime{} = time ->
@@ -194,9 +216,28 @@ defmodule ExqScheduler.Schedule do
     end
   end
 
-  def gte(a, b), do: !Timex.before?(a, b)
+  # In cases where there is a timezone gap, the `before` date/time is the last valid
+  # date/time in the previous zone, i.e. it has a time of HH:59:59.999999. When converting
+  # both before/after to UTC, the two may converge to essentially the same point in time,
+  # i.e. they have a difference of exactly 1 microsecond. In this situation we can not only
+  # automatically resolve the ambiguity, but we want to select the `after` date/time, as it
+  # will hold the canonical date/time that is expected, whereas `before` will have the clock
+  # time as shown above, which is not what we generally want
+  defp maybe_coalesce(%AmbiguousDateTime{before: a, after: b} = amb) do
+    case Timex.to_gregorian_microseconds(a) - Timex.to_gregorian_microseconds(b) do
+      n when n in [-1, 0, 1] ->
+        b
 
-  def lte(a, b), do: !Timex.after?(a, b)
+      _ ->
+        amb
+    end
+  end
+
+  defp maybe_coalesce(datetime), do: datetime
+
+  def gte(a, b), do: Timex.compare(a, b) in [1, 0]
+
+  def lte(a, b), do: Timex.compare(a, b) in [-1, 0]
 
   def build_encoded_cron(schedule) do
     Crontab.CronExpression.Composer.compose(schedule.cron)
