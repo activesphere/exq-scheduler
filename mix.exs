@@ -36,7 +36,7 @@ defmodule ExqScheduler.Mixfile do
       {:crontab, "~> 1.1"},
       {:elixir_uuid, "~> 1.2"},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
-      {:ex_doc, "~> 0.19.3", only: :dev},
+      {:ex_doc, "~> 0.22", only: :dev, runtime: false},
       {:toxiproxy, "~> 0.3", only: :test}
     ]
   end
