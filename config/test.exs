@@ -4,6 +4,7 @@ config :logger, level: :warn
 
 config :exq_scheduler,
   missed_jobs_window: 60 * 60 * 1000,
+  time_module: ExqScheduler.Time.Fake,
   time_zone: "Asia/Kolkata"
 
 config :exq_scheduler, :storage, exq_namespace: "exq"

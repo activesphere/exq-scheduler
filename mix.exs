@@ -10,6 +10,7 @@ defmodule ExqScheduler.Mixfile do
       deps: deps(),
       description: "Cron like job scheduler for Exq",
       package: package(),
+      elixirc_paths: elixirc_paths(Mix.env()),
       dialyzer: [
         plt_add_deps: :transitive,
         flags: [:unmatched_returns, :race_conditions, :error_handling, :underspecs]
@@ -48,4 +49,7 @@ defmodule ExqScheduler.Mixfile do
       maintainers: ["ananthakumaran@gmail.com", "akashh246@gmail.com"]
     }
   end
+
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 end
