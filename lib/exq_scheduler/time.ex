@@ -2,7 +2,7 @@ defmodule ExqScheduler.Time do
   @callback init(base :: integer(), scale :: integer()) :: :ok
   @callback now() :: DateTime.t()
   @callback scale_duration(Timex.Duration.t()) :: Timex.Duration.t()
-  @callback reset(base :: integer(), scale ::integer()) :: :ok
+  @callback reset(base :: integer(), scale :: integer()) :: :ok
 
   @mod Application.get_env(:exq_scheduler, :time_module, __MODULE__.Real)
 
@@ -14,4 +14,3 @@ defmodule ExqScheduler.Time do
 
   def reset(base, scale), do: @mod.reset(base, scale)
 end
-

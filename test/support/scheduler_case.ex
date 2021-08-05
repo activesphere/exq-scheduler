@@ -11,4 +11,3 @@ defmodule ExqScheduler.Case do
     :ok
   end
 end
-
