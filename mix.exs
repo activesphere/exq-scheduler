@@ -4,8 +4,8 @@ defmodule ExqScheduler.Mixfile do
   def project do
     [
       app: :exq_scheduler,
-      version: "0.7.2",
-      elixir: "~> 1.5",
+      version: "1.0.0-rc1",
+      elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       description: "Cron like job scheduler for Exq",
@@ -29,8 +29,8 @@ defmodule ExqScheduler.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:tzdata, "~> 0.5.20"},
-      {:timex, ">= 3.1.0 and < 3.4.0"},
+      {:tzdata, "~> 1.0"},
+      {:timex, "~> 3.7"},
       {:redix, "~> 0.7"},
       {:redix_sentinel, "~> 0.6.0", only: :test},
       {:poison, "~> 3.1", optional: true},

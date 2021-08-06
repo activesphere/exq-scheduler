@@ -51,7 +51,7 @@ defmodule ScheduleTest do
     end
 
     test "when current time is in the first occurrence of repeated hour" do
-      ref_time = first(~N[2019-10-27 02:30:01], "Europe/Copenhagen") |> utc
+      ref_time = first(~N[2019-10-27 02:30:01], "Europe/Copenhagen") |> utc()
       next_date = Schedule.get_next_schedule_date(@schedule.cron, @schedule.timezone, ref_time)
       %_{before: time} = Timex.to_datetime(~N[2019-10-27 02:35:00], "Europe/Copenhagen")
       assert next_date == utc(time)
@@ -208,7 +208,8 @@ defmodule ScheduleTest do
       time = ~N[2019-03-31 01:59:00]
       assert Schedule.local_to_utc(time, "Europe/Copenhagen") == utc(~N[2019-03-31 00:59:00])
 
-      time = Timex.add(time, Duration.from_hours(1))
+      # Add 1 hour and 1 minute to reach 3:00, from 2-3 CET there is a time gap
+      time = Timex.add(time, Duration.from_seconds(3600 + 60))
       assert Schedule.local_to_utc(time, "Europe/Copenhagen") == utc(~N[2019-03-31 01:00:00])
     end
 

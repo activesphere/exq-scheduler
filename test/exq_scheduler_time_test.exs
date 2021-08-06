@@ -41,9 +41,11 @@ defmodule ExqSchedulerTimeTest do
 
     start_time = Timex.to_unix(Time.now())
     start_scheduler(config)
-    :timer.sleep(100)
+    :timer.sleep(1000)
 
     jobs = get_jobs("TimeWorker", "TimeQ")
+
+    assert length(jobs) > 0
 
     is_jobs_scheduled_before_start =
       jobs
