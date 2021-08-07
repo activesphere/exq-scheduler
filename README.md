@@ -37,18 +37,19 @@ config :exq_scheduler, :storage,
 ```
 ### Redis Client
 
-Exq Scheduler will start a Redis Client under it's supervisor tree. It
-supports both [Redix](https://github.com/whatyouhide/redix) and
-[RedixSentinel](https://github.com/ananthakumaran/redix_sentinel). Redix
-is used by default. The `name` used in the
-[child_spec](https://hexdocs.pm/elixir/Supervisor.html#module-child_spec-1)
-and config should be the same.
+Exq Scheduler will start a Redis Client under it's supervisor
+tree. The `name` used in the [child_spec](https://hexdocs.pm/elixir/Supervisor.html#module-child_spec-1) and config should be the
+same.
 
 ```elixir
 config :exq_scheduler, :redis,
   name: ExqScheduler.Redis.Client,
-  child_spec: {Redix, ["redis://localhost:6379", [name: ExqScheduler.Redis.Client]]}
+  child_spec: {Redix, [host: "127.0.0.1", port: 6379, name: ExqScheduler.Redis.Client]}
 ```
+
+NOTE: The child\_spec API provided by Redix library has changed over
+time. Refer [Redix.child\_spec](https://hexdocs.pm/redix/Redix.html#child_spec/1) documentation of the specific
+version you use.
 
 ### Schedules
 

@@ -10,10 +10,7 @@ config :exq_scheduler, :redis,
   name: ExqScheduler.Redis.Client,
   child_spec: {
     Redix,
-    [
-      [host: "127.0.0.1", port: 6379, database: 0],
-      [name: ExqScheduler.Redis.Client]
-    ]
+    [host: "127.0.0.1", port: 6379, database: 0, name: ExqScheduler.Redis.Client]
   }
 
 config :exq_scheduler, :schedules, []
