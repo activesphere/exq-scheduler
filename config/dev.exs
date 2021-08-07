@@ -11,8 +11,12 @@ config :exq_scheduler, :redis,
   child_spec: {
     Redix,
     [
-      [host: "127.0.0.1", port: 6379, database: 0],
-      [name: ExqScheduler.Redis.Client, backoff_max: 1000, backoff_initial: 1000]
+      host: "127.0.0.1",
+      port: 6379,
+      database: 0,
+      name: ExqScheduler.Redis.Client,
+      backoff_max: 1000,
+      backoff_initial: 1000
     ]
   }
 
