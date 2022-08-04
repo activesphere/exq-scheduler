@@ -45,4 +45,14 @@ defmodule ConfigTest do
     {:ok, _} = start_supervised({ExqScheduler, env})
     assert Supervisor.which_children(name) == []
   end
+
+  test "if redix config is a list" do
+    redis_config = Application.get_env(:exq_scheduler, :redis)
+    child_spec = redis_config[:child_spec]
+    wrapped_redis_config = Keyword.put(redis_config, :child_spec, [child_spec])
+    Application.put_env(:exq_scheduler, :redis, wrapped_redis_config)
+
+    config = configure_env(env(), 1000 * 60 * 120, [])
+    assert {:ok, pid} = ExqScheduler.start_link(config)
+  end
 end
