@@ -48,8 +48,8 @@ defmodule ExqScheduler.Storage do
 
   def build_opts(env) do
     Keyword.get(env, :storage)
-    |> Keyword.put(:name, ExqScheduler.redis_name(env))
-    |> Keyword.put(:module, ExqScheduler.redis_module(env))
+    |> Keyword.put(:name, ExqScheduler.Utils.redis_name(env))
+    |> Keyword.put(:module, ExqScheduler.Utils.redis_module(env))
     |> Storage.Opts.new()
   end
 

@@ -3,10 +3,10 @@ ExqScheduler.Time.init(Timex.now(), 60 * 60)
 
 opts =
   TestUtils.add_redis_name(test_env, :redix)
-  |> ExqScheduler.redix_spec()
+  |> ExqScheduler.Utils.redix_spec()
   |> TestUtils.get_opts()
 
-module = ExqScheduler.redis_module(test_env)
+module = ExqScheduler.Utils.redis_module(test_env)
 {:ok, _} = apply(module, :start_link, opts)
 
 TestUtils.flush_redis()
