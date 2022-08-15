@@ -57,7 +57,7 @@ defmodule TestUtils do
   end
 
   def redis_module(e \\ env()) do
-    ExqScheduler.redis_module(e)
+    ExqScheduler.Utils.redis_module(e)
   end
 
   def flush_redis do
@@ -81,7 +81,7 @@ defmodule TestUtils do
 
     opts =
       add_redis_name(env(), pid)
-      |> ExqScheduler.redix_spec()
+      |> ExqScheduler.Utils.redix_spec()
       |> get_opts()
 
     module = redis_module(env())
@@ -106,7 +106,7 @@ defmodule TestUtils do
 
   def add_redis_name(env, name) do
     env = env |> put_in([:redis, :name], name)
-    spec = ExqScheduler.redix_spec(env)
+    spec = ExqScheduler.Utils.redix_spec(env)
 
     opts = update_opts(get_opts(spec), name)
     spec = set_opts(spec, opts)
@@ -115,7 +115,7 @@ defmodule TestUtils do
   end
 
   def add_redis_port(env, port) do
-    spec = ExqScheduler.redix_spec(env)
+    spec = ExqScheduler.Utils.redix_spec(env)
 
     [opts | rest] = get_opts(spec)
     opts = Keyword.put(opts, :port, port)

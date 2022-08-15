@@ -3,6 +3,7 @@ defmodule ExqScheduler do
   use Application
 
   alias ExqScheduler.Scheduler.Server
+  alias ExqScheduler.Utils
   require Logger
 
   def start(_type, _args) do
@@ -22,7 +23,7 @@ defmodule ExqScheduler do
         []
       else
         [
-          redix_spec(env),
+          Utils.redix_spec(env),
           {Server, env}
         ]
       end
@@ -42,45 +43,28 @@ defmodule ExqScheduler do
     Supervisor.stop(supervisor)
   end
 
+  def schedules(name) do
+    Server.schedules(Module.concat(name, "Server"))
+  end
+
+  def enqueue_now(name, schedule_name) do
+    Server.enqueue_now(Module.concat(name, "Server"), schedule_name)
+  end
+
+  def enable(name, schedule_name) do
+    Server.enable_schedule(Module.concat(name, "Server"), schedule_name, true)
+  end
+
+  def disable(name, schedule_name) do
+    Server.enable_schedule(Module.concat(name, "Server"), schedule_name, false)
+  end
+
   defmodule ConfigurationError do
     defexception message: "Invalid configuration!"
   end
 
-  def redix_spec(env) do
-    spec = env[:redis][:child_spec]
-
-    cond do
-      is_tuple(spec) ->
-        {module, args} = spec
-        module.child_spec(args)
-
-      is_atom(spec) ->
-        spec.child_spec([])
-
-      is_map(spec) ->
-        spec
-
-      true ->
-        raise ExqScheduler.ConfigurationError,
-          message:
-            "Invalid redis specification in the configuration. :spec must be a map, Please refer documentation"
-    end
-  end
-
-  def redis_module(env) do
-    redix_spec(env).start() |> elem(0)
-  end
-
-  def redis_name(env), do: env[:redis][:name]
-
   defp supervisor_opts(env) do
     opts = [strategy: :one_for_one]
-    name = Keyword.get(env, :name)
-
-    if name do
-      Keyword.put(opts, :name, name)
-    else
-      opts
-    end
+    Keyword.merge(opts, ExqScheduler.Utils.name(env))
   end
 end

@@ -3,6 +3,7 @@ GEM
   specs:
     concurrent-ruby (1.1.9)
     connection_pool (2.2.5)
+    e2mmap (0.1.0)
     et-orbi (1.2.4)
       tzinfo
     fugit (1.5.0)
@@ -27,6 +28,8 @@ GEM
       rufus-scheduler (~> 3.2)
       sidekiq (>= 3)
       tilt (>= 1.4.0)
+    thwait (0.2.0)
+      e2mmap
     tilt (2.0.10)
     tzinfo (2.0.4)
       concurrent-ruby (~> 1.0)
@@ -35,9 +38,11 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  e2mmap
   redis-namespace (= 1.6.0)
   sidekiq (= 5.0.5)
   sidekiq-scheduler (= 2.1.10)
+  thwait
 
 BUNDLED WITH
-   1.17.2
+   1.17.3

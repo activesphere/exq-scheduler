@@ -109,6 +109,62 @@ defmodule ExqSchedulerTest do
            env(),
            1000 * 60 * 60,
            schedule_cron: %{
+             :cron => "0 0 30 1 * *",
+             # 1st of jan every year
+             :class => "TestWorker",
+             :include_metadata => true,
+             :args => ["a"]
+           }
+         )
+  test "enqueue_now" do
+    assert get_jobs("TestWorker", "default") == []
+    :ok = ExqScheduler.enqueue_now(:scheduler_0, :schedule_cron)
+
+    assert [
+             %ExqScheduler.Schedule.Job{
+               args: ["a", %{"scheduled_at" => _}],
+               class: "TestWorker",
+               enqueued_at: _,
+               jid: _,
+               queue: "default"
+             }
+           ] = get_jobs("TestWorker", "default")
+
+    {:error, "Schedule not found"} = ExqScheduler.enqueue_now(:scheduler_0, :random)
+  end
+
+  @tag config:
+         configure_env(
+           env(),
+           1000 * 60 * 60,
+           schedule_cron: %{
+             :cron => "0 0 30 1 * *",
+             # 1st of jan every year
+             :class => "TestWorker"
+           }
+         )
+  test "enable/disable" do
+    assert [%{schedule: %{name: :schedule_cron, schedule_opts: %{enabled: true}}}] =
+             ExqScheduler.schedules(:scheduler_0)
+
+    :ok = ExqScheduler.disable(:scheduler_0, :schedule_cron)
+
+    assert [%{schedule: %{name: :schedule_cron, schedule_opts: %{enabled: false}}}] =
+             ExqScheduler.schedules(:scheduler_0)
+
+    :ok = ExqScheduler.enable(:scheduler_0, :schedule_cron)
+
+    assert [%{schedule: %{name: :schedule_cron, schedule_opts: %{enabled: true}}}] =
+             ExqScheduler.schedules(:scheduler_0)
+
+    {:error, "Schedule not found"} = ExqScheduler.enable(:scheduler_0, :random)
+  end
+
+  @tag config:
+         configure_env(
+           env(),
+           1000 * 60 * 60,
+           schedule_cron: %{
              :cron => "*/10 * * * * *",
              :class => "TestWorker",
              :include_metadata => true
