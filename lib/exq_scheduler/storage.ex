@@ -133,11 +133,18 @@ defmodule ExqScheduler.Storage do
   end
 
   def get_schedule_last_run_time(storage_opts, schedule) do
-    Redis.hget(
-      storage_opts,
-      build_schedule_runs_key(storage_opts, :last),
-      schedule.name
-    )
+    last_run_time =
+      Redis.hget(
+        storage_opts,
+        build_schedule_runs_key(storage_opts, :last),
+        schedule.name
+      )
+
+    if last_run_time != nil do
+      last_run_time
+      |> Timex.parse!("{ISO:Extended:Z}")
+      |> Timex.to_datetime("Etc/UTC")
+    end
   end
 
   def get_schedule_first_run_time(storage_opts, schedule) do
@@ -165,6 +172,19 @@ defmodule ExqScheduler.Storage do
     end
   end
 
+  def enable_schedule(storage_opts, schedule, enable?) do
+    schedule_state =
+      %{enabled: enable?}
+      |> Serializer.encode!()
+
+    Redis.hset(
+      storage_opts,
+      build_schedule_states_key(storage_opts),
+      schedule.name,
+      schedule_state
+    )
+  end
+
   def storage_connected?(storage_opts) do
     Redis.connected?(storage_opts)
   end
@@ -188,6 +208,18 @@ defmodule ExqScheduler.Storage do
     |> build_key
   end
 
+  def enqueue_now(storage_opts, schedule) do
+    {commands, _, _} =
+      Storage.build_job_commands(
+        storage_opts,
+        schedule,
+        schedule.job,
+        DateTime.utc_now() |> Utils.encode_to_epoc()
+      )
+
+    Redis.multi(storage_opts, commands)
+  end
+
   # TODO: Update schedule.first_run, schedule.last_run
   defp enqueue_job(schedule, scheduled_job, storage_opts, key_expire_duration) do
     %ScheduledJob{job: job, time: localtime} = scheduled_job
@@ -200,7 +232,30 @@ defmodule ExqScheduler.Storage do
       end
       |> Utils.encode_to_epoc()
 
-    job =
+    {commands, job, job_without_id} =
+      build_job_commands(storage_opts, schedule, job, schedule_unix_time)
+
+    enqueue_key = build_enqueued_jobs_key(storage_opts)
+    lock = build_lock_key(job_without_id, localtime, enqueue_key)
+
+    response =
+      Redis.cas(
+        storage_opts,
+        lock,
+        key_expire_duration,
+        commands
+      )
+
+    # Log only if job is enqueued
+    if length(response) > 1 do
+      Logger.info(
+        "Enqueued a job  #{log_str(job, :class)} #{log_str(job, :queue)} #{log_str(job, :enqueued_at)} #{log_str(job, :args)}"
+      )
+    end
+  end
+
+  def build_job_commands(storage_opts, schedule, job, schedule_unix_time) do
+    job_without_id =
       if schedule.schedule_opts.include_metadata == true do
         metadata = %{scheduled_at: schedule_unix_time}
 
@@ -220,12 +275,8 @@ defmodule ExqScheduler.Storage do
 
     queue_name = job.queue
 
-    enqueue_key = build_enqueued_jobs_key(storage_opts)
-
-    lock = build_lock_key(job, localtime, enqueue_key)
-
     job =
-      Map.put(job, :jid, UUID.uuid4())
+      Map.put(job_without_id, :jid, UUID.uuid4())
       |> Map.put(:enqueued_at, Timex.to_unix(Time.now()))
 
     commands = [
@@ -233,20 +284,7 @@ defmodule ExqScheduler.Storage do
       ["LPUSH", queue_key(queue_name, storage_opts), Job.encode(job)]
     ]
 
-    response =
-      Redis.cas(
-        storage_opts,
-        lock,
-        key_expire_duration,
-        commands
-      )
-
-    # Log only if job is enqueued
-    if length(response) > 1 do
-      Logger.info(
-        "Enqueued a job  #{log_str(job, :class)} #{log_str(job, :queue)} #{log_str(job, :enqueued_at)} #{log_str(job, :args)}"
-      )
-    end
+    {commands, job, job_without_id}
   end
 
   defp log_str(map, key) do

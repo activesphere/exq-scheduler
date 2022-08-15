@@ -43,18 +43,28 @@ defmodule ExqScheduler do
     Supervisor.stop(supervisor)
   end
 
+  def schedules(name) do
+    Server.schedules(Module.concat(name, "Server"))
+  end
+
+  def enqueue_now(name, schedule_name) do
+    Server.enqueue_now(Module.concat(name, "Server"), schedule_name)
+  end
+
+  def enable(name, schedule_name) do
+    Server.enable_schedule(Module.concat(name, "Server"), schedule_name, true)
+  end
+
+  def disable(name, schedule_name) do
+    Server.enable_schedule(Module.concat(name, "Server"), schedule_name, false)
+  end
+
   defmodule ConfigurationError do
     defexception message: "Invalid configuration!"
   end
 
   defp supervisor_opts(env) do
     opts = [strategy: :one_for_one]
-    name = Keyword.get(env, :name)
-
-    if name do
-      Keyword.put(opts, :name, name)
-    else
-      opts
-    end
+    Keyword.merge(opts, ExqScheduler.Utils.name(env))
   end
 end

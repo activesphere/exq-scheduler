@@ -15,6 +15,14 @@ defmodule ExqScheduler.Storage.Redis do
     storage.module.command!(storage.name, ["HSET", key, field, val])
   end
 
+  def multi(storage, commands) do
+    response = storage.module.pipeline!(storage.name, [["MULTI"]] ++ commands ++ [["EXEC"]])
+
+    expected = ["OK"] ++ Enum.map(commands, fn _ -> "QUEUED" end)
+    ^expected = Enum.take(response, length(expected))
+    response
+  end
+
   def cas(storage, lock_key, ttl, commands) do
     watch = ["WATCH", lock_key]
     get = ["GET", lock_key]
@@ -24,21 +32,7 @@ defmodule ExqScheduler.Storage.Redis do
     if is_locked do
       ["OK"] = storage.module.pipeline!(storage.name, [["UNWATCH"]])
     else
-      pipeline_command =
-        [["MULTI"], ["SETEX", lock_key, ttl, true]]
-        |> Enum.concat(commands)
-        |> Enum.concat([["EXEC"]])
-
-      expected =
-        Enum.concat([
-          ["OK"],
-          ["QUEUED"],
-          Enum.map(commands, fn _ -> "QUEUED" end)
-        ])
-
-      response = storage.module.pipeline!(storage.name, pipeline_command)
-      ^expected = Enum.take(response, length(expected))
-      response
+      multi(storage, [["SETEX", lock_key, ttl, true]] ++ commands)
     end
   end
 

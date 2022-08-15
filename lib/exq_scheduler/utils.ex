@@ -1,6 +1,21 @@
 defmodule ExqScheduler.Utils do
   @moduledoc false
 
+  def name(env, component \\ nil) do
+    base_name = Keyword.get(env, :name)
+
+    cond do
+      base_name == nil ->
+        []
+
+      component == nil ->
+        [name: base_name]
+
+      true ->
+        [name: Module.concat(base_name, Server)]
+    end
+  end
+
   def redix_spec(env) do
     spec = env[:redis][:child_spec]
 

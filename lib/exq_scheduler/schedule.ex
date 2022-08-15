@@ -130,11 +130,6 @@ defmodule ExqScheduler.Schedule do
 
     local_lower_bound_time =
       if schedule_last_run_time != nil do
-        schedule_last_run_time =
-          schedule_last_run_time
-          |> Timex.parse!("{ISO:Extended:Z}")
-          |> Timex.to_datetime("Etc/UTC")
-
         Utils.get_nearer_date(ref_time, lower_bound_time, schedule_last_run_time)
       else
         lower_bound_time

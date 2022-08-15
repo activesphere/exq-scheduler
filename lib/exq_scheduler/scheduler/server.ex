@@ -42,7 +42,11 @@ defmodule ExqScheduler.Scheduler.Server do
   alias ExqScheduler.Schedule.TimeRange
 
   def start_link(env) do
-    GenServer.start_link(__MODULE__, env)
+    GenServer.start_link(
+      __MODULE__,
+      env,
+      ExqScheduler.Utils.name(env, "Server")
+    )
   end
 
   def init(env) do
@@ -58,31 +62,66 @@ defmodule ExqScheduler.Scheduler.Server do
       start_time: Time.now()
     }
 
-    Process.send_after(self(), :first, 0)
-    {:ok, state}
+    {:ok, state, {:continue, :first}}
+  end
+
+  def schedules(name) do
+    GenServer.call(name, :scheduled)
+  end
+
+  def enable_schedule(name, schedule_name, enable?) do
+    GenServer.call(name, {:enable_schedule, schedule_name, enable?})
+  end
+
+  def enqueue_now(name, schedule_name) do
+    GenServer.call(name, {:enqueue_now, schedule_name})
+  end
+
+  def handle_call({:enqueue_now, name}, _from, state) do
+    schedule = Enum.find(state.schedules, fn schedule -> schedule.name == name end)
+
+    if schedule do
+      Storage.enqueue_now(state.storage_opts, schedule)
+      {:reply, :ok, state}
+    else
+      {:reply, {:error, "Schedule not found"}, state}
+    end
+  end
+
+  def handle_call({:enable_schedule, name, enable?}, _from, state) do
+    schedule = Enum.find(state.schedules, fn schedule -> schedule.name == name end)
+
+    if schedule do
+      Storage.enable_schedule(state.storage_opts, schedule, enable?)
+      {:reply, :ok, update_schedules(state)}
+    else
+      {:reply, {:error, "Schedule not found"}, state}
+    end
+  end
+
+  def handle_call(:scheduled, _from, state) do
+    ref_time = Time.now()
+
+    schedules =
+      Enum.map(state.schedules, fn schedule ->
+        %{
+          cron: Crontab.CronExpression.Composer.compose(schedule.cron),
+          schedule: schedule,
+          last_run:
+            Schedule.get_previous_schedule_date(schedule.cron, schedule.timezone, ref_time),
+          next_run: Schedule.get_next_schedule_date(schedule.cron, schedule.timezone, ref_time)
+        }
+      end)
+
+    {:reply, schedules, state}
+  end
+
+  def handle_continue(:first, state) do
+    do_init(state)
   end
 
   def handle_info(:first, state) do
-    storage_opts = state.storage_opts
-
-    state =
-      if Storage.storage_connected?(storage_opts) do
-        state = update_schedules(state)
-
-        Enum.map(state.schedules, &Storage.persist_schedule(&1, storage_opts))
-
-        Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
-        |> Enum.filter(&(!Storage.get_schedule_first_run_time(storage_opts, &1)))
-        |> Storage.persist_schedule_times(storage_opts, state.start_time)
-
-        next_tick(self(), 0)
-        state
-      else
-        Process.send_after(self(), :first, @storage_reconnect_timeout)
-        state
-      end
-
-    {:noreply, state}
+    do_init(state)
   end
 
   def handle_info(:tick, state) do
@@ -102,6 +141,29 @@ defmodule ExqScheduler.Scheduler.Server do
       end
 
     next_tick(self(), timeout)
+    {:noreply, state}
+  end
+
+  defp do_init(state) do
+    storage_opts = state.storage_opts
+
+    state =
+      if Storage.storage_connected?(storage_opts) do
+        state = update_schedules(state)
+
+        Enum.map(state.schedules, &Storage.persist_schedule(&1, storage_opts))
+
+        Enum.filter(state.schedules, &Storage.is_schedule_enabled?(storage_opts, &1))
+        |> Enum.filter(&(!Storage.get_schedule_first_run_time(storage_opts, &1)))
+        |> Storage.persist_schedule_times(storage_opts, state.start_time)
+
+        next_tick(self(), 0)
+        state
+      else
+        Process.send_after(self(), :first, @storage_reconnect_timeout)
+        state
+      end
+
     {:noreply, state}
   end
 
