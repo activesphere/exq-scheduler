@@ -115,6 +115,14 @@ config :exq_scheduler,
 * `time_zone`: Default time zone for all schedules. Defaults to system
   time zone.
 
+The scheduler will start by default when the app is started, to
+disable set `start_on_application` to false.
+
+```elixir
+config :exq_scheduler,
+  start_on_application: false
+```
+
 ## Web
 
 Exq Scheduler is compatible with
