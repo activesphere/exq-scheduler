@@ -1,5 +1,6 @@
 defmodule ExqScheduler.Serializer do
-  @serializer Application.fetch_env!(:exq_scheduler, :storage)[:json_serializer] || Poison
+  @storage Application.get_env(:exq_scheduler, :storage, [])
+  @serializer Keyword.get(@storage, :json_serializer, Poison)
 
   def encode!(object, opts \\ []) do
     @serializer.encode!(object, opts)
