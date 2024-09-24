@@ -29,7 +29,7 @@ defmodule ExqScheduler.Mixfile do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:tzdata, "~> 1.0"},
+      {:tzdata, "~> 1.1"},
       {:timex, "~> 3.7"},
       {:redix, "~> 0.7 or ~> 1.0"},
       {:poison, "~> 3.1 or ~> 4.0 or ~> 5.0", optional: true},
