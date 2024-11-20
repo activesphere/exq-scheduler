@@ -32,7 +32,7 @@ defmodule ExqScheduler.Mixfile do
       {:tzdata, "~> 1.1"},
       {:timex, "~> 3.7"},
       {:redix, "~> 0.7 or ~> 1.0"},
-      {:poison, "~> 3.1 or ~> 4.0 or ~> 5.0", optional: true},
+      {:jason, "~> 1.3"},
       {:crontab, "~> 1.1"},
       {:elixir_uuid, "~> 1.2"},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
