@@ -33,7 +33,6 @@ It uses `"#{exq_namespace}:sidekiq-scheduler"` for storing scheduler internal me
 ```elixir
 config :exq_scheduler, :storage,
   exq_namespace: "exq" # exq redis namespace
-  json_serializer: Jason # or Poison, which is the default if not provided
 ```
 ### Redis Client
 

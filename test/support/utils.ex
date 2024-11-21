@@ -200,7 +200,7 @@ defmodule TestUtils do
         "HSET",
         "#{exq_namespace}:sidekiq-scheduler:states",
         schedule_name,
-        Poison.encode!(schedule_state)
+        Jason.encode!(schedule_state)
       ]
     )
   end

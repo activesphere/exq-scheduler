@@ -69,11 +69,11 @@ defmodule ExqScheduler.Schedule do
     end
 
     def encode(%{__struct__: _} = job) do
-      Serializer.encode!(Map.from_struct(job))
+      Serializer.stable_encode!(Map.from_struct(job))
     end
 
     def encode(job) do
-      Serializer.encode!(job)
+      Serializer.stable_encode!(job)
     end
   end
 
