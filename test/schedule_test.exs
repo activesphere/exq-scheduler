@@ -181,7 +181,11 @@ defmodule ScheduleTest do
       assert Schedule.utc_to_localtime(time, "Europe/Copenhagen") == ~N[2019-03-31 01:45:00]
 
       time = Timex.add(time, Duration.from_minutes(30))
-      assert Schedule.utc_to_localtime(time, "Europe/Copenhagen") == ~N[2019-03-31 03:15:00]
+
+      assert NaiveDateTime.compare(
+               Schedule.utc_to_localtime(time, "Europe/Copenhagen"),
+               ~N[2019-03-31 03:15:00]
+             ) == :eq
     end
 
     test "for DST backward switch" do
@@ -189,7 +193,11 @@ defmodule ScheduleTest do
       assert Schedule.utc_to_localtime(time, "Europe/Copenhagen") == ~N[2019-10-27 01:45:00]
 
       time = Timex.add(time, Duration.from_hours(2))
-      assert Schedule.utc_to_localtime(time, "Europe/Copenhagen") == ~N[2019-10-27 02:45:00]
+
+      assert NaiveDateTime.compare(
+               Schedule.utc_to_localtime(time, "Europe/Copenhagen"),
+               ~N[2019-10-27 02:45:00]
+             ) == :eq
     end
   end
 
@@ -210,7 +218,11 @@ defmodule ScheduleTest do
 
       # Add 1 hour and 1 minute to reach 3:00, from 2-3 CET there is a time gap
       time = Timex.add(time, Duration.from_seconds(3600 + 60))
-      assert Schedule.local_to_utc(time, "Europe/Copenhagen") == utc(~N[2019-03-31 01:00:00])
+
+      assert DateTime.compare(
+               Schedule.local_to_utc(time, "Europe/Copenhagen"),
+               utc(~N[2019-03-31 01:00:00])
+             ) == :eq
     end
 
     test "for DST backward switch" do
