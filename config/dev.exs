@@ -1,4 +1,4 @@
-use Mix.Config
+import Config
 
 config :exq_scheduler,
   missed_jobs_window: 3 * 60 * 60 * 1000,

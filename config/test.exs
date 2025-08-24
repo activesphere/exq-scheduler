@@ -1,6 +1,6 @@
-use Mix.Config
+import Config
 
-config :logger, level: :warn
+config :logger, level: :warning
 
 config :exq_scheduler,
   missed_jobs_window: 60 * 60 * 1000,

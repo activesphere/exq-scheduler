@@ -38,7 +38,7 @@ defmodule ExqScheduler.Utils do
   end
 
   def redis_module(env) do
-    redix_spec(env).start() |> elem(0)
+    redix_spec(env).start |> elem(0)
   end
 
   def redis_name(env), do: env[:redis][:name]

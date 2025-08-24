@@ -4,7 +4,7 @@ defmodule ExqScheduler.Time do
   @callback scale_duration(Timex.Duration.t()) :: Timex.Duration.t()
   @callback reset(base :: integer(), scale :: integer()) :: :ok
 
-  @mod Application.get_env(:exq_scheduler, :time_module, __MODULE__.Real)
+  @mod Application.compile_env(:exq_scheduler, :time_module, __MODULE__.Real)
 
   def init(base, scale), do: @mod.init(base, scale)
 
